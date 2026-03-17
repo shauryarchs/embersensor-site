@@ -9,31 +9,55 @@
       font-family: Arial, sans-serif;
       background: #0b0f1a;
       color: white;
-      text-align: center;
+    }
+
+    .hero {
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
-      height: 100vh;
+      text-align: center;
+      padding: 40px 20px;
     }
-    .container {
-      max-width: 600px;
+
+    .hero img {
+      width: 90%;
+      max-width: 700px;
+      border-radius: 12px;
+      margin-bottom: 20px;
     }
+
     h1 {
-      font-size: 48px;
-      margin-bottom: 10px;
+      font-size: 42px;
+      margin: 10px 0;
     }
+
     p {
       font-size: 18px;
+      color: #ccc;
+      max-width: 600px;
+    }
+
+    .tagline {
+      margin-top: 10px;
+      font-size: 20px;
       color: #aaa;
     }
   </style>
 </head>
 <body>
-  <div class="container">
+
+  <div class="hero">
+    <img src="images/hero.jpg" alt="EmberSensor Project">
+
     <h1>EmberSensor</h1>
-    <p>Smart Wildfire Detection & Protection System</p>
-    <p>Monitoring heat, smoke, and ember risk in real time.</p>
+    <p class="tagline">Smart Wildfire Detection & Protection System</p>
+
+    <p>
+      Detecting fire risks using heat, smoke, and ember signals combined with real-time weather and satellite data.
+    </p>
+
     <p>🚧 Website Coming Soon</p>
   </div>
+
 </body>
 </html>
