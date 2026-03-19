@@ -1,0 +1,23 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "embersensor",
+	"main": "src/worker.js",
+	"compatibility_date": "2026-03-19",
+	"kv_namespaces": [
+		{
+			"binding": "FIRE_DATA",
+			"id": "ca8667f8831f4db79a9050df07d58fac",
+      "remote": true
+		},
+		{
+			"binding": "FIRMS_CACHE",
+			"id": "9dedac2ca3e24aacbb953ea53a1cda62",
+			"remote": true
+		},
+		{
+			"binding": "WEATHER_CACHE",
+			"id": "b20cbe525b334bf2afc4a04f3c0e0ad2",
+			"remote": true
+		}
+	]
+}
