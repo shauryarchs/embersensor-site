@@ -3,9 +3,11 @@ import { fetchFirmsData, refreshFirmsCache } from "./firms.js";
 import { fetchWeatherData, refreshWeatherCache } from "./weather.js";
 import { parseCSV } from "./csv.js";
 import {
+  distanceMiles,
   findNearbyFires,
   getClosestDistance,
-  evaluateWindRisk
+  evaluateWindRisk,
+  filterFiresByBounds
 } from "./geo.js";
 import {
   computeSensorScore,
@@ -14,7 +16,6 @@ import {
   computeWindScore
 } from "./risk.js";
 import { round2 } from "./utils.js";
-import { filterFiresByBounds } from "./geo.js";
 
 export default {
   async fetch(request, env) {
@@ -60,15 +61,21 @@ export default {
 
         return new Response(JSON.stringify({
           count: firesInBounds.length,
-          fires: firesInBounds.map(f => ({
-            latitude: Number(f.latitude),
-            longitude: Number(f.longitude),
-            brightness: f.bright_ti4 ? Number(f.bright_ti4) : null,
-            confidence: f.confidence ?? null,
-            satellite: f.satellite ?? null,
-            acquiredDate: f.acq_date ?? null,
-            acquiredTime: f.acq_time ?? null
-          })),
+          fires: firesInBounds.map(f => {
+            const lat = Number(f.latitude);
+            const lon = Number(f.longitude);
+
+            return {
+              latitude: lat,
+              longitude: lon,
+              distanceMiles: round2(distanceMiles(HOME_LAT, HOME_LON, lat, lon)),
+              brightness: f.bright_ti4 ? Number(f.bright_ti4) : null,
+              confidence: f.confidence ?? null,
+              satellite: f.satellite ?? null,
+              acquiredDate: f.acq_date ?? null,
+              acquiredTime: f.acq_time ?? null
+            };
+          }),
           firmsSource: firmsResult.source,
           generatedAt: new Date().toISOString()
         }), {
