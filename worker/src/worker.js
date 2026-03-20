@@ -14,6 +14,7 @@ import {
   computeWindScore
 } from "./risk.js";
 import { round2 } from "./utils.js";
+import { filterFiresByBounds } from "./geo.js";
 
 export default {
   async fetch(request, env) {
@@ -32,6 +33,64 @@ export default {
       const data = await request.json();
       await env.FIRE_DATA.put("latest", JSON.stringify(data));
       return new Response("OK");
+    }
+
+    if (url.pathname === "/api/fires") {
+      try {
+        const minLat = parseFloat(url.searchParams.get("minLat"));
+        const maxLat = parseFloat(url.searchParams.get("maxLat"));
+        const minLon = parseFloat(url.searchParams.get("minLon"));
+        const maxLon = parseFloat(url.searchParams.get("maxLon"));
+
+        if ([minLat, maxLat, minLon, maxLon].some(Number.isNaN)) {
+          return new Response(JSON.stringify({
+            error: "Invalid bounding box parameters"
+          }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        const forceRefreshFirms = url.searchParams.get("refreshFirms") === "1";
+        const firmsResult = await fetchFirmsData(env, forceRefreshFirms);
+        const csv = firmsResult.text;
+        const fires = parseCSV(csv);
+
+        const firesInBounds = filterFiresByBounds(fires, minLat, maxLat, minLon, maxLon);
+
+        return new Response(JSON.stringify({
+          count: firesInBounds.length,
+          fires: firesInBounds.map(f => ({
+            latitude: Number(f.latitude),
+            longitude: Number(f.longitude),
+            brightness: f.bright_ti4 ? Number(f.bright_ti4) : null,
+            confidence: f.confidence ?? null,
+            satellite: f.satellite ?? null,
+            acquiredDate: f.acq_date ?? null,
+            acquiredTime: f.acq_time ?? null
+          })),
+          firmsSource: firmsResult.source,
+          generatedAt: new Date().toISOString()
+        }), {
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0"
+          }
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({
+          error: "api/fires failed",
+          message: String(err)
+        }), {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"
+          }
+        });
+      }
     }
 
     if (url.pathname === "/api/status") {
@@ -103,6 +162,6 @@ export default {
     }
 
     return new Response("Not Found", { status: 404 });
-    
+
   }
 };

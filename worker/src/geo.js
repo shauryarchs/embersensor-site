@@ -80,3 +80,14 @@ export function evaluateWindRisk(nearbyFires, windDirTo) {
 
     return false;
 }
+
+export function filterFiresByBounds(fires, minLat, maxLat, minLon, maxLon) {
+    return fires.filter(f => {
+        const lat = parseFloat(f.latitude);
+        const lon = parseFloat(f.longitude);
+
+        if (isNaN(lat) || isNaN(lon)) return false;
+
+        return lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon;
+    });
+}
