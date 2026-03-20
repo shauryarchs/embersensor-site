@@ -18,7 +18,7 @@ export async function fetchFirmsData(env, forceRefresh = false) {
     }
   }
 
-  const url = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${apiKey}/VIIRS_NOAA20_NRT/-180,-90,180,90/2`;
+  const url = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${apiKey}/VIIRS_NOAA20_NRT/-180,-90,180,90/1`;
 
   const response = await fetch(url);
 
@@ -49,7 +49,7 @@ export async function refreshFirmsCache(env) {
     return new Response("FIRMS_CACHE binding is missing", { status: 500 });
   }
 
-  const firmsUrl = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${apiKey}/VIIRS_NOAA20_NRT/-180,-90,180,90/2`;
+  const firmsUrl = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${apiKey}/VIIRS_NOAA20_NRT/-180,-90,180,90/1`;
 
   const response = await fetch(firmsUrl);
   if (!response.ok) {
