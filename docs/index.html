@@ -1,26 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>EmberSensor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="EmberSensor is a connected wildfire monitoring and response system designed to help homeowners detect dangerous conditions earlier and respond faster." />
+  <meta name="description"
+    content="EmberSensor is a connected wildfire monitoring and response system designed to help homeowners detect dangerous conditions earlier and respond faster." />
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
   <div id="site-header"></div>
 
   <header class="hero">
     <div class="container hero-grid">
       <div>
-        <div class="eyebrow">Wildfire Detection • Live Monitoring • Automated Response</div>
-        <h1>Early wildfire risk detection for smarter home protection</h1>
-        <p class="lead">
-          EmberSensor is a connected wildfire monitoring and response system designed to help detect dangerous conditions earlier, understand live fire risk around the home, and support faster protective action through alerts, live monitoring, and smart sprinkler activation.
-        </p>
+        <div id="home-eyebrow" class="eyebrow"></div>
+        <h1 id="home-title"></h1>
+        <p id="home-lead" class="lead"></p>
 
         <div class="action-buttons">
           <button class="action-btn status-btn" onclick="window.open('https://embersensor.com/api/status')">
@@ -28,7 +29,8 @@
             <span>View Live Fire Risk</span>
           </button>
 
-          <button class="action-btn camera-btn" onclick="window.open('https://home.google.com/u/3/home/1-bf274c04573901a825c98b061c3ab65d5bf7bb682aa8583ef8dab5b2fba6e91e/cameras/list/1-b7e2e9be7aa8379b4748be3aa058f4e7ac375bc0774265209cfb961a3b8859d4?fap=true')">
+          <button class="action-btn camera-btn"
+            onclick="window.open('https://home.google.com/u/3/home/1-bf274c04573901a825c98b061c3ab65d5bf7bb682aa8583ef8dab5b2fba6e91e/cameras/list/1-b7e2e9be7aa8379b4748be3aa058f4e7ac375bc0774265209cfb961a3b8859d4?fap=true')">
             <span class="icon">📷</span>
             <span>View Live Camera Feed</span>
           </button>
@@ -39,24 +41,7 @@
           </a>
         </div>
 
-        <div class="quick-stats">
-          <div class="stat">
-            <div class="num">Live</div>
-            <div class="label">Risk monitoring API deployed</div>
-          </div>
-          <div class="stat">
-            <div class="num">3+</div>
-            <div class="label">Local sensor inputs</div>
-          </div>
-          <div class="stat">
-            <div class="num">Real-time</div>
-            <div class="label">Weather and fire data integration</div>
-          </div>
-          <div class="stat">
-            <div class="num">Working</div>
-            <div class="label">Prototype sprinkler response</div>
-          </div>
-        </div>
+        <div id="home-stats" class="quick-stats"></div>
       </div>
 
       <div class="hero-image-wrap">
@@ -67,38 +52,22 @@
 
   <section>
     <div class="container">
-      <h2>Why EmberSensor exists</h2>
-      <p class="section-sub">
-        Wildfires can spread quickly, and ember-driven ignition can threaten homes before people have enough time to react. EmberSensor was created to bring local sensing, weather awareness, wildfire hotspot data, live monitoring, and automated response together into one connected system.
-      </p>
+      <h2 id="home-why-title"></h2>
+      <p id="home-why-text" class="section-sub"></p>
     </div>
   </section>
 
   <section>
     <div class="container">
-      <h2>What the system already does</h2>
-      <p class="section-sub">
-        EmberSensor is already more than an idea. A working prototype has been built with several real capabilities that can be demonstrated today.
-      </p>
-
-      <div class="cards">
-        <div class="card">
-          <h3>Real-time local sensing</h3>
-          <p>Tracks temperature, smoke, and flame-related conditions around the home environment.</p>
-        </div>
-        <div class="card">
-          <h3>Weather-aware risk analysis</h3>
-          <p>Uses live weather conditions such as heat, humidity, wind, and rain to better understand risk.</p>
-        </div>
-        <div class="card">
-          <h3>Nearby wildfire awareness</h3>
-          <p>Integrates satellite-based wildfire hotspot data to detect active fire activity near the surrounding area.</p>
-        </div>
-      </div>
+      <h2 id="home-features-title"></h2>
+      <p id="home-features-text" class="section-sub"></p>
+      <div id="home-features" class="cards"></div>
     </div>
   </section>
 
   <div id="site-footer"></div>
+  <script src="content.js"></script>
   <script src="script.js"></script>
 </body>
+
 </html>

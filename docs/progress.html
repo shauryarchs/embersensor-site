@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>EmberSensor Progress</title>
@@ -9,41 +10,31 @@
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
   <div id="site-header"></div>
 
   <section class="page-header">
     <div class="container">
-      <h1>Progress so far</h1>
-      <p class="lead">
-        EmberSensor already includes several working pieces across hardware, cloud services, and mobile visibility.
-      </p>
+      <h1 id="progress-title"></h1>
+      <p id="progress-lead" class="lead"></p>
     </div>
   </section>
 
   <section>
     <div class="container">
-      <div class="milestones">
-        <div class="milestone"><strong>Completed:</strong> Sensor-based fire detection prototype</div>
-        <div class="milestone"><strong>Completed:</strong> Cloud-based live status API</div>
-        <div class="milestone"><strong>Completed:</strong> Weather integration</div>
-        <div class="milestone"><strong>Completed:</strong> Wildfire hotspot integration</div>
-        <div class="milestone"><strong>Completed:</strong> Live camera access from website</div>
-        <div class="milestone"><strong>In Progress:</strong> iPhone app live monitoring</div>
-        <div class="milestone"><strong>In Progress:</strong> Nearby fire map visualization</div>
-        <div class="milestone"><strong>Working Prototype:</strong> Smart sprinkler integration</div>
-      </div>
+      <div id="progress-milestones" class="milestones"></div>
 
       <div class="cta">
-        <h3>Prototype actively evolving</h3>
-        <p class="footer-text">
-          EmberSensor is being refined across hardware, backend services, map visualization, and mobile monitoring to become a stronger and more practical wildfire defense platform for homes.
-        </p>
+        <h3 id="progress-cta-title"></h3>
+        <p id="progress-cta-text" class="footer-text"></p>
       </div>
     </div>
   </section>
 
   <div id="site-footer"></div>
+  <script src="content.js"></script>
   <script src="script.js"></script>
 </body>
+
 </html>

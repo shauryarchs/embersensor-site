@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>Live Monitoring | EmberSensor</title>
@@ -9,15 +10,14 @@
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
   <div id="site-header"></div>
 
   <section class="page-header">
     <div class="container">
-      <h1>Live monitoring in action</h1>
-      <p class="lead">
-        EmberSensor includes live tools that help show how the system is performing in real time.
-      </p>
+      <h1 id="live-title"></h1>
+      <p id="live-lead" class="lead"></p>
 
       <div class="action-buttons">
         <button class="action-btn status-btn" onclick="window.open('https://embersensor.com/api/status')">
@@ -25,7 +25,8 @@
           <span>View Live Fire Risk</span>
         </button>
 
-        <button class="action-btn camera-btn" onclick="window.open('https://home.google.com/u/3/home/1-bf274c04573901a825c98b061c3ab65d5bf7bb682aa8583ef8dab5b2fba6e91e/cameras/list/1-b7e2e9be7aa8379b4748be3aa058f4e7ac375bc0774265209cfb961a3b8859d4?fap=true')">
+        <button class="action-btn camera-btn"
+          onclick="window.open('https://home.google.com/u/3/home/1-bf274c04573901a825c98b061c3ab65d5bf7bb682aa8583ef8dab5b2fba6e91e/cameras/list/1-b7e2e9be7aa8379b4748be3aa058f4e7ac375bc0774265209cfb961a3b8859d4?fap=true')">
           <span class="icon">📷</span>
           <span>View Live Camera Feed</span>
         </button>
@@ -34,25 +35,12 @@
   </section>
 
   <section>
-    <div class="container cards">
-      <div class="card">
-        <h3>Live fire risk status</h3>
-        <p>See the current fire risk level calculated from sensor data, weather conditions, and nearby wildfire activity.</p>
-      </div>
-
-      <div class="card">
-        <h3>Live camera feed</h3>
-        <p>Visually monitor the outdoor area through the connected camera system.</p>
-      </div>
-
-      <div class="card">
-        <h3>Mobile visibility</h3>
-        <p>Track conditions and fire awareness features through the EmberSensor iPhone app.</p>
-      </div>
-    </div>
+    <div id="live-cards" class="container cards"></div>
   </section>
 
   <div id="site-footer"></div>
+  <script src="content.js"></script>
   <script src="script.js"></script>
 </body>
+
 </html>
