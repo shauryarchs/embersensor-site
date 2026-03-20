@@ -351,4 +351,33 @@ footer {
     display: block;
     border-radius: 16px;
   }
+
+  .diagram-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .diagram-wrap img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 16px;
+  }
+
+  .diagram-wrap.narrow {
+    max-width: 900px;
+  }
+
+  .diagram-wrap.medium {
+    max-width: 1000px;
+  }
+
+  .diagram-wrap.wide {
+    max-width: 1200px;
+  }
+
+  .diagram-wrap {
+    max-width: 1100px;
+    margin: 18px auto 0;
+  }
 }
