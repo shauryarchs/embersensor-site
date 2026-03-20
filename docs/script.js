@@ -1,18 +1,18 @@
 document.addEventListener("DOMContentLoaded", () => {
   const path = window.location.pathname.split("/").pop() || "index.html";
-  const content = window.siteContent || {};
 
   const navClass = (file) => (path === file ? "active" : "");
 
   const header = `
     <div class="topbar">
       <div class="container topbar-inner">
-        <div class="brand"><a href="index.html">${content.brand || "EmberSensor"}</a></div>
+        <div class="brand"><a href="index.html">EmberSensor</a></div>
         <nav class="nav">
           <a class="${navClass("index.html")}" href="index.html">Home</a>
           <a class="${navClass("how-it-works.html")}" href="how-it-works.html">How It Works</a>
           <a class="${navClass("progress.html")}" href="progress.html">Progress</a>
           <a class="${navClass("live-monitoring.html")}" href="live-monitoring.html">Live Monitoring</a>
+          <a class="${navClass("screenshots.html")}" href="screenshots.html">Screenshots</a>
         </nav>
       </div>
     </div>
@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const footer = `
     <footer>
-      ${content.footer || ""}
+      EmberSensor • Connected wildfire monitoring and response system
     </footer>
   `;
 
@@ -29,11 +29,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (headerTarget) headerTarget.innerHTML = header;
   if (footerTarget) footerTarget.innerHTML = footer;
-
-  if (path === "index.html" || path === "") injectHome(content.home);
-  if (path === "how-it-works.html") injectHowItWorks(content.howItWorks);
-  if (path === "progress.html") injectProgress(content.progress);
-  if (path === "live-monitoring.html") injectLiveMonitoring(content.liveMonitoring);
 });
 
 function injectHome(home) {
