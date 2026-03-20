@@ -345,4 +345,10 @@ footer {
     color: white;
     text-decoration: none;
   }
+
+  .diagram-wrap img {
+    width: 100%;
+    display: block;
+    border-radius: 16px;
+  }
 }
