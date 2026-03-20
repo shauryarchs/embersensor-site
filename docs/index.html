@@ -8,386 +8,17 @@
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
-
-  <style>
-    :root {
-      --bg: #0b0f1a;
-      --bg-soft: #121827;
-      --card: rgba(255, 255, 255, 0.06);
-      --card-border: rgba(255, 255, 255, 0.12);
-      --text: #ffffff;
-      --muted: #b7c0d1;
-      --blue: #2563eb;
-      --blue2: #1d4ed8;
-      --orange: #ea580c;
-      --red: #dc2626;
-      --yellow: #f59e0b;
-      --green: #10b981;
-      --maxw: 1150px;
-      --shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
-      --radius: 18px;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background:
-        radial-gradient(circle at top, rgba(234, 88, 12, 0.16), transparent 28%),
-        radial-gradient(circle at top right, rgba(37, 99, 235, 0.14), transparent 24%),
-        var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-    }
-
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    .container {
-      width: min(var(--maxw), calc(100% - 32px));
-      margin: 0 auto;
-    }
-
-    .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      backdrop-filter: blur(10px);
-      background: rgba(11, 15, 26, 0.75);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .topbar-inner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 14px 0;
-    }
-
-    .brand {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: 0.2px;
-    }
-
-    .nav {
-      display: flex;
-      gap: 18px;
-      flex-wrap: wrap;
-    }
-
-    .nav a {
-      font-size: 14px;
-      color: var(--muted);
-    }
-
-    .nav a:hover {
-      color: white;
-    }
-
-    .hero {
-      padding: 56px 0 40px;
-    }
-
-    .hero-grid {
-      display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
-      gap: 34px;
-      align-items: center;
-    }
-
-    .eyebrow {
-      display: inline-block;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(234, 88, 12, 0.14);
-      color: #ffd0b2;
-      border: 1px solid rgba(234, 88, 12, 0.28);
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-      margin-bottom: 16px;
-    }
-
-    h1 {
-      font-size: clamp(34px, 6vw, 60px);
-      line-height: 1.08;
-      margin: 0 0 16px;
-    }
-
-    .hero p.lead {
-      font-size: 19px;
-      color: var(--muted);
-      max-width: 680px;
-      margin: 0 0 22px;
-    }
-
-    .hero-image-wrap {
-      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
-      border: 1px solid var(--card-border);
-      border-radius: 24px;
-      padding: 14px;
-      box-shadow: var(--shadow);
-    }
-
-    .hero img {
-      width: 100%;
-      display: block;
-      border-radius: 16px;
-    }
-
-    .action-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-      margin-top: 20px;
-    }
-
-    .action-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 14px 22px;
-      font-size: 15px;
-      font-weight: 700;
-      border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      cursor: pointer;
-      color: white;
-      background: rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(8px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-      transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
-    }
-
-    .action-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
-    }
-
-    .camera-btn {
-      background: linear-gradient(135deg, rgba(37, 99, 235, 0.95), rgba(29, 78, 216, 0.95));
-    }
-
-    .status-btn {
-      background: linear-gradient(135deg, rgba(234, 88, 12, 0.95), rgba(220, 38, 38, 0.95));
-    }
-
-    .secondary-btn {
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    .icon {
-      font-size: 18px;
-      line-height: 1;
-    }
-
-    .quick-stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      margin-top: 28px;
-    }
-
-    .stat {
-      background: var(--card);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius);
-      padding: 18px;
-      box-shadow: var(--shadow);
-    }
-
-    .stat .num {
-      font-size: 28px;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-
-    .stat .label {
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    section {
-      padding: 34px 0;
-    }
-
-    .section-title {
-      font-size: 32px;
-      margin: 0 0 12px;
-    }
-
-    .section-sub {
-      color: var(--muted);
-      max-width: 760px;
-      margin: 0 0 24px;
-      font-size: 17px;
-    }
-
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
-    }
-
-    .card {
-      background: var(--card);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius);
-      padding: 22px;
-      box-shadow: var(--shadow);
-    }
-
-    .card h3 {
-      margin: 0 0 10px;
-      font-size: 20px;
-    }
-
-    .card p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 15px;
-    }
-
-    .two-col {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-
-    .steps {
-      display: grid;
-      gap: 16px;
-    }
-
-    .step {
-      display: flex;
-      gap: 14px;
-      background: var(--card);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius);
-      padding: 18px;
-    }
-
-    .step-num {
-      flex: 0 0 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--orange), var(--red));
-      display: grid;
-      place-items: center;
-      font-weight: 700;
-    }
-
-    .step h3 {
-      margin: 0 0 6px;
-      font-size: 18px;
-    }
-
-    .step p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 15px;
-    }
-
-    .milestones {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 14px;
-    }
-
-    .milestone {
-      background: var(--card);
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 16px 18px;
-      color: var(--muted);
-    }
-
-    .milestone strong {
-      color: white;
-    }
-
-    .cta {
-      margin: 18px 0 8px;
-      padding: 26px;
-      background: linear-gradient(135deg, rgba(234,88,12,0.16), rgba(37,99,235,0.14));
-      border: 1px solid var(--card-border);
-      border-radius: 22px;
-      box-shadow: var(--shadow);
-    }
-
-    .badge {
-      display: inline-block;
-      margin-top: 14px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(16, 185, 129, 0.14);
-      border: 1px solid rgba(16, 185, 129, 0.28);
-      color: #b7ffe3;
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    footer {
-      padding: 34px 0 48px;
-      color: #91a0b8;
-      font-size: 14px;
-      text-align: center;
-    }
-
-    @media (max-width: 980px) {
-      .hero-grid,
-      .cards,
-      .two-col,
-      .quick-stats {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
-    @media (max-width: 700px) {
-      .hero-grid,
-      .cards,
-      .two-col,
-      .quick-stats,
-      .milestones {
-        grid-template-columns: 1fr;
-      }
-
-      .topbar-inner {
-        align-items: flex-start;
-        flex-direction: column;
-      }
-
-      h1 {
-        font-size: 38px;
-      }
-
-      .section-title {
-        font-size: 28px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="topbar">
     <div class="container topbar-inner">
       <div class="brand">EmberSensor</div>
       <nav class="nav">
-        <a href="#why">Why It Exists</a>
-        <a href="#features">What It Does</a>
-        <a href="#how">How It Works</a>
-        <a href="#progress">Progress</a>
+        <a class="active" href="index.html">Home</a>
+        <a href="how-it-works.html">How It Works</a>
+        <a href="progress.html">Progress</a>
+        <a href="live-monitoring.html">Live Monitoring</a>
       </nav>
     </div>
   </div>
@@ -412,7 +43,7 @@
             <span>View Live Camera Feed</span>
           </button>
 
-          <a class="action-btn secondary-btn" href="#how">
+          <a class="action-btn secondary-btn" href="how-it-works.html">
             <span class="icon">⚙️</span>
             <span>See How It Works</span>
           </a>
@@ -444,18 +75,18 @@
     </div>
   </header>
 
-  <section id="why">
+  <section>
     <div class="container">
-      <h2 class="section-title">Why EmberSensor exists</h2>
+      <h2>Why EmberSensor exists</h2>
       <p class="section-sub">
         Wildfires can spread quickly, and ember-driven ignition can threaten homes before people have enough time to react. EmberSensor was created to bring local sensing, weather awareness, wildfire hotspot data, live monitoring, and automated response together into one connected system.
       </p>
     </div>
   </section>
 
-  <section id="features">
+  <section>
     <div class="container">
-      <h2 class="section-title">What the system already does</h2>
+      <h2>What the system already does</h2>
       <p class="section-sub">
         EmberSensor is already more than an idea. A working prototype has been built with several real capabilities that can be demonstrated today.
       </p>
@@ -473,95 +104,12 @@
           <h3>Nearby wildfire awareness</h3>
           <p>Integrates satellite-based wildfire hotspot data to detect active fire activity near the surrounding area.</p>
         </div>
-        <div class="card">
-          <h3>Integrated fire risk scoring</h3>
-          <p>Combines local sensors, weather, and nearby fire activity into a single live fire risk level.</p>
-        </div>
-        <div class="card">
-          <h3>Automated sprinkler response</h3>
-          <p>Supports smart sprinkler activation when dangerous conditions are detected.</p>
-        </div>
-        <div class="card">
-          <h3>Mobile and live monitoring</h3>
-          <p>Includes live status access, map-based fire awareness, and connected camera visibility.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="how">
-    <div class="container two-col">
-      <div>
-        <h2 class="section-title">How EmberSensor works</h2>
-        <p class="section-sub">
-          EmberSensor combines local sensing and cloud intelligence to produce a clearer, more actionable picture of wildfire risk.
-        </p>
-
-        <div class="steps">
-          <div class="step">
-            <div class="step-num">1</div>
-            <div>
-              <h3>Local sensors collect conditions</h3>
-              <p>Temperature, smoke, and flame-related signals are monitored near the home.</p>
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="step-num">2</div>
-            <div>
-              <h3>Cloud services combine external data</h3>
-              <p>Live weather and nearby wildfire hotspot information are added to local sensor readings.</p>
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="step-num">3</div>
-            <div>
-              <h3>Risk is calculated in real time</h3>
-              <p>The platform computes a live fire risk score based on local and surrounding conditions.</p>
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="step-num">4</div>
-            <div>
-              <h3>Alerts and protective response can follow</h3>
-              <p>When conditions become critical, the system can notify the user and trigger sprinkler response.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div id="progress">
-        <h2 class="section-title">Progress so far</h2>
-        <p class="section-sub">
-          The project already includes several working pieces across hardware, cloud services, and mobile visibility.
-        </p>
-
-        <div class="milestones">
-          <div class="milestone"><strong>Completed:</strong> Sensor-based fire detection prototype</div>
-          <div class="milestone"><strong>Completed:</strong> Cloud-based live status API</div>
-          <div class="milestone"><strong>Completed:</strong> Weather integration</div>
-          <div class="milestone"><strong>Completed:</strong> Wildfire hotspot integration</div>
-          <div class="milestone"><strong>Completed:</strong> Live camera access from website</div>
-          <div class="milestone"><strong>In Progress:</strong> iPhone app live monitoring</div>
-          <div class="milestone"><strong>In Progress:</strong> Nearby fire map visualization</div>
-          <div class="milestone"><strong>Working Prototype:</strong> Smart sprinkler integration</div>
-        </div>
-
-        <div class="cta">
-          <h3 style="margin-top:0;">Built for proactive home wildfire defense</h3>
-          <p style="color: var(--muted); margin-bottom: 0;">
-            EmberSensor is being developed to help homeowners move from passive awareness to earlier detection, clearer risk visibility, and faster response.
-          </p>
-          <div class="badge">Prototype actively evolving</div>
-        </div>
       </div>
     </div>
   </section>
 
   <footer>
-    EmberSensor • Connected wildfire monitoring and response system!!
+    EmberSensor • Connected wildfire monitoring and response system
   </footer>
 </body>
 </html>
