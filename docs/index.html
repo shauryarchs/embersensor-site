@@ -46,6 +46,48 @@
       font-size: 20px;
       color: #aaa;
     }
+
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 24px;
+    }
+
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 22px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      cursor: pointer;
+      color: white;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+    }
+
+    .camera-btn {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.95), rgba(29, 78, 216, 0.95));
+    }
+
+    .status-btn {
+      background: linear-gradient(135deg, rgba(234, 88, 12, 0.95), rgba(220, 38, 38, 0.95));
+    }
+
+    .icon {
+      font-size: 18px;
+      line-height: 1;
+    }
   </style>
 </head>
 
@@ -65,13 +107,18 @@
 
     <p>Real-time camera feed from outdoor area</p>
 
-    <button onclick="window.open('https://home.google.com/u/3/home/1-bf274c04573901a825c98b061c3ab65d5bf7bb682aa8583ef8dab5b2fba6e91e/cameras/list/1-b7e2e9be7aa8379b4748be3aa058f4e7ac375bc0774265209cfb961a3b8859d4?fap=true')">
-      View Live Camera Feed
-    </button>
+    <div class="action-buttons">
+      <button class="action-btn camera-btn"
+        onclick="window.open('https://home.google.com/u/3/home/1-bf274c04573901a825c98b061c3ab65d5bf7bb682aa8583ef8dab5b2fba6e91e/cameras/list/1-b7e2e9be7aa8379b4748be3aa058f4e7ac375bc0774265209cfb961a3b8859d4?fap=true')">
+        <span class="icon">📷</span>
+        <span>View Live Camera Feed</span>
+      </button>
 
-    <button onclick="window.open('https://embersensor.com/api/status')">
-      Check Fire Risk Status
-    </button>
+      <button class="action-btn status-btn" onclick="window.open('https://embersensor.com/api/status')">
+        <span class="icon">🔥</span>
+        <span>Check Fire Risk Status</span>
+      </button>
+    </div>
 
     <p>🚧 Website Under Construction (Making good proress) 🚧</p>
   </div>
