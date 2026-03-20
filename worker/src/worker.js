@@ -1,4 +1,4 @@
-import { DEFAULT_RADIUS_MILES } from "./config.js";
+import { DEFAULT_RADIUS_MILES, HOME_LAT, HOME_LON } from "./config.js";
 import { fetchFirmsData, refreshFirmsCache } from "./firms.js";
 import { fetchWeatherData, refreshWeatherCache } from "./weather.js";
 import { parseCSV } from "./csv.js";
