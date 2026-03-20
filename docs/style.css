@@ -340,4 +340,9 @@ footer {
   h2 {
     font-size: 28px;
   }
+
+  .brand a {
+    color: white;
+    text-decoration: none;
+  }
 }
