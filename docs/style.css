@@ -316,14 +316,15 @@ section {
 }
 
 /* Diagrams */
+/* Diagrams */
 .diagram-section {
-  padding-top: 24px;
+  padding-top: 20px;
 }
 
 .diagram-wrap {
-  max-width: 860px;
+  max-width: 820px;
   margin: 18px auto 0;
-  padding: 10px;
+  padding: 8px;
 }
 
 .diagram-wrap img {
@@ -334,11 +335,20 @@ section {
 }
 
 .diagram-wrap.medium-diagram {
-  max-width: 980px;
+  max-width: 940px;
 }
 
 .diagram-wrap.low-diagram {
-  max-width: 1080px;
+  max-width: 1040px;
+}
+
+@media (max-width: 700px) {
+
+  .diagram-wrap,
+  .diagram-wrap.medium-diagram,
+  .diagram-wrap.low-diagram {
+    max-width: 100%;
+  }
 }
 
 /* Footer */
