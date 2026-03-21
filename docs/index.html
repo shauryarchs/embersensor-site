@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>EmberSensor</title>
@@ -11,6 +12,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
   <div id="site-header"></div>
 
@@ -99,7 +101,8 @@
         </div>
         <div class="card">
           <h3>Nearby wildfire awareness</h3>
-          <p>Integrates satellite-based wildfire hotspot data to detect active fire activity near the surrounding area.</p>
+          <p>Integrates satellite-based wildfire hotspot data to detect active fire activity near the surrounding area.
+          </p>
         </div>
         <div class="card">
           <h3>Integrated fire risk scoring</h3>
@@ -191,13 +194,45 @@
 
       <div class="diagram-frame">
         <div class="diagram-card">
-          <img src="images/embersensor-high-level-3.png" alt="EmberSensor high-level system design" />
+          <img src="images/embersensor-high-level.png" alt="EmberSensor high-level system design" />
         </div>
       </div>
     </div>
   </section>
 
+  <section class="diagram-section">
+    <div class="container">
+      <h2>Medimum-level system design</h2>
+      <p class="section-sub"> This view shows how local sensing, cloud services, weather data, wildfire hotspot data,
+        and client applications work together.
+      </p>
+
+      <div class="diagram-frame">
+        <div class="diagram-card">
+          <img src="images/embersensor-medium-level.png" alt="EmberSensor medium-level system design" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="diagram-section">
+    <div class="container">
+      <h2>Low-level system design</h2>
+      <p class="section-sub"> This view shows the internal data flow across sensors, Cloudflare Worker APIs, caches, and
+        client applications.
+      </p>
+
+      <div class="diagram-frame">
+        <div class="diagram-card">
+          <img src="images/embersensor-low-level.png" alt="EmberSensor low-level system design" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+
   <div id="site-footer"></div>
   <script src="script.js"></script>
 </body>
+
 </html>
