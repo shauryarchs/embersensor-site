@@ -393,4 +393,10 @@ footer {
   .diagram-card.low {
     width: 100%;
   }
+
+  .creator-line {
+    margin: 8px 0 0;
+    color: #d7deea;
+    font-size: 16px;
+  }
 }
