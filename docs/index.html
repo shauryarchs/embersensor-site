@@ -1,238 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
-  <title>EmberSensor | Shaurya Varshnay</title>
+  <title>How EmberSensor Works</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description"
-    content="EmberSensor is a wildfire monitoring and response project by Shaurya Varshnay, a Freshman at Rancho Cucamonga High School, Rancho Cucamonga, California" />
+    content="Learn how EmberSensor works by combining IoT sensing, cloud-based fire risk analysis, live monitoring, and mobile visibility." />
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
   <div id="site-header"></div>
 
-  <header class="hero">
-
-    <div class="container hero-grid">
-
-
-      <div>
-        <div class="eyebrow">Wildfire Detection • Live Monitoring • Automated Response</div>
-        <h1>Early wildfire risk detection for smarter home protection</h1>
-        <p class="lead">
-          EmberSensor is a connected wildfire monitoring and response system designed to help detect dangerous
-          conditions earlier, understand live fire risk around the home, and support faster protective action through
-          alerts, live monitoring, and smart sprinkler activation.
-        </p>
-
-        <p class="creator-line">
-          A wildfire monitoring and response project by <strong>Shaurya Varshnay</strong>,
-          Freshman at Rancho Cucamonga High School, California
-        </p>
-
-        <div class="action-buttons">
-          <button class="action-btn status-btn" onclick="window.open('https://embersensor.com/api/status')">
-            <span class="icon">🔥</span>
-            <span>View Live Fire Risk</span>
-          </button>
-
-          <button class="action-btn camera-btn"
-            onclick="window.open('https://home.google.com/u/3/home/1-bf274c04573901a825c98b061c3ab65d5bf7bb682aa8583ef8dab5b2fba6e91e/cameras/list/1-b7e2e9be7aa8379b4748be3aa058f4e7ac375bc0774265209cfb961a3b8859d4?fap=true')">
-            <span class="icon">📷</span>
-            <span>View Live Camera Feed</span>
-          </button>
-
-          <a class="action-btn secondary-btn" href="how-it-works.html">
-            <span class="icon">⚙️</span>
-            <span>See How It Works</span>
-          </a>
-        </div>
-
-        <div class="quick-stats">
-          <div class="stat">
-            <div class="num">Live</div>
-            <div class="label">Risk monitoring API deployed</div>
-          </div>
-          <div class="stat">
-            <div class="num">3+</div>
-            <div class="label">Local sensor inputs</div>
-          </div>
-          <div class="stat">
-            <div class="num">Real-time</div>
-            <div class="label">Weather and fire data integration</div>
-          </div>
-          <div class="stat">
-            <div class="num">Working</div>
-            <div class="label">Prototype sprinkler response</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="hero-image-wrap">
-        <img src="images/shaurya-ember-sensor.jpg" alt="EmberSensor Project" />
-      </div>
-    </div>
-  </header>
-
-  <section>
+  <section class="page-header">
     <div class="container">
-      <h2>Why EmberSensor exists</h2>
-      <p class="section-sub">
-        Wildfires can spread quickly, and ember-driven ignition can threaten homes before people have enough time to
-        react. EmberSensor was created to bring local sensing, weather awareness, wildfire hotspot data, live
-        monitoring, and automated response together into one connected system.
+      <h1>How EmberSensor Works</h1>
+      <p class="lead">
+        EmberSensor combines local sensing and cloud intelligence to produce a clearer, more actionable picture of wildfire risk.
       </p>
-    </div>
-  </section>
-
-  <section>
-    <div class="container">
-      <h2>What the system already does</h2>
-      <p class="section-sub">
-        EmberSensor is already more than an idea. A working prototype has been built with several real capabilities that
-        can be demonstrated today.
-      </p>
-
-      <div class="cards">
-        <div class="card">
-          <h3>Real-time local sensing</h3>
-          <p>Tracks temperature, smoke, and flame-related conditions around the home environment.</p>
-        </div>
-        <div class="card">
-          <h3>Weather-aware risk analysis</h3>
-          <p>Uses live weather conditions such as heat, humidity, wind, and rain to better understand risk.</p>
-        </div>
-        <div class="card">
-          <h3>Nearby wildfire awareness</h3>
-          <p>Integrates satellite-based wildfire hotspot data to detect active fire activity near the surrounding area.
-          </p>
-        </div>
-        <div class="card">
-          <h3>Integrated fire risk scoring</h3>
-          <p>Combines local sensors, weather, and nearby fire activity into a single live fire risk level.</p>
-        </div>
-        <div class="card">
-          <h3>Automated sprinkler response</h3>
-          <p>Supports smart sprinkler activation when dangerous conditions are detected.</p>
-        </div>
-        <div class="card">
-          <h3>Mobile and live monitoring</h3>
-          <p>Includes live status access, map-based fire awareness, and connected camera visibility.</p>
-        </div>
-      </div>
     </div>
   </section>
 
   <section>
     <div class="container two-col">
-      <div>
-        <h2>How EmberSensor works</h2>
-        <p class="section-sub">
-          EmberSensor combines local sensing and cloud intelligence to produce a clearer, more actionable picture of
-          wildfire risk.
-        </p>
-
-        <div class="steps">
-          <div class="step">
-            <div class="step-num">1</div>
-            <div>
-              <h3>Local sensors collect conditions</h3>
-              <p>Temperature, smoke, and flame-related signals are monitored near the home.</p>
-            </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div>
+            <h3>Local sensors collect conditions</h3>
+            <p>Temperature, smoke, and flame-related signals are monitored near the home.</p>
           </div>
+        </div>
 
-          <div class="step">
-            <div class="step-num">2</div>
-            <div>
-              <h3>Cloud services combine external data</h3>
-              <p>Live weather and nearby wildfire hotspot information are added to local sensor readings.</p>
-            </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div>
+            <h3>Cloud services combine external data</h3>
+            <p>Live weather and nearby wildfire hotspot information are added to local sensor readings.</p>
           </div>
+        </div>
 
-          <div class="step">
-            <div class="step-num">3</div>
-            <div>
-              <h3>Risk is calculated in real time</h3>
-              <p>The platform computes a live fire risk score based on local and surrounding conditions.</p>
-            </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div>
+            <h3>Risk is calculated in real time</h3>
+            <p>The platform computes a live fire risk score based on local and surrounding conditions.</p>
           </div>
+        </div>
 
-          <div class="step">
-            <div class="step-num">4</div>
-            <div>
-              <h3>Alerts and protective response can follow</h3>
-              <p>When conditions become critical, the system can notify the user and trigger sprinkler response.</p>
-            </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div>
+            <h3>Alerts and protective response can follow</h3>
+            <p>When conditions become critical, the system can notify the user and trigger sprinkler response.</p>
           </div>
         </div>
       </div>
 
       <div>
-        <h2>Progress so far</h2>
-        <p class="section-sub">
-          The project already includes several working pieces across hardware, cloud services, and mobile visibility.
-        </p>
-
-        <div class="milestones">
-          <div class="milestone"><strong>Completed:</strong> Sensor-based fire detection prototype</div>
-          <div class="milestone"><strong>Completed:</strong> Cloud-based live status API</div>
-          <div class="milestone"><strong>Completed:</strong> Weather integration</div>
-          <div class="milestone"><strong>Completed:</strong> Wildfire hotspot integration</div>
-          <div class="milestone"><strong>Completed:</strong> Live camera access from website</div>
-          <div class="milestone"><strong>In Progress:</strong> iPhone app live monitoring</div>
-          <div class="milestone"><strong>In Progress:</strong> Nearby fire map visualization</div>
-          <div class="milestone"><strong>Working Prototype:</strong> Smart sprinkler integration</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="diagram-section">
-    <div class="container">
-      <h2>High-level system design</h2>
-      <p class="section-sub">
-        EmberSensor connects local IoT sensing, cloud-based fire risk intelligence, the website, and the iPhone app into
-        one integrated system.
-      </p>
-
-      <div class="diagram-frame">
-        <div class="diagram-card">
-          <img src="images/embersensor-high-level.png" alt="EmberSensor high-level system design" />
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="diagram-section">
-    <div class="container">
-      <h2>Medimum-level system design</h2>
-      <p class="section-sub"> This view shows how local sensing, cloud services, weather data, wildfire hotspot data,
-        and client applications work together.
-      </p>
-
-      <div class="diagram-frame">
-        <div class="diagram-card">
-          <img src="images/embersensor-medium-level.png" alt="EmberSensor medium-level system design" />
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="diagram-section">
-    <div class="container">
-      <h2>Low-level system design</h2>
-      <p class="section-sub"> This view shows the internal data flow across sensors, Cloudflare Worker APIs, caches, and
-        client applications.
-      </p>
-
-      <div class="diagram-frame">
-        <div class="diagram-card">
-          <img src="images/embersensor-low-level.png" alt="EmberSensor low-level system design" />
+        <img class="page-hero-img" src="images/shaurya-ember-sensor.jpg" alt="How EmberSensor works" />
+        <div class="page-copy">
+          <h3>Built as a connected system</h3>
+          <p>
+            EmberSensor is designed to connect local environmental monitoring with broader regional fire awareness.
+            Instead of looking at only one signal, the system combines multiple inputs to form a more complete view of danger.
+          </p>
+          <p>
+            This approach helps support earlier awareness, better decision-making, and more proactive protection around the home.
+          </p>
         </div>
       </div>
     </div>
@@ -240,13 +77,22 @@
 
   <section>
     <div class="container">
-      <h2>About the Creator</h2>
-      <div class="card">
-        <p>
-          <strong>Shaurya Varshnay</strong> is a Freshman at Rancho Cucamonga High School, California.
-          He created EmberSensor as a wildfire detection and protection project focused on combining IoT sensing,
-          cloud-based fire risk analysis, live monitoring, and mobile visibility into one connected system.
-        </p>
+      <h2>Watch EmberSensor in action</h2>
+      <p class="section-sub">
+        This video provides a walkthrough of how EmberSensor works and shows the project in action.
+      </p>
+
+      <div class="video-frame">
+        <iframe
+          width="560"
+          height="315"
+          src="https://www.youtube.com/embed/KMeSjCohi9E?rel=0"
+          title="EmberSensor YouTube video"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allowfullscreen>
+        </iframe>
       </div>
     </div>
   </section>
@@ -254,5 +100,4 @@
   <div id="site-footer"></div>
   <script src="script.js"></script>
 </body>
-
 </html>

@@ -399,4 +399,22 @@ footer {
     color: #d7deea;
     font-size: 16px;
   }
+
+  .video-frame {
+    max-width: 900px;
+    margin: 18px auto 0;
+    padding: 10px;
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+    box-shadow: var(--shadow);
+  }
+
+  .video-frame iframe {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 0;
+    border-radius: 14px;
+  }
 }
