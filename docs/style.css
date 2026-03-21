@@ -327,7 +327,7 @@ section {
 }
 
 .diagram-card {
-  width: min(100%, 720px);
+  width: min(75%, 720px);
   padding: 8px;
   border: 1px solid var(--card-border);
   border-radius: 20px;
