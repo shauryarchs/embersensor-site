@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Live Monitoring | EmberSensor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <div id="site-header"></div>
+
+  <section class="page-header">
+    <div class="container">
+      <h1 id="live-title"></h1>
+      <p id="live-lead" class="lead"></p>
+
+      <div class="action-buttons">
+        <button class="action-btn status-btn" onclick="window.open('https://embersensor.com/api/status')">
+          <span class="icon">🔥</span>
+          <span>View Live Fire Risk</span>
+        </button>
+
+        <button class="action-btn camera-btn"
+          onclick="window.open('https://home.google.com/u/3/home/1-bf274c04573901a825c98b061c3ab65d5bf7bb682aa8583ef8dab5b2fba6e91e/cameras/list/1-b7e2e9be7aa8379b4748be3aa058f4e7ac375bc0774265209cfb961a3b8859d4?fap=true')">
+          <span class="icon">📷</span>
+          <span>View Live Camera Feed</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div id="live-cards" class="container cards"></div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="content.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>
