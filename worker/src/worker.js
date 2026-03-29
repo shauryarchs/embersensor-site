@@ -16,6 +16,7 @@ import {
   computeWindScore
 } from "./risk.js";
 import { round2 } from "./utils.js";
+import { fetchYoutubeLiveStatus } from "./youtube.js";
 
 export default {
   async fetch(request, env) {
@@ -166,6 +167,10 @@ export default {
           }
         });
       }
+    }
+
+    if (url.pathname === "/api/youtube-live-status") {
+      return fetchYoutubeLiveStatus(env);
     }
 
     return new Response("Not Found", { status: 404 });

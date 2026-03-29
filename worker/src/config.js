@@ -6,3 +6,6 @@ export const FIRMS_CACHE_TTL_SECONDS = 300; // 5 minutes
 
 export const WEATHER_CACHE_KEY = "weather_home_current";
 export const WEATHER_CACHE_TTL_SECONDS = 300; // 5 minutes
+
+export const YOUTUBE_CHANNEL_ID = "UCvj9pFy7xF7Ecg6ji9gCKQg";
+export const YOUTUBE_STATUS_CACHE_SECONDS = 30;
