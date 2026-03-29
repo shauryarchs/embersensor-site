@@ -18,6 +18,11 @@
 			"binding": "WEATHER_CACHE",
 			"id": "b20cbe525b334bf2afc4a04f3c0e0ad2",
 			"remote": true
-		}
+		},
+		{
+      "binding": "YOUTUBE_CACHE",
+      "id": "d7a63cc0170f49cfbb2c61f07c8029df",
+			"remote": true
+    }
 	]
 }
