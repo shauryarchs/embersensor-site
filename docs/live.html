@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Live Camera | EmberSensor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Live camera feed for EmberSensor." />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    .live-section {
+      padding: 48px 0 64px;
+    }
+
+    .live-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .live-header h1 {
+      margin-bottom: 10px;
+    }
+
+    .live-header p {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .live-frame {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: #111;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+    }
+
+    .video-wrap {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%;
+      height: 0;
+      background: #000;
+    }
+
+    .video-wrap iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+
+    .live-note {
+      max-width: 900px;
+      margin: 18px auto 0;
+      text-align: center;
+      opacity: 0.85;
+    }
+
+    .live-actions {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 22px;
+      flex-wrap: wrap;
+    }
+
+    .live-link-btn {
+      display: inline-block;
+      padding: 12px 18px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 600;
+      border: 1px solid #ddd;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="site-header"></div>
+
+  <section class="live-section">
+    <div class="container">
+      <div class="live-header">
+        <div class="eyebrow">Live Monitoring</div>
+        <h1>EmberSensor Live Camera Feed</h1>
+        <p>
+          This page shows the current live monitoring stream connected through YouTube Live.
+        </p>
+      </div>
+
+      <div class="live-frame">
+        <div class="video-wrap">
+          <iframe src="https://www.youtube.com/embed/F2ij54cd_1o" title="EmberSensor Live Camera"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen>
+          </iframe>
+        </div>
+      </div>
+
+      <p class="live-note">
+        If the stream is offline, the player may show unavailable content until the next live session starts.
+      </p>
+
+      <div class="live-actions">
+        <a class="live-link-btn" href="https://www.youtube.com/watch?v=F2ij54cd_1o" target="_blank">
+          Open on YouTube
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="script.js"></script>
+</body>
+
+</html>
