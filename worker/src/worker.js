@@ -16,6 +16,7 @@ import {
   computeWindScore
 } from "./risk.js";
 import { round2 } from "./utils.js";
+import { fetchYoutubeLiveStatus } from "./youtube.js";
 
 export default {
   async fetch(request, env) {
@@ -34,6 +35,11 @@ export default {
       const data = await request.json();
       await env.FIRE_DATA.put("latest", JSON.stringify(data));
       return new Response("OK");
+    }
+
+    if (url.pathname === "/api/youtube-live-status") {
+      const forceRefresh = url.searchParams.get("refresh") === "1";
+      return fetchYoutubeLiveStatus(env, forceRefresh);
     }
 
     if (url.pathname === "/api/fires") {
