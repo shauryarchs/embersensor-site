@@ -10,8 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
         <nav class="nav">
           <a class="${navClass("index.html")}" href="index.html">Home</a>
           <a class="${navClass("how-it-works.html")}" href="how-it-works.html">How It Works</a>
-          <a class="${navClass("progress.html")}" href="progress.html">Progress</a>
-          <a class="${navClass("live-monitoring.html")}" href="live-monitoring.html">Live Monitoring</a>
           <a class="${navClass("screenshots.html")}" href="screenshots.html">Pictures</a>
         </nav>
       </div>
