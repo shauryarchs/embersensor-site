@@ -27,10 +27,11 @@
 
       <div id="live-container" class="live-card">
         <div class="live-message">
+          <div class="live-status-pill">Ready to check</div>
           <h2>Live stream status not checked yet</h2>
           <p>Press the button below to check whether the EmberSensor live stream is currently active.</p>
           <div class="live-actions">
-            <button id="check-live-btn" class="live-btn" type="button">Check Live Stream</button>
+            <button id="check-live-btn" class="live-btn live-btn-primary" type="button">Check Live Stream</button>
           </div>
         </div>
       </div>
@@ -55,7 +56,7 @@
       const refreshBtn = document.getElementById("refresh-live-btn");
 
       if (checkBtn) {
-        checkBtn.addEventListener("click", () => loadLiveStatus(true));
+        checkBtn.addEventListener("click", () => loadLiveStatus(false));
       }
 
       if (refreshBtn) {
@@ -67,6 +68,7 @@
       const container = document.getElementById("live-container");
       container.innerHTML = `
         <div class="live-message">
+          <div class="live-status-pill live-status-loading">Checking…</div>
           <h2>Checking live stream status...</h2>
           <p>Please wait while EmberSensor checks whether the stream is currently active.</p>
         </div>
@@ -77,12 +79,13 @@
       const container = document.getElementById("live-container");
       container.innerHTML = `
         <div class="live-message">
+          <div class="live-status-pill live-status-offline">Offline</div>
           <h2>Live stream is currently not on</h2>
           <p>
             The EmberSensor camera feed is offline right now. Please check back when the next live session begins.
           </p>
           <div class="live-actions">
-            <button id="refresh-live-btn" class="live-btn" type="button">Check Again</button>
+            <button id="refresh-live-btn" class="live-btn live-btn-primary" type="button">Check Again</button>
             <a class="live-btn" href="https://www.youtube.com/channel/UCvj9pFy7xF7Ecg6ji9gCKQg/live" target="_blank" rel="noopener noreferrer">
               Open YouTube Live Page
             </a>
@@ -103,9 +106,11 @@
             allowfullscreen>
           </iframe>
         </div>
-        <div class="live-message">
+        <div class="live-message live-message-compact">
+          <div class="live-status-pill live-status-live">Live Now</div>
+          <h2>${data.title || "EmberSensor Live Camera"}</h2>
           <div class="live-actions">
-            <button id="refresh-live-btn" class="live-btn" type="button">Refresh Status</button>
+            <button id="refresh-live-btn" class="live-btn live-btn-primary" type="button">Refresh Status</button>
             <a class="live-btn" href="https://www.youtube.com/watch?v=${data.videoId}" target="_blank" rel="noopener noreferrer">
               Open on YouTube
             </a>
@@ -119,10 +124,11 @@
       const container = document.getElementById("live-container");
       container.innerHTML = `
         <div class="live-message">
+          <div class="live-status-pill live-status-offline">Error</div>
           <h2>Unable to check live stream status</h2>
           <p>There was a problem checking the stream right now. Please try again shortly.</p>
           <div class="live-actions">
-            <button id="refresh-live-btn" class="live-btn" type="button">Try Again</button>
+            <button id="refresh-live-btn" class="live-btn live-btn-primary" type="button">Try Again</button>
           </div>
         </div>
       `;
