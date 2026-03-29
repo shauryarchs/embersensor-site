@@ -1,7 +1,7 @@
 import { YOUTUBE_CHANNEL_ID } from "./config.js";
 
 const YOUTUBE_LIVE_STATUS_CACHE_KEY = "youtube_live_status";
-const LIVE_CACHE_SECONDS = 30;
+const LIVE_CACHE_SECONDS = 60;
 const OFFLINE_CACHE_SECONDS = 180;
 
 function jsonResponse(payload, status = 200) {
