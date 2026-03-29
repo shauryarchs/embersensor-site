@@ -38,7 +38,8 @@ export default {
     }
 
     if (url.pathname === "/api/youtube-live-status") {
-      return fetchYoutubeLiveStatus(env);
+      const forceRefresh = url.searchParams.get("refresh") === "1";
+      return fetchYoutubeLiveStatus(env, forceRefresh);
     }
 
     if (url.pathname === "/api/fires") {

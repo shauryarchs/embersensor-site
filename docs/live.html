@@ -78,6 +78,8 @@
       font-weight: 600;
       background: #fff;
       color: #111;
+      border: none;
+      cursor: pointer;
     }
 
     .live-note {
@@ -97,19 +99,22 @@
         <div class="eyebrow">Live Monitoring</div>
         <h1>EmberSensor Live Camera Feed</h1>
         <p class="section-sub">
-          Watch the live camera feed when streaming is active.
+          Check whether the live stream is active and view it here when available.
         </p>
       </div>
 
       <div id="live-container" class="live-card">
         <div class="live-message">
-          <h2>Checking live stream status...</h2>
-          <p>Please wait while EmberSensor checks whether the stream is currently active.</p>
+          <h2>Live stream status not checked yet</h2>
+          <p>Press the button below to check whether the EmberSensor live stream is currently active.</p>
+          <div class="live-actions">
+            <button id="check-live-btn" class="live-btn" type="button">Check Live Stream</button>
+          </div>
         </div>
       </div>
 
       <p class="live-note">
-        This page updates automatically and shows the live video only when the stream is on.
+        This page can check on demand and optionally auto-refresh if enabled in the page configuration.
       </p>
     </div>
   </section>
@@ -117,56 +122,130 @@
   <div id="site-footer"></div>
   <script src="script.js"></script>
   <script>
-    async function loadLiveStatus() {
-      const container = document.getElementById("live-container");
+    const AUTO_CHECK_LIVE = false;
+    const AUTO_REFRESH_LIVE = false;
+    const AUTO_REFRESH_INTERVAL_MS = 120000;
 
-      try {
-        const response = await fetch("/api/youtube-live-status?ts=" + Date.now(), {
-          cache: "no-store"
-        });
+    let refreshTimer = null;
 
-        const data = await response.json();
+    function attachButtonHandlers() {
+      const checkBtn = document.getElementById("check-live-btn");
+      const refreshBtn = document.getElementById("refresh-live-btn");
 
-        if (data.live && data.videoId) {
-          container.innerHTML = `
-            <div class="video-wrap">
-              <iframe
-                src="https://www.youtube.com/embed/${data.videoId}"
-                title="${data.title || "EmberSensor Live Camera"}"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowfullscreen>
-              </iframe>
-            </div>
-          `;
-        } else {
-          container.innerHTML = `
-            <div class="live-message">
-              <h2>Live stream is currently not on</h2>
-              <p>
-                The EmberSensor camera feed is offline right now. Please check back when the next live session begins.
-              </p>
-              <div class="live-actions">
-                <a class="live-btn" href="https://www.youtube.com/channel/UCvj9pFy7xF7Ecg6ji9gCKQg/live" target="_blank" rel="noopener noreferrer">
-                  Open YouTube Live Page
-                </a>
-              </div>
-            </div>
-          `;
-        }
-      } catch (err) {
-        container.innerHTML = `
-          <div class="live-message">
-            <h2>Unable to check live stream status</h2>
-            <p>
-              There was a problem checking the stream right now. Please try again shortly.
-            </p>
-          </div>
-        `;
+      if (checkBtn) {
+        checkBtn.addEventListener("click", () => loadLiveStatus(true));
+      }
+
+      if (refreshBtn) {
+        refreshBtn.addEventListener("click", () => loadLiveStatus(true));
       }
     }
 
-    loadLiveStatus();
-    setInterval(loadLiveStatus, 30000);
+    function renderLoading() {
+      const container = document.getElementById("live-container");
+      container.innerHTML = `
+        <div class="live-message">
+          <h2>Checking live stream status...</h2>
+          <p>Please wait while EmberSensor checks whether the stream is currently active.</p>
+        </div>
+      `;
+    }
+
+    function renderOffline() {
+      const container = document.getElementById("live-container");
+      container.innerHTML = `
+        <div class="live-message">
+          <h2>Live stream is currently not on</h2>
+          <p>
+            The EmberSensor camera feed is offline right now. Please check back when the next live session begins.
+          </p>
+          <div class="live-actions">
+            <button id="refresh-live-btn" class="live-btn" type="button">Check Again</button>
+            <a class="live-btn" href="https://www.youtube.com/channel/UCvj9pFy7xF7Ecg6ji9gCKQg/live" target="_blank" rel="noopener noreferrer">
+              Open YouTube Live Page
+            </a>
+          </div>
+        </div>
+      `;
+      attachButtonHandlers();
+    }
+
+    function renderLive(data) {
+      const container = document.getElementById("live-container");
+      container.innerHTML = `
+        <div class="video-wrap">
+          <iframe
+            src="https://www.youtube.com/embed/${data.videoId}"
+            title="${data.title || "EmberSensor Live Camera"}"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen>
+          </iframe>
+        </div>
+        <div class="live-message">
+          <div class="live-actions">
+            <button id="refresh-live-btn" class="live-btn" type="button">Refresh Status</button>
+            <a class="live-btn" href="https://www.youtube.com/watch?v=${data.videoId}" target="_blank" rel="noopener noreferrer">
+              Open on YouTube
+            </a>
+          </div>
+        </div>
+      `;
+      attachButtonHandlers();
+    }
+
+    function renderError() {
+      const container = document.getElementById("live-container");
+      container.innerHTML = `
+        <div class="live-message">
+          <h2>Unable to check live stream status</h2>
+          <p>There was a problem checking the stream right now. Please try again shortly.</p>
+          <div class="live-actions">
+            <button id="refresh-live-btn" class="live-btn" type="button">Try Again</button>
+          </div>
+        </div>
+      `;
+      attachButtonHandlers();
+    }
+
+    async function loadLiveStatus(forceRefresh = false) {
+      renderLoading();
+
+      try {
+        const url = forceRefresh
+          ? "/api/youtube-live-status?refresh=1"
+          : "/api/youtube-live-status";
+
+        const response = await fetch(url, { cache: "no-store" });
+        const data = await response.json();
+
+        if (data.live && data.videoId) {
+          renderLive(data);
+        } else {
+          renderOffline();
+        }
+      } catch (err) {
+        renderError();
+      }
+    }
+
+    function startAutoRefresh() {
+      if (!AUTO_REFRESH_LIVE) return;
+      if (refreshTimer) clearInterval(refreshTimer);
+
+      refreshTimer = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          loadLiveStatus(false);
+        }
+      }, AUTO_REFRESH_INTERVAL_MS);
+    }
+
+    attachButtonHandlers();
+
+    if (AUTO_CHECK_LIVE) {
+      loadLiveStatus(false);
+    }
+
+    startAutoRefresh();
   </script>
 </body>
 

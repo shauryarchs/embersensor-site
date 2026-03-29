@@ -1,16 +1,53 @@
 import { YOUTUBE_CHANNEL_ID } from "./config.js";
 
-export async function fetchYoutubeLiveStatus(env) {
+const YOUTUBE_LIVE_STATUS_CACHE_KEY = "youtube_live_status";
+const LIVE_CACHE_SECONDS = 30;
+const OFFLINE_CACHE_SECONDS = 180;
+
+function jsonResponse(payload, status = 200) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      "Pragma": "no-cache",
+      "Expires": "0"
+    }
+  });
+}
+
+export async function fetchYoutubeLiveStatus(env, forceRefresh = false) {
   const apiKey = env.YOUTUBE_API_KEY;
 
   if (!apiKey) {
-    return new Response(JSON.stringify({
+    return jsonResponse({
       live: false,
       error: "Missing YOUTUBE_API_KEY secret"
-    }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
+    }, 500);
+  }
+
+  if (!env.YOUTUBE_CACHE) {
+    return jsonResponse({
+      live: false,
+      error: "Missing YOUTUBE_CACHE KV binding"
+    }, 500);
+  }
+
+  const cache = env.YOUTUBE_CACHE;
+
+  if (!forceRefresh) {
+    const cached = await cache.get(YOUTUBE_LIVE_STATUS_CACHE_KEY, "text");
+    if (cached) {
+      return new Response(cached, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+          "Pragma": "no-cache",
+          "Expires": "0"
+        }
+      });
+    }
   }
 
   const ytUrl =
@@ -31,42 +68,39 @@ export async function fetchYoutubeLiveStatus(env) {
 
     if (!resp.ok) {
       const text = await resp.text();
-      return new Response(JSON.stringify({
+      return jsonResponse({
         live: false,
         error: "YouTube API request failed",
         details: text
-      }), {
-        status: 502,
-        headers: { "Content-Type": "application/json" }
-      });
+      }, 502);
     }
 
     const data = await resp.json();
     const item = data?.items?.[0];
     const videoId = item?.id?.videoId ?? null;
 
-    return new Response(JSON.stringify({
+    const payload = {
       live: Boolean(videoId),
       videoId,
       title: item?.snippet?.title ?? null,
       channelId: YOUTUBE_CHANNEL_ID,
       checkedAt: new Date().toISOString()
-    }), {
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-        "Pragma": "no-cache",
-        "Expires": "0"
+    };
+
+    await cache.put(
+      YOUTUBE_LIVE_STATUS_CACHE_KEY,
+      JSON.stringify(payload),
+      {
+        expirationTtl: payload.live ? LIVE_CACHE_SECONDS : OFFLINE_CACHE_SECONDS
       }
-    });
+    );
+
+    return jsonResponse(payload);
   } catch (err) {
-    return new Response(JSON.stringify({
+    return jsonResponse({
       live: false,
       error: "youtube_live_status_failed",
       message: String(err)
-    }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
+    }, 500);
   }
 }
