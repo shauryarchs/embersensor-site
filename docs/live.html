@@ -10,7 +10,6 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
   <link rel="stylesheet" href="style.css" />
-
   <style>
     .live-section {
       padding: 48px 0 64px;
@@ -19,15 +18,6 @@
     .live-header {
       text-align: center;
       margin-bottom: 28px;
-    }
-
-    .live-header h1 {
-      margin-bottom: 10px;
-    }
-
-    .live-header p {
-      max-width: 800px;
-      margin: 0 auto;
     }
 
     .live-frame {
@@ -55,6 +45,23 @@
       border: 0;
     }
 
+    .offline-box,
+    .loading-box {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 36px 24px;
+      text-align: center;
+      background: #fff7f2;
+      border: 1px solid #f0d7c8;
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+    }
+
+    .loading-box {
+      background: #f8fafc;
+      border-color: #dbe4ee;
+    }
+
     .live-note {
       max-width: 900px;
       margin: 18px auto 0;
@@ -77,6 +84,8 @@
       text-decoration: none;
       font-weight: 600;
       border: 1px solid #ddd;
+      background: white;
+      color: inherit;
     }
   </style>
 </head>
@@ -90,33 +99,104 @@
         <div class="eyebrow">Live Monitoring</div>
         <h1>EmberSensor Live Camera Feed</h1>
         <p>
-          This page shows the current live monitoring stream connected through YouTube Live.
+          This page checks whether the EmberSensor YouTube channel is currently live.
         </p>
       </div>
 
-      <div class="live-frame">
-        <div class="video-wrap">
-          <iframe src="https://www.youtube.com/embed/F2ij54cd_1o" title="EmberSensor Live Camera"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowfullscreen>
-          </iframe>
+      <div id="live-content">
+        <div class="loading-box">
+          <h2>Checking live stream status...</h2>
+          <p>Please wait while we look for an active stream.</p>
         </div>
-      </div>
-
-      <p class="live-note">
-        If the stream is offline, the player may show unavailable content until the next live session starts.
-      </p>
-
-      <div class="live-actions">
-        <a class="live-link-btn" href="https://www.youtube.com/watch?v=F2ij54cd_1o" target="_blank">
-          Open on YouTube
-        </a>
       </div>
     </div>
   </section>
 
   <div id="site-footer"></div>
   <script src="script.js"></script>
+  <script>
+    const CHANNEL_ID = "UCvj9pFy7xF7Ecg6ji9gCKQg";
+    const API_KEY = "YOUR_YOUTUBE_DATA_API_KEY";
+
+    async function loadLiveStreamStatus() {
+      const container = document.getElementById("live-content");
+
+      const apiUrl =
+        "https://www.googleapis.com/youtube/v3/search" +
+        "?part=snippet" +
+        "&channelId=" + CHANNEL_ID +
+        "&eventType=live" +
+        "&type=video" +
+        "&maxResults=1" +
+        "&key=" + API_KEY;
+
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+
+        if (data.items && data.items.length > 0) {
+          const videoId = data.items[0].id.videoId;
+
+          container.innerHTML = `
+            <div class="live-frame">
+              <div class="video-wrap">
+                <iframe
+                  src="https://www.youtube.com/embed/${videoId}?autoplay=1"
+                  title="EmberSensor Live Camera"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowfullscreen>
+                </iframe>
+              </div>
+            </div>
+
+            <p class="live-note">
+              The live stream is currently active.
+            </p>
+
+            <div class="live-actions">
+              <a class="live-link-btn" href="https://www.youtube.com/watch?v=${videoId}" target="_blank" rel="noopener noreferrer">
+                Open on YouTube
+              </a>
+            </div>
+          `;
+        } else {
+          container.innerHTML = `
+            <div class="offline-box">
+              <h2>The live stream is currently not on.</h2>
+              <p>
+                Please check back later when EmberSensor starts broadcasting again.
+              </p>
+
+              <div class="live-actions">
+                <a class="live-link-btn" href="https://www.youtube.com/channel/${CHANNEL_ID}" target="_blank" rel="noopener noreferrer">
+                  Visit YouTube Channel
+                </a>
+              </div>
+            </div>
+          `;
+        }
+      } catch (error) {
+        container.innerHTML = `
+          <div class="offline-box">
+            <h2>Unable to check live stream status.</h2>
+            <p>
+              There was a problem checking YouTube right now. Please try again later.
+            </p>
+
+            <div class="live-actions">
+              <a class="live-link-btn" href="https://www.youtube.com/channel/${CHANNEL_ID}" target="_blank" rel="noopener noreferrer">
+                Visit YouTube Channel
+              </a>
+            </div>
+          </div>
+        `;
+        console.error("Error checking YouTube live status:", error);
+      }
+    }
+
+    loadLiveStreamStatus();
+    setInterval(loadLiveStreamStatus, 60000);
+  </script>
 </body>
 
 </html>
