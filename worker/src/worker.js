@@ -37,6 +37,10 @@ export default {
       return new Response("OK");
     }
 
+    if (url.pathname === "/api/youtube-live-status") {
+      return fetchYoutubeLiveStatus(env);
+    }
+
     if (url.pathname === "/api/fires") {
       try {
         const minLat = parseFloat(url.searchParams.get("minLat"));
@@ -167,10 +171,6 @@ export default {
           }
         });
       }
-    }
-
-    if (url.pathname === "/api/youtube-live-status") {
-      return fetchYoutubeLiveStatus(env);
     }
 
     return new Response("Not Found", { status: 404 });
