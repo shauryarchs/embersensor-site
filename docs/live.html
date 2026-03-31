@@ -21,42 +21,93 @@
         <div class="eyebrow">Live Monitoring</div>
         <h1>EmberSensor Live Camera Feed</h1>
         <p class="section-sub">
-          This live view is streamed from the EmberSensor monitoring camera.
+          Enter the 4-digit access code to view the live Reolink camera stream.
         </p>
       </div>
 
-      <div class="live-card">
-        <div class="video-wrap">
-          <iframe src="https://live.embersensor.com/reolink/" title="EmberSensor Live Camera Feed"
-            allow="autoplay; fullscreen" allowfullscreen>
-          </iframe>
-        </div>
-
-        <div class="live-message live-message-compact">
-          <div class="live-status-pill live-status-live">Live Feed</div>
-          <h2>Real-time camera view</h2>
+      <div id="live-container" class="live-card">
+        <div class="live-message">
+          <div class="live-status-pill">Protected Access</div>
+          <h2>Open Reolink Live Camera</h2>
           <p>
-            This feed is powered by the on-site EmberSensor camera and updates in real time while the local stream is
-            active.
+            This live camera feed is protected. Enter the 4-digit code to continue.
           </p>
 
-          <div class="live-actions">
-            <a class="live-btn live-btn-primary" href="https://live.embersensor.com/reolink/" target="_blank"
-              rel="noopener noreferrer">
-              Open Full Live View
-            </a>
+          <div class="camera-code-wrap">
+            <input id="camera-code-input" class="camera-code-input" type="password" inputmode="numeric" maxlength="4"
+              placeholder="Enter 4-digit code" aria-label="Enter 4-digit access code" />
           </div>
+
+          <div class="live-actions">
+            <button id="open-camera-btn" class="live-btn live-btn-primary" type="button">
+              Open Reolink Live Camera
+            </button>
+          </div>
+
+          <p id="camera-code-message" class="camera-code-message" aria-live="polite"></p>
         </div>
       </div>
 
+      <div id="camera-frame-wrap" class="video-frame protected-video" style="display: none;">
+        <iframe id="camera-frame" src="" title="EmberSensor Reolink Live Camera" allowfullscreen>
+        </iframe>
+      </div>
+
       <p class="live-note">
-        If the live feed does not load, the local encoder or network tunnel may be temporarily offline.
+        Authorized users can view the live camera feed directly on this page.
       </p>
     </div>
   </section>
 
   <div id="site-footer"></div>
   <script src="script.js"></script>
+  <script>
+    const CAMERA_ACCESS_CODE = "7438";
+
+    const REOLINK_STREAM_URL = "https://live.embersensor.com/reolink/";
+
+    const codeInput = document.getElementById("camera-code-input");
+    const openButton = document.getElementById("open-camera-btn");
+    const messageEl = document.getElementById("camera-code-message");
+    const frameWrap = document.getElementById("camera-frame-wrap");
+    const frame = document.getElementById("camera-frame");
+
+    function openProtectedCamera() {
+      const enteredCode = codeInput.value.trim();
+
+      if (enteredCode === CAMERA_ACCESS_CODE) {
+        messageEl.textContent = "";
+        messageEl.classList.remove("error");
+
+        frame.src = REOLINK_STREAM_URL;
+        frameWrap.style.display = "block";
+
+        const liveContainer = document.getElementById("live-container");
+        liveContainer.innerHTML = `
+          <div class="live-message live-message-compact">
+            <div class="live-status-pill live-status-live">Access Granted</div>
+            <h2>Reolink live camera is now open</h2>
+            <p>You entered the correct code.</p>
+          </div>
+        `;
+
+        frameWrap.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        frameWrap.style.display = "none";
+        frame.src = "";
+        messageEl.textContent = "Wrong code. Please try again.";
+        messageEl.classList.add("error");
+      }
+    }
+
+    openButton.addEventListener("click", openProtectedCamera);
+
+    codeInput.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        openProtectedCamera();
+      }
+    });
+  </script>
 </body>
 
 </html>

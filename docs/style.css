@@ -677,4 +677,49 @@ footer {
   .gallery-caption {
     padding: 16px;
   }
+
+  .camera-code-wrap {
+    margin-top: 22px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .camera-code-input {
+    width: 100%;
+    max-width: 240px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.10);
+    color: var(--text);
+    font-size: 16px;
+    text-align: center;
+    outline: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(8px);
+  }
+
+  .camera-code-input::placeholder {
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  .camera-code-input:focus {
+    border-color: rgba(37, 99, 235, 0.8);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  }
+
+  .camera-code-message {
+    margin-top: 16px;
+    min-height: 24px;
+    color: #b7c0d1;
+    font-size: 15px;
+  }
+
+  .camera-code-message.error {
+    color: #ffb4b4;
+  }
+
+  .protected-video {
+    margin-top: 22px;
+  }
 }
