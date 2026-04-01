@@ -65,51 +65,92 @@
   <div id="site-footer"></div>
   <script src="script.js"></script>
   <script>
-    const CAMERA_ACCESS_CODE = "7438";
+    const SESSION_MS = 5 * 60 * 1000;
+    let sessionTimer = null;
 
-    const REOLINK_STREAM_URL = "https://livecam.embersensor.com/reolink/";
+    function bindFormEvents() {
+      const btn = document.getElementById("open-camera-btn");
+      const input = document.getElementById("camera-code-input");
+      if (btn) btn.addEventListener("click", openProtectedCamera);
+      if (input) input.addEventListener("keydown", e => {
+        if (e.key === "Enter") openProtectedCamera();
+      });
+    }
 
-    const codeInput = document.getElementById("camera-code-input");
-    const openButton = document.getElementById("open-camera-btn");
-    const messageEl = document.getElementById("camera-code-message");
-    const frameWrap = document.getElementById("camera-frame-wrap");
-    const frame = document.getElementById("camera-frame");
+    function lockCamera() {
+      document.getElementById("camera-frame").src = "";
+      document.getElementById("camera-frame-wrap").style.display = "none";
+      document.getElementById("live-container").innerHTML = `
+        <div class="live-message">
+          <div class="live-status-pill">Session Expired</div>
+          <h2>Open Reolink Live Camera</h2>
+          <p>Your session has expired. Enter the 4-digit code to continue.</p>
+          <div class="camera-code-wrap">
+            <input id="camera-code-input" class="camera-code-input" type="password" inputmode="numeric" maxlength="4"
+              placeholder="Enter 4-digit code" aria-label="Enter 4-digit access code" />
+          </div>
+          <div class="live-actions">
+            <button id="open-camera-btn" class="live-btn live-btn-primary" type="button">
+              Open Reolink Live Camera
+            </button>
+          </div>
+          <p id="camera-code-message" class="camera-code-message" aria-live="polite"></p>
+        </div>
+      `;
+      bindFormEvents();
+    }
 
-    function openProtectedCamera() {
+    async function openProtectedCamera() {
+      const codeInput = document.getElementById("camera-code-input");
+      const messageEl = document.getElementById("camera-code-message");
+      const frameWrap = document.getElementById("camera-frame-wrap");
+      const frame = document.getElementById("camera-frame");
       const enteredCode = codeInput.value.trim();
 
-      if (enteredCode === CAMERA_ACCESS_CODE) {
-        messageEl.textContent = "";
-        messageEl.classList.remove("error");
+      let res;
+      try {
+        res = await fetch("/api/camera-access", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: enteredCode })
+        });
+      } catch {
+        messageEl.textContent = "Could not connect. Please try again.";
+        messageEl.classList.add("error");
+        return;
+      }
 
-        frame.src = REOLINK_STREAM_URL;
-        frameWrap.style.display = "block";
-
-        const liveContainer = document.getElementById("live-container");
-        liveContainer.innerHTML = `
-          <div class="live-message live-message-compact">
-            <div class="live-status-pill live-status-live">Access Granted</div>
-            <h2>Reolink live camera is now open</h2>
-            <p>You entered the correct code.</p>
-          </div>
-        `;
-
-        frameWrap.scrollIntoView({ behavior: "smooth", block: "start" });
-      } else {
+      if (!res.ok) {
         frameWrap.style.display = "none";
         frame.src = "";
         messageEl.textContent = "Wrong code. Please try again.";
         messageEl.classList.add("error");
+        return;
       }
+
+      const { url } = await res.json();
+
+      messageEl.textContent = "";
+      messageEl.classList.remove("error");
+
+      frame.src = url;
+      frameWrap.style.display = "block";
+
+      document.getElementById("live-container").innerHTML = `
+        <div class="live-message live-message-compact">
+          <div class="live-status-pill live-status-live">Access Granted</div>
+          <h2>Reolink live camera is now open</h2>
+          <p>You entered the correct code.</p>
+        </div>
+      `;
+
+      frameWrap.scrollIntoView({ behavior: "smooth", block: "start" });
+
+      if (sessionTimer) clearTimeout(sessionTimer);
+      sessionTimer = setTimeout(lockCamera, SESSION_MS);
     }
 
-    openButton.addEventListener("click", openProtectedCamera);
-
-    codeInput.addEventListener("keydown", function (event) {
-      if (event.key === "Enter") {
-        openProtectedCamera();
-      }
-    });
+    bindFormEvents();
   </script>
 </body>
 

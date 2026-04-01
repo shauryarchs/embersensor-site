@@ -31,6 +31,39 @@ export default {
       return refreshWeatherCache(env);
     }
 
+    if (url.pathname === "/api/camera-access" && request.method === "POST") {
+      const accessCode = env.CAMERA_ACCESS_CODE;
+      const streamUrl = env.CAMERA_STREAM_URL;
+
+      if (!accessCode || !streamUrl) {
+        return new Response(JSON.stringify({ error: "Camera access not configured" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return new Response(JSON.stringify({ error: "Invalid request body" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      if (body.code !== accessCode) {
+        return new Response(JSON.stringify({ error: "Invalid code" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      return new Response(JSON.stringify({ url: streamUrl }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
     if (url.pathname === "/api/update" && request.method === "POST") {
       const data = await request.json();
       await env.FIRE_DATA.put("latest", JSON.stringify(data));

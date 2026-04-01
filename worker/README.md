@@ -29,6 +29,7 @@ worker/
 | `GET` | `/api/status` | Core endpoint. Returns merged sensor + weather + fire data with computed `riskIndex` (1–10). |
 | `GET` | `/api/fires` | Fire hotspots in a lat/lon bounding box. Requires `minLat`, `maxLat`, `minLon`, `maxLon` query params. Returns 400 if any are missing or invalid. |
 | `GET` | `/api/youtube-live-status` | Whether the YouTube channel is currently live. `?refresh=1` bypasses cache. |
+| `POST` | `/api/camera-access` | Validates 4-digit code against `CAMERA_ACCESS_CODE` secret. Returns `{ url }` on success, 401 on wrong code. The stream URL is never exposed in client HTML. |
 | `POST` | `/api/update` | Accepts a JSON body and stores it in `FIRE_DATA` KV under key `"latest"`. Called by the IoT device. |
 | `POST` | `/api/refresh-firms` | Force-fetches fresh NASA FIRMS data and overwrites the KV cache. |
 | `POST` | `/api/refresh-weather` | Force-fetches fresh OpenWeather data and overwrites the KV cache. |
@@ -112,6 +113,8 @@ acquiredTime               string or null
 | `FIRMS_API_KEY` | `firms.js` — NASA FIRMS API key |
 | `OPENWEATHER_API_KEY` | `weather.js` — OpenWeather API key |
 | `YOUTUBE_API_KEY` | `youtube.js` — YouTube Data API v3 key |
+| `CAMERA_ACCESS_CODE` | `worker.js` — 4-digit code for live camera access |
+| `CAMERA_STREAM_URL` | `worker.js` — Reolink stream URL, never sent to the client until code is validated |
 
 Secrets are set via `wrangler secret put` and are never hardcoded.
 
