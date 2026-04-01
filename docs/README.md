@@ -8,7 +8,7 @@ Static website for EmberSensor. Hosted on GitHub Pages at `embersensor.com`.
 |---|---|---|
 | `index.html` | `/` | Landing page — hero, feature cards, system diagrams, about section |
 | `how-it-works.html` | `/how-it-works.html` | 4-step explainer + embedded YouTube demo video |
-| `live.html` | `/live.html` | Password-gated Reolink camera feed (4-digit code) |
+| `live.html` | `/live.html` | Password-gated live camera feed (4-digit code) |
 | `screenshots.html` | `/screenshots.html` | Photo gallery — awards and build photos |
 
 ## Shared assets

@@ -24,14 +24,14 @@
         <div class="eyebrow">Live Monitoring</div>
         <h1>EmberSensor Live Camera Feed</h1>
         <p class="section-sub">
-          Enter the 4-digit access code to view the live Reolink camera stream.
+          Enter the 4-digit access code to view the live camera stream.
         </p>
       </div>
 
       <div id="live-container" class="live-card">
         <div class="live-message">
           <div class="live-status-pill">Protected Access</div>
-          <h2>Open Reolink Live Camera</h2>
+          <h2>Open Live Camera</h2>
           <p>
             This live camera feed is protected. Enter the 4-digit code to continue.
           </p>
@@ -43,7 +43,7 @@
 
           <div class="live-actions">
             <button id="open-camera-btn" class="live-btn live-btn-primary" type="button">
-              Open Reolink Live Camera
+              Open Live Camera
             </button>
           </div>
 
@@ -52,7 +52,7 @@
       </div>
 
       <div id="camera-frame-wrap" class="video-frame protected-video" style="display: none;">
-        <iframe id="camera-frame" src="" title="EmberSensor Reolink Live Camera" allowfullscreen>
+        <iframe id="camera-frame" src="" title="EmberSensor Live Camera" allowfullscreen>
         </iframe>
       </div>
 
@@ -83,7 +83,7 @@
       document.getElementById("live-container").innerHTML = `
         <div class="live-message">
           <div class="live-status-pill">Session Expired</div>
-          <h2>Open Reolink Live Camera</h2>
+          <h2>Open Live Camera</h2>
           <p>Your session has expired. Enter the 4-digit code to continue.</p>
           <div class="camera-code-wrap">
             <input id="camera-code-input" class="camera-code-input" type="password" inputmode="numeric" maxlength="4"
@@ -91,7 +91,7 @@
           </div>
           <div class="live-actions">
             <button id="open-camera-btn" class="live-btn live-btn-primary" type="button">
-              Open Reolink Live Camera
+              Open Live Camera
             </button>
           </div>
           <p id="camera-code-message" class="camera-code-message" aria-live="polite"></p>
@@ -139,7 +139,7 @@
       document.getElementById("live-container").innerHTML = `
         <div class="live-message live-message-compact">
           <div class="live-status-pill live-status-live">Access Granted</div>
-          <h2>Reolink live camera is now open</h2>
+          <h2>Live camera is now open</h2>
           <p>You entered the correct code.</p>
         </div>
       `;
