@@ -25,13 +25,14 @@ html {
 
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: 'Inter', sans-serif;
   line-height: 1.6;
   color: var(--text);
   background:
     radial-gradient(circle at top, rgba(234, 88, 12, 0.16), transparent 28%),
     radial-gradient(circle at top right, rgba(37, 99, 235, 0.14), transparent 24%),
     var(--bg);
+  animation: fadeInUp 0.4s ease-out both;
 }
 
 a {
@@ -83,9 +84,14 @@ a {
   color: var(--muted);
 }
 
-.nav a:hover,
+.nav a:hover {
+  color: white;
+}
+
 .nav a.active {
   color: white;
+  border-bottom: 2px solid var(--orange);
+  padding-bottom: 2px;
 }
 
 /* Typography */
@@ -93,11 +99,13 @@ h1 {
   margin: 0 0 16px;
   font-size: clamp(34px, 6vw, 60px);
   line-height: 1.08;
+  letter-spacing: -0.03em;
 }
 
 h2 {
   margin: 0 0 12px;
   font-size: 32px;
+  letter-spacing: -0.02em;
 }
 
 h3 {
@@ -218,6 +226,8 @@ section {
   border-radius: var(--radius);
   background: var(--card);
   box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .stat,
@@ -254,6 +264,7 @@ section {
   border-radius: 50%;
   background: linear-gradient(135deg, var(--orange), var(--red));
   font-weight: 700;
+  box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.15), 0 4px 12px rgba(234, 88, 12, 0.25);
 }
 
 .milestone strong {
@@ -296,6 +307,14 @@ section {
 .action-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+}
+
+.status-btn:hover {
+  box-shadow: 0 0 24px rgba(234, 88, 12, 0.45);
+}
+
+.camera-btn:hover {
+  box-shadow: 0 0 24px rgba(37, 99, 235, 0.45);
 }
 
 .camera-btn {
@@ -599,6 +618,26 @@ section {
 
 .award-grid .gallery-image {
   min-height: 360px;
+}
+
+/* Hero heading gradient */
+.hero h1 {
+  background: linear-gradient(135deg, #ffffff 60%, #fb923c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Page load animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Footer */
