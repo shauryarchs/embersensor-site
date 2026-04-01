@@ -24,6 +24,7 @@ embersensor-site/
 | `GET /api/status` | Core fire risk response — sensor + weather + nearby fires + `riskIndex` |
 | `GET /api/fires` | Fire hotspots within a lat/lon bounding box |
 | `GET /api/youtube-live-status` | Whether the YouTube channel is currently live |
+| `POST /api/camera-access` | Validates 4-digit code, returns stream URL — code and URL never exposed in client HTML |
 | `POST /api/update` | IoT device pushes sensor readings here |
 | `POST /api/refresh-firms` | Force-refresh NASA FIRMS cache |
 | `POST /api/refresh-weather` | Force-refresh OpenWeather cache |
