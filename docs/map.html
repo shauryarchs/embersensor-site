@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <title>Fire Map | EmberSensor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Live fire map showing nearby FIRMS satellite detections and CAL FIRE reported incidents." />
+  <meta name="description" content="Live fire map showing nearby FIRMS satellite detections and NIFC reported incidents." />
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
@@ -31,46 +31,11 @@
 
     #fire-map {
       width: 100%;
-      height: 540px;
+      height: 560px;
       border-radius: var(--radius);
       border: 1px solid var(--card-border);
       box-shadow: var(--shadow);
       background: #1a1f2e;
-    }
-
-    .map-legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      justify-content: center;
-      margin-top: 18px;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 14px;
-      color: var(--muted);
-    }
-
-    .legend-dot {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .legend-dot.home     { background: #60a5fa; border: 2px solid #93c5fd; }
-    .legend-dot.firms    { background: #fb923c; border: 2px solid #fed7aa; }
-    .legend-dot.calfire  { background: #f87171; border: 2px solid #fca5a5; }
-
-    .map-status {
-      text-align: center;
-      margin-top: 14px;
-      font-size: 13px;
-      color: rgba(183, 192, 209, 0.55);
-      min-height: 20px;
     }
 
     .map-counts {
@@ -105,6 +70,14 @@
     .map-count-item .num.firms-color   { color: #fb923c; }
     .map-count-item .num.calfire-color { color: #f87171; }
 
+    .map-status {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 13px;
+      color: rgba(183, 192, 209, 0.55);
+      min-height: 20px;
+    }
+
     .refresh-row {
       text-align: center;
       margin-top: 20px;
@@ -131,8 +104,288 @@
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
     }
 
+    /* Leaflet attribution */
+    .leaflet-control-attribution {
+      background: rgba(0, 0, 0, 0.5) !important;
+      color: rgba(255,255,255,0.4) !important;
+      font-size: 10px !important;
+    }
+    .leaflet-control-attribution a { color: rgba(255,255,255,0.55) !important; }
+
+    /* Zoom control */
+    .leaflet-control-zoom {
+      border: 1px solid rgba(255,255,255,0.12) !important;
+      border-radius: 10px !important;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important;
+    }
+    .leaflet-control-zoom-in,
+    .leaflet-control-zoom-out {
+      background: rgba(18,24,39,0.88) !important;
+      color: #d7deea !important;
+      border: none !important;
+      font-size: 16px !important;
+      width: 32px !important;
+      height: 32px !important;
+      line-height: 32px !important;
+    }
+    .leaflet-control-zoom-in:hover,
+    .leaflet-control-zoom-out:hover {
+      background: rgba(255,255,255,0.1) !important;
+      color: white !important;
+    }
+
+    /* Custom TOC panel */
+    .map-toc {
+      font-family: 'Inter', sans-serif;
+      background: rgba(11, 15, 26, 0.90);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      width: 178px;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .toc-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+
+    .toc-header:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .toc-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(183, 192, 209, 0.7);
+    }
+
+    .toc-chevron {
+      font-size: 10px;
+      color: rgba(183, 192, 209, 0.5);
+      transition: transform 0.2s ease;
+    }
+
+    .toc-chevron.open { transform: rotate(180deg); }
+
+    .toc-body {
+      padding: 0 14px 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      overflow: hidden;
+      max-height: 300px;
+      transition: max-height 0.25s ease, padding 0.25s ease, opacity 0.2s ease;
+      opacity: 1;
+    }
+
+    .toc-body.collapsed {
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      opacity: 0;
+    }
+
+    .toc-section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgba(183, 192, 209, 0.45);
+      margin: 10px 0 6px;
+    }
+
+    .toc-basemaps {
+      display: flex;
+      gap: 5px;
+    }
+
+    .toc-basemap-btn {
+      flex: 1;
+      padding: 5px 0;
+      border-radius: 7px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(183, 192, 209, 0.7);
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .toc-basemap-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    .toc-basemap-btn.active {
+      background: rgba(234, 88, 12, 0.22);
+      border-color: rgba(234, 88, 12, 0.5);
+      color: #fb923c;
+    }
+
+    .toc-divider {
+      border: none;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      margin: 10px 0;
+    }
+
+    .toc-layer-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 0;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: opacity 0.15s;
+    }
+
+    .toc-layer-row.off {
+      opacity: 0.4;
+    }
+
+    .toc-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .toc-dot.firms   { background: #fb923c; border: 1.5px solid #fed7aa; }
+    .toc-dot.calfire { background: #f87171; border: 1.5px solid #fca5a5; }
+    .toc-dot.radius  { background: transparent; border: 1.5px solid rgba(255,255,255,0.4); }
+
+    .toc-layer-name {
+      font-size: 12px;
+      color: #d7deea;
+      flex: 1;
+    }
+
+    .toc-toggle {
+      width: 28px;
+      height: 16px;
+      border-radius: 999px;
+      background: rgba(234, 88, 12, 0.7);
+      position: relative;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    .toc-toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: white;
+      transition: transform 0.15s;
+    }
+
+    .toc-layer-row.off .toc-toggle {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .toc-layer-row.off .toc-toggle::after {
+      transform: translateX(-12px);
+    }
+
+    /* Legend */
+    .map-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend-dot.home    { background: #60a5fa; border: 1.5px solid #93c5fd; }
+    .legend-dot.firms   { background: #fb923c; border: 1.5px solid #fed7aa; }
+    .legend-dot.calfire { background: #f87171; border: 1.5px solid #fca5a5; }
+
+    /* Zoom to sensor button */
+    .zoom-home-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 12px;
+      background: rgba(11, 15, 26, 0.90);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 10px;
+      color: #d7deea;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .zoom-home-btn:hover {
+      background: rgba(96, 165, 250, 0.2);
+      border-color: rgba(96, 165, 250, 0.4);
+      color: #93c5fd;
+    }
+
+    /* Wind arrow marker */
+    .wind-arrow-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .wind-arrow-icon svg {
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+    }
+
+    /* Distance label tooltips */
+    .leaflet-tooltip.dist-label {
+      background: rgba(11, 15, 26, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      color: #d7deea;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    .leaflet-tooltip.dist-label.firms-tip   { border-color: rgba(251,146,60,0.45); color: #fed7aa; }
+    .leaflet-tooltip.dist-label.calfire-tip { border-color: rgba(248,113,113,0.45); color: #fca5a5; }
+    .leaflet-tooltip.dist-label::before     { display: none; }
+
     @media (max-width: 700px) {
-      #fire-map { height: 380px; }
+      #fire-map { height: 420px; }
+      .map-toc  { width: 150px; padding: 10px; }
     }
   </style>
 </head>
@@ -146,7 +399,7 @@
         <div class="eyebrow">Live Fire Map</div>
         <h1>Nearby Fire Activity</h1>
         <p class="section-sub">
-          Showing FIRMS satellite heat detections and CAL FIRE reported incidents within 25 miles of the sensor.
+          Showing FIRMS satellite heat detections and NIFC reported incidents within 25 miles of the sensor.
         </p>
       </div>
 
@@ -158,7 +411,7 @@
           </div>
           <div class="map-count-item">
             <div class="num calfire-color" id="count-calfire">—</div>
-            <div class="label">CAL FIRE Incidents</div>
+            <div class="label">NIFC Incidents</div>
           </div>
         </div>
 
@@ -167,7 +420,8 @@
         <div class="map-legend">
           <div class="legend-item"><div class="legend-dot home"></div> Home (sensor location)</div>
           <div class="legend-item"><div class="legend-dot firms"></div> FIRMS satellite detection</div>
-          <div class="legend-item"><div class="legend-dot calfire"></div> CAL FIRE reported incident</div>
+          <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#fb923c,#ef4444);border:none;width:24px;height:10px;border-radius:3px;"></div> FIRMS heat density</div>
+          <div class="legend-item"><div class="legend-dot calfire"></div> NIFC reported incident</div>
         </div>
 
         <div class="map-status" id="map-status">Loading fire data…</div>
@@ -182,116 +436,333 @@
   <div id="site-footer"></div>
   <script src="script.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
   <script>
-    const HOME_LAT = 34.1;
-    const HOME_LON = -117.6;
-    const RADIUS_DEG = 1.2; // bounding box buffer for /api/fires query
+    const HOME_LAT   = 34.1;
+    const HOME_LON   = -117.6;
+    const RADIUS_MI  = 25;
 
-    const map = L.map("fire-map", { zoomControl: true }).setView([HOME_LAT, HOME_LON], 10);
+    // --- Basemaps ---
+    const basemaps = {
+      "Street": L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19
+      }),
+      "Satellite": L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+        attribution: '© <a href="https://www.esri.com">Esri</a>, Maxar, Earthstar Geographics',
+        maxZoom: 19
+      }),
+      "Terrain": L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
+        attribution: '© <a href="https://opentopomap.org">OpenTopoMap</a>, © OpenStreetMap',
+        maxZoom: 17
+      })
+    };
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 18
+    let activeBasemap = basemaps["Street"];
+
+    const map = L.map("fire-map", {
+      zoomControl: true,
+      layers: [activeBasemap]
+    }).setView([HOME_LAT, HOME_LON], 10);
+
+    // --- Layers ---
+    const firmsLayer   = L.layerGroup().addTo(map);
+    const calfireLayer = L.layerGroup().addTo(map);
+    const radiusLayer  = L.layerGroup().addTo(map);
+
+    // Heatmap layer (FIRMS brightness-weighted)
+    const heatmapLayer = L.heatLayer([], {
+      radius: 22,
+      blur: 18,
+      maxZoom: 17,
+      gradient: { 0.0: "rgba(251,146,60,0)", 0.35: "#fb923c", 0.65: "#ef4444", 1.0: "#fff7ed" }
     }).addTo(map);
 
-    // Home marker
-    const homeIcon = L.circleMarker([HOME_LAT, HOME_LON], {
-      radius: 9,
-      fillColor: "#60a5fa",
-      color: "#93c5fd",
-      weight: 2,
-      fillOpacity: 0.95
-    }).addTo(map).bindPopup("<strong>EmberSensor</strong><br>Sensor location");
+    // Home marker (always on map, not toggled)
+    L.circleMarker([HOME_LAT, HOME_LON], {
+      radius: 9, fillColor: "#60a5fa", color: "#93c5fd", weight: 2, fillOpacity: 0.95
+    }).bindPopup("<strong>EmberSensor</strong><br>Sensor location").addTo(map);
 
-    // 25-mile radius circle
+    // 25-mile radius ring (lives in radiusLayer)
     L.circle([HOME_LAT, HOME_LON], {
-      radius: 25 * 1609.34,
-      color: "rgba(255,255,255,0.18)",
-      weight: 1,
-      fill: false,
-      dashArray: "4 6"
-    }).addTo(map);
+      radius: RADIUS_MI * 1609.34,
+      color: "rgba(255,255,255,0.25)", weight: 1.5, fill: false, dashArray: "4 6"
+    }).addTo(radiusLayer);
 
-    let firmsLayer = L.layerGroup().addTo(map);
-    let calfireLayer = L.layerGroup().addTo(map);
+    // --- State ---
+    let lastFirmsData = [];   // cache of last fetched FIRMS fires
+    let filter25mi    = true; // when true, only show fires within 25mi
 
+    // --- Helpers ---
     function setStatus(msg) {
       document.getElementById("map-status").textContent = msg;
     }
 
-    function loadMapData() {
+    function debounce(fn, ms) {
+      let t;
+      return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    }
+
+    // --- Render FIRMS markers from cache, applying 25mi filter if active ---
+    function renderFirmsMarkers() {
       firmsLayer.clearLayers();
-      calfireLayer.clearLayers();
-      setStatus("Loading fire data…");
+      const fires = filter25mi
+        ? lastFirmsData.filter(f => f.distanceMiles <= RADIUS_MI)
+        : lastFirmsData;
+
+      document.getElementById("count-firms").textContent = fires.length;
+
+      // Update heatmap — brightness_ti4 typically 320–500 K; normalize to 0–1
+      const heatPoints = fires.map(f => {
+        const intensity = f.brightness != null
+          ? Math.min(1, Math.max(0, (f.brightness - 320) / 150))
+          : 0.5;
+        return [f.latitude, f.longitude, intensity];
+      });
+      heatmapLayer.setLatLngs(heatPoints);
+
+      fires.forEach(f => {
+        const marker = L.circleMarker([f.latitude, f.longitude], {
+          radius: 6, fillColor: "#fb923c", color: "#fed7aa", weight: 1.5, fillOpacity: 0.85
+        });
+        marker.bindPopup(
+          `<strong>FIRMS Detection</strong><br>${f.distanceMiles} mi from sensor` +
+          (f.confidence   ? `<br>Confidence: ${f.confidence}` : "") +
+          (f.satellite    ? `<br>Satellite: ${f.satellite}`   : "") +
+          (f.acquiredDate ? `<br>Date: ${f.acquiredDate}`     : "")
+        );
+        marker.bindTooltip(`${f.distanceMiles} mi`, {
+          permanent: true, direction: "right", offset: [8, 0], className: "dist-label firms-tip"
+        });
+        marker.addTo(firmsLayer);
+      });
+    }
+
+    // --- Fetch FIRMS for current map view extent ---
+    function loadFirmsData() {
+      setStatus("Loading FIRMS data…");
       document.getElementById("count-firms").textContent = "—";
-      document.getElementById("count-calfire").textContent = "—";
-
-      const minLat = HOME_LAT - RADIUS_DEG;
-      const maxLat = HOME_LAT + RADIUS_DEG;
-      const minLon = HOME_LON - RADIUS_DEG;
-      const maxLon = HOME_LON + RADIUS_DEG;
-
-      const firmsPromise = fetch(
-        `https://embersensor.com/api/fires?minLat=${minLat}&maxLat=${maxLat}&minLon=${minLon}&maxLon=${maxLon}`
+      const b = map.getBounds();
+      fetch(
+        `https://embersensor.com/api/fires` +
+        `?minLat=${b.getSouth().toFixed(4)}&maxLat=${b.getNorth().toFixed(4)}` +
+        `&minLon=${b.getWest().toFixed(4)}&maxLon=${b.getEast().toFixed(4)}`
       )
         .then(r => r.json())
         .then(data => {
-          document.getElementById("count-firms").textContent = data.count ?? 0;
-          (data.fires ?? []).forEach(f => {
-            L.circleMarker([f.latitude, f.longitude], {
-              radius: 6,
-              fillColor: "#fb923c",
-              color: "#fed7aa",
-              weight: 1.5,
-              fillOpacity: 0.85
-            })
-              .bindPopup(
-                `<strong>FIRMS Detection</strong><br>` +
-                `${f.distanceMiles} mi away` +
-                (f.confidence ? `<br>Confidence: ${f.confidence}` : "") +
-                (f.satellite ? `<br>Satellite: ${f.satellite}` : "") +
-                (f.acquiredDate ? `<br>Date: ${f.acquiredDate}` : "")
-              )
-              .addTo(firmsLayer);
-          });
-        });
+          lastFirmsData = data.fires ?? [];
+          renderFirmsMarkers();
+          const dt = new Date();
+          setStatus("Updated " + dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+        })
+        .catch(() => setStatus("Error loading FIRMS data."));
+    }
 
-      const calfirePromise = fetch("https://embersensor.com/api/calfire-fires")
+    // --- Fetch NIFC incidents (not extent-based, always 25mi radius) ---
+    function loadCalfireData() {
+      document.getElementById("count-calfire").textContent = "—";
+      calfireLayer.clearLayers();
+      fetch("https://embersensor.com/api/calfire-fires")
         .then(r => r.json())
         .then(data => {
           document.getElementById("count-calfire").textContent = data.count ?? 0;
           (data.fires ?? []).forEach(f => {
             const popup = [
               `<strong>${f.name}</strong>`,
-              `${f.distanceMiles} mi away`,
-              f.acresBurned != null ? `${f.acresBurned.toLocaleString()} acres` : null,
-              f.percentContained != null ? `${f.percentContained}% contained` : null,
-              f.state ? `${f.state}` : null,
+              `${f.distanceMiles} mi from sensor`,
+              f.acresBurned      != null ? `${f.acresBurned.toLocaleString()} acres` : null,
+              f.percentContained != null ? `${f.percentContained}% contained`        : null,
+              f.state   ? f.state : null,
               f.updated ? `Updated: ${new Date(f.updated).toLocaleDateString()}` : null
             ].filter(Boolean).join("<br>");
+            const marker = L.circleMarker([f.latitude, f.longitude], {
+              radius: 10, fillColor: "#f87171", color: "#fca5a5", weight: 2, fillOpacity: 0.9
+            });
+            marker.bindPopup(popup);
+            marker.bindTooltip(`${f.name} · ${f.distanceMiles} mi`, {
+              permanent: true, direction: "right", offset: [12, 0], className: "dist-label calfire-tip"
+            });
+            marker.addTo(calfireLayer);
+          });
+        })
+        .catch(() => {});
+    }
 
-            L.circleMarker([f.latitude, f.longitude], {
-              radius: 10,
-              fillColor: "#f87171",
-              color: "#fca5a5",
-              weight: 2,
-              fillOpacity: 0.9
-            })
-              .bindPopup(popup)
-              .addTo(calfireLayer);
+    function loadMapData() {
+      loadFirmsData();
+      loadCalfireData();
+    }
+
+    // Refetch FIRMS whenever map view changes (debounced 600ms)
+    map.on("moveend zoomend", debounce(loadFirmsData, 600));
+
+    // --- Custom TOC control ---
+    const TocControl = L.Control.extend({
+      onAdd() {
+        const div = L.DomUtil.create("div", "map-toc");
+        L.DomEvent.disableClickPropagation(div);
+        L.DomEvent.disableScrollPropagation(div);
+
+        div.innerHTML = `
+          <div class="toc-header" id="toc-header">
+            <span class="toc-title">Map Layers</span>
+            <span class="toc-chevron open">▼</span>
+          </div>
+          <div class="toc-body" id="toc-body">
+            <div class="toc-section-label">Basemap</div>
+            <div class="toc-basemaps">
+              <button class="toc-basemap-btn active" data-bm="Street">Street</button>
+              <button class="toc-basemap-btn" data-bm="Satellite">Satellite</button>
+              <button class="toc-basemap-btn" data-bm="Terrain">Terrain</button>
+            </div>
+
+            <hr class="toc-divider">
+
+            <div class="toc-section-label">Overlays</div>
+            <div class="toc-layer-row" data-action="toggle-firms">
+              <div class="toc-dot firms"></div>
+              <span class="toc-layer-name">FIRMS</span>
+              <div class="toc-toggle"></div>
+            </div>
+            <div class="toc-layer-row" data-action="toggle-heatmap">
+              <div class="toc-dot" style="background:linear-gradient(135deg,#fb923c,#ef4444);border:none;"></div>
+              <span class="toc-layer-name">Heat Map</span>
+              <div class="toc-toggle"></div>
+            </div>
+            <div class="toc-layer-row" data-action="toggle-calfire">
+              <div class="toc-dot calfire"></div>
+              <span class="toc-layer-name">NIFC Incidents</span>
+              <div class="toc-toggle"></div>
+            </div>
+            <div class="toc-layer-row" data-action="toggle-25mi">
+              <div class="toc-dot radius"></div>
+              <span class="toc-layer-name">25-mi Filter</span>
+              <div class="toc-toggle"></div>
+            </div>
+            <div class="toc-layer-row off" data-action="toggle-wind">
+              <div class="toc-dot" style="background:#a78bfa;border:1.5px solid #c4b5fd;"></div>
+              <span class="toc-layer-name">Wind Direction</span>
+              <div class="toc-toggle"></div>
+            </div>
+          </div>
+        `;
+
+        // Collapse / expand
+        div.querySelector("#toc-header").addEventListener("click", () => {
+          const body    = div.querySelector("#toc-body");
+          const chevron = div.querySelector(".toc-chevron");
+          const isOpen  = !body.classList.contains("collapsed");
+          body.classList.toggle("collapsed", isOpen);
+          chevron.classList.toggle("open", !isOpen);
+        });
+
+        // Basemap buttons
+        div.querySelectorAll(".toc-basemap-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const name = btn.dataset.bm;
+            map.removeLayer(activeBasemap);
+            activeBasemap = basemaps[name];
+            map.addLayer(activeBasemap);
+            activeBasemap.bringToBack();
+            div.querySelectorAll(".toc-basemap-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
           });
         });
 
-      Promise.all([firmsPromise, calfirePromise])
-        .then(() => {
-          const dt = new Date();
-          setStatus("Updated " + dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
-        })
-        .catch(() => {
-          setStatus("Error loading fire data. Please try again.");
+        // Overlay row actions
+        div.querySelectorAll(".toc-layer-row").forEach(row => {
+          row.addEventListener("click", () => {
+            const action = row.dataset.action;
+
+            if (action === "toggle-firms") {
+              if (map.hasLayer(firmsLayer)) { map.removeLayer(firmsLayer); row.classList.add("off"); }
+              else { map.addLayer(firmsLayer); row.classList.remove("off"); }
+
+            } else if (action === "toggle-heatmap") {
+              if (map.hasLayer(heatmapLayer)) { map.removeLayer(heatmapLayer); row.classList.add("off"); }
+              else { map.addLayer(heatmapLayer); row.classList.remove("off"); }
+
+            } else if (action === "toggle-calfire") {
+              if (map.hasLayer(calfireLayer)) { map.removeLayer(calfireLayer); row.classList.add("off"); }
+              else { map.addLayer(calfireLayer); row.classList.remove("off"); }
+
+            } else if (action === "toggle-wind") {
+              if (map.hasLayer(windLayer)) {
+                map.removeLayer(windLayer);
+                row.classList.add("off");
+              } else {
+                loadWindData();
+                map.addLayer(windLayer);
+                row.classList.remove("off");
+              }
+
+            } else if (action === "toggle-25mi") {
+              filter25mi = !filter25mi;
+              // Show/hide radius ring to match filter state
+              if (filter25mi) { map.addLayer(radiusLayer); row.classList.remove("off"); }
+              else            { map.removeLayer(radiusLayer); row.classList.add("off"); }
+              // Re-render FIRMS markers with updated filter
+              renderFirmsMarkers();
+            }
+          });
         });
+
+        return div;
+      }
+    });
+
+    new TocControl({ position: "topright" }).addTo(map);
+
+    // --- Wind direction layer ---
+    const windLayer = L.layerGroup(); // off by default
+
+    function loadWindData() {
+      windLayer.clearLayers();
+      fetch("https://embersensor.com/api/status")
+        .then(r => r.json())
+        .then(d => {
+          if (d.windDirection == null) return;
+          const speed    = d.wind != null ? d.wind + " m/s" : "—";
+          const fromDeg  = d.windDirection;
+          const toDeg    = (fromDeg + 180) % 360; // direction wind is blowing toward
+
+          const icon = L.divIcon({
+            className: "wind-arrow-icon",
+            html: `<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"
+                        style="transform:rotate(${toDeg}deg)">
+                     <line x1="24" y1="40" x2="24" y2="8" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round"/>
+                     <polygon points="24,4 18,16 30,16" fill="#a78bfa"/>
+                   </svg>`,
+            iconSize: [48, 48],
+            iconAnchor: [24, 24]
+          });
+
+          L.marker([HOME_LAT, HOME_LON], { icon })
+            .bindTooltip(
+              `<strong>Wind</strong><br>From: ${fromDeg}°<br>Speed: ${speed}`,
+              { permanent: false, direction: "right", offset: [16, 0] }
+            )
+            .addTo(windLayer);
+        })
+        .catch(() => {});
     }
 
+    // --- Zoom to sensor button ---
+    const ZoomHomeControl = L.Control.extend({
+      onAdd() {
+        const btn = L.DomUtil.create("button", "zoom-home-btn");
+        L.DomEvent.disableClickPropagation(btn);
+        btn.title = "Zoom to sensor location";
+        btn.innerHTML = "⌖ Sensor";
+        btn.addEventListener("click", () => {
+          map.flyTo([HOME_LAT, HOME_LON], 10, { duration: 0.8 });
+        });
+        return btn;
+      }
+    });
+    new ZoomHomeControl({ position: "bottomright" }).addTo(map);
+
+    // Initial load
     loadMapData();
   </script>
 </body>
