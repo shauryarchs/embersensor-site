@@ -33,7 +33,6 @@ body {
     radial-gradient(circle at top, rgba(234, 88, 12, 0.16), transparent 28%),
     radial-gradient(circle at top right, rgba(37, 99, 235, 0.14), transparent 24%),
     var(--bg);
-  animation: fadeInUp 0.4s ease-out both;
 }
 
 a {
