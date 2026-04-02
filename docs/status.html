@@ -209,6 +209,197 @@
       text-align: center;
       margin-top: 8px;
     }
+
+    /* Score breakdown expand button */
+    .breakdown-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 12px 20px;
+      margin-bottom: 20px;
+      border-radius: var(--radius);
+      border: 1px solid var(--card-border);
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .breakdown-toggle:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+
+    .breakdown-toggle .chevron {
+      display: inline-block;
+      transition: transform 0.25s ease;
+      font-size: 12px;
+    }
+
+    .breakdown-toggle.open .chevron {
+      transform: rotate(180deg);
+    }
+
+    .breakdown-panel {
+      display: none;
+    }
+
+    .breakdown-panel.open {
+      display: block;
+    }
+
+    /* Score section card */
+    .score-section {
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .score-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .score-section-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .score-section-title .section-icon {
+      font-size: 17px;
+      width: 22px;
+      text-align: center;
+    }
+
+    .score-badge {
+      font-size: 13px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .score-badge.positive { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+    .score-badge.neutral  { background: rgba(255, 255, 255, 0.08); color: var(--muted); }
+    .score-badge.negative { background: rgba(52, 211, 153, 0.15); color: #34d399; }
+
+    .score-section-summary {
+      padding: 12px 20px;
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .score-factor {
+      padding: 8px 20px 8px 52px;
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .score-factor-label { flex: 1; }
+
+    .score-factor-value {
+      font-weight: 700;
+      font-size: 13px;
+      margin-left: 12px;
+    }
+
+    .score-factor-value.added { color: #f87171; }
+    .score-factor-value.none  { color: rgba(183, 192, 209, 0.45); }
+    .score-factor-value.reduced { color: #34d399; }
+
+    /* Detail slider */
+    .detail-slider-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .detail-slider-label {
+      font-size: 12px;
+      color: rgba(183, 192, 209, 0.55);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .detail-switch {
+      position: relative;
+      width: 40px;
+      height: 22px;
+      cursor: pointer;
+    }
+
+    .detail-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .detail-switch .slider {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      transition: background 0.2s;
+    }
+
+    .detail-switch .slider::before {
+      content: "";
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      left: 3px;
+      top: 3px;
+      background: var(--muted);
+      border-radius: 50%;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .detail-switch input:checked + .slider {
+      background: rgba(234, 136, 58, 0.35);
+    }
+
+    .detail-switch input:checked + .slider::before {
+      transform: translateX(18px);
+      background: var(--orange);
+    }
+
+    .score-detail-text {
+      display: none;
+      padding: 0 20px 14px;
+      font-size: 13px;
+      color: rgba(183, 192, 209, 0.7);
+      line-height: 1.65;
+    }
+
+    .score-detail-text.open {
+      display: block;
+    }
   </style>
 </head>
 
@@ -238,6 +429,75 @@
             <div class="risk-icon">🔥</div>
             <div id="risk-label" class="risk-label"></div>
             <div id="risk-index-text" class="risk-index-text"></div>
+          </div>
+
+          <!-- Score Breakdown -->
+          <button class="breakdown-toggle" id="breakdown-toggle" onclick="toggleBreakdown()">
+            Score Breakdown <span class="chevron">&#9660;</span>
+          </button>
+
+          <div id="breakdown-panel" class="breakdown-panel">
+
+            <!-- Sensor Score -->
+            <div class="score-section" id="section-sensor">
+              <div class="score-section-header">
+                <div class="score-section-title"><span class="section-icon">🌡</span> Sensor Score</div>
+                <span class="score-badge neutral" id="badge-sensor">— / 4</span>
+              </div>
+              <div class="score-section-summary" id="summary-sensor">—</div>
+              <div id="factors-sensor"></div>
+              <div class="detail-slider-row">
+                <span class="detail-slider-label">More details</span>
+                <label class="detail-switch"><input type="checkbox" onchange="toggleDetail('sensor')"><span class="slider"></span></label>
+              </div>
+              <div class="score-detail-text" id="detail-sensor"></div>
+            </div>
+
+            <!-- Fire Score -->
+            <div class="score-section" id="section-fire">
+              <div class="score-section-header">
+                <div class="score-section-title"><span class="section-icon">🔥</span> Fire Score</div>
+                <span class="score-badge neutral" id="badge-fire">— / 4</span>
+              </div>
+              <div class="score-section-summary" id="summary-fire">—</div>
+              <div id="factors-fire"></div>
+              <div class="detail-slider-row">
+                <span class="detail-slider-label">More details</span>
+                <label class="detail-switch"><input type="checkbox" onchange="toggleDetail('fire')"><span class="slider"></span></label>
+              </div>
+              <div class="score-detail-text" id="detail-fire"></div>
+            </div>
+
+            <!-- Weather Score -->
+            <div class="score-section" id="section-weather">
+              <div class="score-section-header">
+                <div class="score-section-title"><span class="section-icon">🌤</span> Weather Score</div>
+                <span class="score-badge neutral" id="badge-weather">— / 3</span>
+              </div>
+              <div class="score-section-summary" id="summary-weather">—</div>
+              <div id="factors-weather"></div>
+              <div class="detail-slider-row">
+                <span class="detail-slider-label">More details</span>
+                <label class="detail-switch"><input type="checkbox" onchange="toggleDetail('weather')"><span class="slider"></span></label>
+              </div>
+              <div class="score-detail-text" id="detail-weather"></div>
+            </div>
+
+            <!-- Wind Score -->
+            <div class="score-section" id="section-wind">
+              <div class="score-section-header">
+                <div class="score-section-title"><span class="section-icon">🌬</span> Wind Score</div>
+                <span class="score-badge neutral" id="badge-wind">— / 2</span>
+              </div>
+              <div class="score-section-summary" id="summary-wind">—</div>
+              <div id="factors-wind"></div>
+              <div class="detail-slider-row">
+                <span class="detail-slider-label">More details</span>
+                <label class="detail-switch"><input type="checkbox" onchange="toggleDetail('wind')"><span class="slider"></span></label>
+              </div>
+              <div class="score-detail-text" id="detail-wind"></div>
+            </div>
+
           </div>
 
           <!-- Temperature -->
@@ -344,6 +604,211 @@
   <div id="site-footer"></div>
   <script src="script.js"></script>
   <script>
+    function toggleBreakdown() {
+      const btn = document.getElementById("breakdown-toggle");
+      const panel = document.getElementById("breakdown-panel");
+      btn.classList.toggle("open");
+      panel.classList.toggle("open");
+    }
+
+    function toggleDetail(section) {
+      document.getElementById("detail-" + section).classList.toggle("open");
+    }
+
+    function scoreBadgeClass(score) {
+      if (score > 0) return "positive";
+      if (score < 0) return "negative";
+      return "neutral";
+    }
+
+    function factorHTML(label, points) {
+      let cls = "none";
+      let text = "0";
+      if (points > 0) { cls = "added"; text = "+" + points; }
+      else if (points < 0) { cls = "reduced"; text = String(points); }
+      return '<div class="score-factor"><span class="score-factor-label">' + label + '</span><span class="score-factor-value ' + cls + '">' + text + '</span></div>';
+    }
+
+    function renderBreakdown(d) {
+      const b = d.scoreBreakdown || {};
+
+      // --- Sensor Score ---
+      const ss = b.sensorScore ?? 0;
+      document.getElementById("badge-sensor").textContent = ss + " / 4";
+      document.getElementById("badge-sensor").className = "score-badge " + scoreBadgeClass(ss);
+
+      const flame = d.flame;
+      const smoke = d.smoke;
+      const sensorTemp = d.sensorTemperature;
+      const weatherTemp = d.weatherTemperature;
+      const delta = (sensorTemp != null && weatherTemp != null) ? sensorTemp - weatherTemp : null;
+
+      let sensorSummary = "";
+      if (flame === 0 || (sensorTemp != null && sensorTemp > 120) || (smoke != null && smoke > 600)) {
+        sensorSummary = "Critical condition detected — sensor triggered maximum alert.";
+      } else if (ss === 0) {
+        sensorSummary = "All sensor readings are within normal range. No fire indicators detected.";
+      } else {
+        sensorSummary = "Elevated sensor readings are contributing to the risk score.";
+      }
+      document.getElementById("summary-sensor").textContent = sensorSummary;
+
+      let sensorFactors = "";
+      if (flame === 0) {
+        sensorFactors += factorHTML("Flame detected", 8);
+      }
+      if (smoke != null) {
+        let sp = 0;
+        if (smoke > 600) sp = 8;
+        else if (smoke > 500) sp = 3;
+        else if (smoke >= 400) sp = 2;
+        else if (smoke >= 300) sp = 1;
+        sensorFactors += factorHTML("Smoke level (" + smoke + " ppm)", sp);
+      }
+      if (sensorTemp != null) {
+        let tp = sensorTemp > 120 ? 8 : (sensorTemp > 90 ? 2 : 0);
+        sensorFactors += factorHTML("Sensor temp (" + sensorTemp.toFixed(1) + " °F)", tp);
+      }
+      if (delta != null) {
+        let dp = 0;
+        if (delta > 30) dp = 2;
+        else if (delta >= 15) dp = 1;
+        sensorFactors += factorHTML("Temp delta (" + delta.toFixed(1) + " °F)", dp);
+      }
+      document.getElementById("factors-sensor").innerHTML = sensorFactors;
+
+      document.getElementById("detail-sensor").innerHTML =
+        "The sensor score (0–4) measures on-site fire indicators. " +
+        "A flame detection or sensor temperature above 120 °F triggers an immediate critical score of 8. " +
+        "Smoke levels above 300 ppm add 1–3 points depending on concentration; above 600 ppm is critical. " +
+        "Sensor temperature above 90 °F adds +2. " +
+        "The temperature delta between the sensor and ambient weather adds +1 (≥15 °F) or +2 (>30 °F), " +
+        "which can indicate a nearby heat source. The sub-score is capped at 4.";
+
+      // --- Fire Score ---
+      const fs = b.fireScore ?? 0;
+      document.getElementById("badge-fire").textContent = fs + " / 4";
+      document.getElementById("badge-fire").className = "score-badge " + scoreBadgeClass(fs);
+
+      const calfireCount = d.calfireCount || 0;
+      const nearbyCount = d.nearbyCount || 0;
+      const closestDist = d.closestFireDistanceMiles;
+      const windThreat = d.windTowardsHome;
+
+      let fireSummary = "";
+      if (fs === 0) {
+        fireSummary = "No active fires detected near your location.";
+      } else if (fs >= 3) {
+        fireSummary = "Significant fire activity detected in your area — multiple sources confirm nearby fires.";
+      } else {
+        fireSummary = "Some fire activity detected nearby, contributing to elevated risk.";
+      }
+      document.getElementById("summary-fire").textContent = fireSummary;
+
+      let fireFactors = "";
+      let cfp = 0;
+      if (calfireCount >= 2) cfp = 3;
+      else if (calfireCount === 1) cfp = 2;
+      fireFactors += factorHTML("CAL FIRE incidents (" + calfireCount + ")", cfp);
+
+      // Approximate FIRMS contribution
+      let firmsPts = 0;
+      if (nearbyCount > 5) firmsPts = 1;
+      fireFactors += factorHTML("FIRMS satellite detections (" + nearbyCount + ")", firmsPts);
+
+      let proxPts = 0;
+      if (nearbyCount > 0 && closestDist != null && closestDist < 5) proxPts = 1;
+      fireFactors += factorHTML("Closest fire proximity" + (closestDist != null ? " (" + closestDist + " mi)" : ""), proxPts);
+
+      fireFactors += factorHTML("Wind carrying fire toward home", windThreat ? 1 : 0);
+      document.getElementById("factors-fire").innerHTML = fireFactors;
+
+      document.getElementById("detail-fire").innerHTML =
+        "The fire score (0–4) combines confirmed fire reports and satellite detections. " +
+        "CAL FIRE confirmed incidents carry the most weight: 1 incident adds +2, and 2 or more add +3. " +
+        "FIRMS satellite detections are weighted by confidence (high = 1.0, nominal = 0.5) and then halved — " +
+        "so only 6+ weighted detections contribute +1 point, reducing noise from false positives. " +
+        "If any FIRMS detection is within 5 miles, a proximity bonus of +1 is added. " +
+        "If wind is blowing fire toward your home, another +1. The sub-score is capped at 4.";
+
+      // --- Weather Score ---
+      const ws = b.weatherScore ?? 0;
+      document.getElementById("badge-weather").textContent = (ws >= 0 ? "+" : "") + ws + " (range: -2 to 3)";
+      document.getElementById("badge-weather").className = "score-badge " + scoreBadgeClass(ws);
+
+      const humidity = d.humidity;
+      const wind = d.wind;
+      const wTemp = d.weatherTemperature;
+      const raining = d.raining;
+
+      let weatherSummary = "";
+      if (raining) {
+        weatherSummary = "Rain is falling — weather conditions strongly suppress fire risk.";
+      } else if (ws <= -1) {
+        weatherSummary = "Favorable weather conditions are reducing the overall risk score.";
+      } else if (ws === 0) {
+        weatherSummary = "Weather conditions are neutral — neither increasing nor decreasing risk.";
+      } else {
+        weatherSummary = "Dry or windy weather conditions are increasing fire risk.";
+      }
+      document.getElementById("summary-weather").textContent = weatherSummary;
+
+      let weatherFactors = "";
+      if (humidity != null) {
+        let hp = 0;
+        if (humidity < 20) hp = 2;
+        else if (humidity <= 30) hp = 1;
+        else if (humidity > 50) hp = -2;
+        else if (humidity > 40) hp = -1;
+        weatherFactors += factorHTML("Humidity (" + humidity + "%)", hp);
+      }
+      if (wind != null) {
+        let wp = 0;
+        if (wind > 8) wp = 2;
+        else if (wind >= 5) wp = 1;
+        weatherFactors += factorHTML("Wind speed (" + wind + " m/s)", wp);
+      }
+      if (wTemp != null) {
+        weatherFactors += factorHTML("Temperature (" + wTemp.toFixed(1) + " °F)", wTemp > 95 ? 1 : 0);
+      }
+      if (raining != null) {
+        weatherFactors += factorHTML("Rain", raining ? -10 : 0);
+      }
+      document.getElementById("factors-weather").innerHTML = weatherFactors;
+
+      document.getElementById("detail-weather").innerHTML =
+        "The weather score (range -2 to +3) adjusts risk based on atmospheric conditions. " +
+        "Low humidity is dangerous: below 20% adds +2, below 30% adds +1. " +
+        "Higher humidity helps: above 40% subtracts 1, above 50% subtracts 2. " +
+        "Wind speed above 5 m/s adds +1, above 8 m/s adds +2 — wind spreads fire faster. " +
+        "Temperatures above 95 °F add +1. " +
+        "If it is raining, the weather score returns -10, which effectively overrides all other factors " +
+        "and drives the total risk index to its minimum. The sub-score is clamped between -2 and +3.";
+
+      // --- Wind Score ---
+      const wds = b.windScore ?? 0;
+      document.getElementById("badge-wind").textContent = wds + " / 2";
+      document.getElementById("badge-wind").className = "score-badge " + scoreBadgeClass(wds);
+
+      let windSummary = "";
+      if (wds > 0) {
+        windSummary = "Wind is blowing from an active fire toward your location — elevated threat.";
+      } else {
+        windSummary = "Wind direction is not carrying fire toward your location.";
+      }
+      document.getElementById("summary-wind").textContent = windSummary;
+
+      let windFactors = "";
+      windFactors += factorHTML("Wind threat toward home", wds);
+      document.getElementById("factors-wind").innerHTML = windFactors;
+
+      document.getElementById("detail-wind").innerHTML =
+        "The wind score is a simple binary check: if wind is blowing from a detected fire toward your home, " +
+        "it adds +2 to the total risk index. Otherwise it contributes 0. " +
+        "This is separate from the wind factor in the fire score — the fire score's wind component adds +1, " +
+        "while this standalone wind score adds +2, reflecting the direct danger of fire-driven wind reaching your location.";
+    }
+
     function yesNo(val) {
       return val ? "Yes" : "No";
     }
@@ -382,6 +847,9 @@
           label.textContent = riskText;
           label.className = "risk-label " + riskLevel;
           document.getElementById("risk-index-text").textContent = "Risk Index: " + risk + " / 10";
+
+          // Score breakdown
+          renderBreakdown(d);
 
           // Temperature (API values are already in °F)
           const wt = d.weatherTemperature;
