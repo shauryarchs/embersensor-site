@@ -13,7 +13,8 @@ import {
   computeSensorScore,
   computeFireScore,
   computeWeatherScore,
-  computeWindScore
+  computeWindScore,
+  computeEffectiveFireCount
 } from "./risk.js";
 import { round2 } from "./utils.js";
 import { fetchYoutubeLiveStatus } from "./youtube.js";
@@ -206,10 +207,11 @@ export default {
         const windTo = (windDirection + 180) % 360;
         const windThreat = evaluateWindRisk(nearby, windTo);
 
+        const effectiveFireCount = computeEffectiveFireCount(nearby, calfireNearby.length);
         const sensorScore = computeSensorScore(mergedData);
-        const fireScore = computeFireScore(nearby, closestFireDistanceMiles, windThreat, calfireNearby.length);
-        const weatherScore = computeWeatherScore(mergedData);
-        const windScore = computeWindScore(windThreat, nearby, calfireNearby.length);
+        const fireScore = computeFireScore(nearby, closestFireDistanceMiles, windThreat, calfireNearby.length, effectiveFireCount);
+        const weatherScore = computeWeatherScore(mergedData, effectiveFireCount);
+        const windScore = computeWindScore(windThreat, effectiveFireCount);
 
         let riskIndex = sensorScore + fireScore + weatherScore + windScore;
         riskIndex = Math.max(1, Math.min(10, riskIndex));

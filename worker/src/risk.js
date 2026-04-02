@@ -25,17 +25,17 @@ export function computeSensorScore(data) {
     return Math.min(score, 4);
 }
 
-export function computeFireScore(nearbyFires, closestDistance, windThreat, calfireCount = 0) {
-    // Weighted count: high confidence = 1.0, nominal = 0.5, low already filtered out
-    const firmsWeighted = nearbyFires.reduce((sum, f) => sum + (f._weight ?? 1.0), 0);
-
-    if (firmsWeighted === 0 && calfireCount === 0) return 0;
+export function computeFireScore(nearbyFires, closestDistance, windThreat, calfireCount = 0, effectiveFireCount = 0) {
+    if (effectiveFireCount === 0) return 0;
 
     let score = 0;
 
     // NIFC confirmed incidents — higher weight (real reported fires)
     if (calfireCount >= 2) score += 3;
     else if (calfireCount === 1) score += 2;
+
+    // Weighted count: high confidence = 1.0, nominal = 0.5, low already filtered out
+    const firmsWeighted = nearbyFires.reduce((sum, f) => sum + (f._weight ?? 1.0), 0);
 
     // FIRMS satellite detections — 0.5 overall weight (noisy source)
     // raw score: 6+ detections = 2, 1-5 = 1, then halved (floor)
@@ -46,13 +46,13 @@ export function computeFireScore(nearbyFires, closestDistance, windThreat, calfi
     // Closest FIRMS detection proximity bonus
     if (firmsWeighted > 0 && closestDistance < 5) score += 1;
 
-    // Wind carrying fire toward home
+    // Wind carrying fire toward home — only counts when fires are nearby
     if (windThreat) score += 1;
 
     return Math.min(score, 4);
 }
 
-export function computeWeatherScore(data) {
+export function computeWeatherScore(data, effectiveFireCount = 0) {
     let score = 0;
 
     const humidity = Number(data.humidity || 0);
@@ -65,8 +65,11 @@ export function computeWeatherScore(data) {
     else if (humidity > 40) score -= 1;
     else if (humidity > 50) score -= 2;
 
-    if (wind > 8) score += 2;
-    else if (wind >= 5) score += 1;
+    // Wind speed only contributes when there are effective fires nearby
+    if (effectiveFireCount > 0) {
+        if (wind > 8) score += 2;
+        else if (wind >= 5) score += 1;
+    }
 
     if (weatherTemp > 95) score += 1;
 
@@ -75,9 +78,17 @@ export function computeWeatherScore(data) {
     return Math.max(-2, Math.min(score, 3));
 }
 
-export function computeWindScore(windThreat, nearbyFires, calfireCount = 0) {
+export function computeWindScore(windThreat, effectiveFireCount = 0) {
     if (!windThreat) return 0;
-    const firmsWeighted = nearbyFires.reduce((sum, f) => sum + (f._weight ?? 1.0), 0);
-    if (firmsWeighted === 0 && calfireCount === 0) return 0;
+    if (effectiveFireCount === 0) return 0;
     return 2;
+}
+
+/**
+ * Compute effective fire count:
+ * CAL FIRE incidents + FIRMS weighted (high = 1.0, nominal/medium = 0.5)
+ */
+export function computeEffectiveFireCount(nearbyFires, calfireCount = 0) {
+    const firmsWeighted = nearbyFires.reduce((sum, f) => sum + (f._weight ?? 1.0), 0);
+    return calfireCount + firmsWeighted;
 }

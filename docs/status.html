@@ -700,15 +700,19 @@
         "The temperature delta between the sensor and ambient weather adds +1 (≥15 °F) or +2 (>30 °F), " +
         "which can indicate a nearby heat source. The sub-score is capped at 4.";
 
-      // --- Fire Score ---
-      const fs = b.fireScore ?? 0;
-      document.getElementById("badge-fire").textContent = fs + " / 4";
-      document.getElementById("badge-fire").className = "score-badge " + scoreBadgeClass(fs);
-
+      // --- Effective fire count (used by fire, weather, wind sections) ---
       const calfireCount = d.calfireCount || 0;
       const nearbyCount = d.nearbyCount || 0;
       const closestDist = d.closestFireDistanceMiles;
       const windThreat = d.windTowardsHome;
+      // Approximate effective fire count: CAL FIRE + FIRMS weighted
+      // (nearbyCount is raw count; weighted would be lower, but we use raw as an approximation here)
+      const hasEffectiveFires = calfireCount > 0 || nearbyCount > 0;
+
+      // --- Fire Score ---
+      const fs = b.fireScore ?? 0;
+      document.getElementById("badge-fire").textContent = fs + " / 4";
+      document.getElementById("badge-fire").className = "score-badge " + scoreBadgeClass(fs);
 
       let fireSummary = "";
       if (fs === 0) {
@@ -735,7 +739,8 @@
       if (nearbyCount > 0 && closestDist != null && closestDist < 5) proxPts = 1;
       fireFactors += factorHTML("Closest fire proximity" + (closestDist != null ? " (" + closestDist + " mi)" : ""), proxPts);
 
-      fireFactors += factorHTML("Wind carrying fire toward home", windThreat ? 1 : 0);
+      const fireWindPts = (hasEffectiveFires && windThreat) ? 1 : 0;
+      fireFactors += factorHTML("Wind carrying fire toward home" + (!hasEffectiveFires ? " (ignored — no fires)" : ""), fireWindPts);
       document.getElementById("factors-fire").innerHTML = fireFactors;
 
       document.getElementById("detail-fire").innerHTML =
@@ -744,7 +749,8 @@
         "FIRMS satellite detections are weighted by confidence (high = 1.0, nominal = 0.5) and then halved — " +
         "so only 6+ weighted detections contribute +1 point, reducing noise from false positives. " +
         "If any FIRMS detection is within 5 miles, a proximity bonus of +1 is added. " +
-        "If wind is blowing fire toward your home, another +1. The sub-score is capped at 4.";
+        "Wind blowing fire toward your home adds +1, but only when there are effective fires nearby. " +
+        "If there are no fires (CAL FIRE + weighted FIRMS = 0), the entire fire score is 0. Capped at 4.";
 
       // --- Weather Score ---
       const ws = b.weatherScore ?? 0;
@@ -779,9 +785,11 @@
       }
       if (wind != null) {
         let wp = 0;
-        if (wind > 8) wp = 2;
-        else if (wind >= 5) wp = 1;
-        weatherFactors += factorHTML("Wind speed (" + wind + " m/s)", wp);
+        if (hasEffectiveFires) {
+          if (wind > 8) wp = 2;
+          else if (wind >= 5) wp = 1;
+        }
+        weatherFactors += factorHTML("Wind speed (" + wind + " m/s)" + (!hasEffectiveFires ? " (ignored — no fires)" : ""), wp);
       }
       if (wTemp != null) {
         weatherFactors += factorHTML("Temperature (" + wTemp.toFixed(1) + " °F)", wTemp > 95 ? 1 : 0);
@@ -795,7 +803,9 @@
         "The weather score (range -2 to +3) adjusts risk based on atmospheric conditions. " +
         "Low humidity is dangerous: below 20% adds +2, below 30% adds +1. " +
         "Higher humidity helps: above 40% subtracts 1, above 50% subtracts 2. " +
-        "Wind speed above 5 m/s adds +1, above 8 m/s adds +2 — wind spreads fire faster. " +
+        "Wind speed only contributes when there are effective fires nearby " +
+        "(CAL FIRE incidents + weighted FIRMS detections > 0). When fires are present, " +
+        "wind above 5 m/s adds +1, above 8 m/s adds +2. " +
         "Temperatures above 95 °F add +1. " +
         "If it is raining, the weather score returns -10, which effectively overrides all other factors " +
         "and drives the total risk index to its minimum. The sub-score is clamped between -2 and +3.";
@@ -806,7 +816,9 @@
       document.getElementById("badge-wind").className = "score-badge " + scoreBadgeClass(wds);
 
       let windSummary = "";
-      if (wds > 0) {
+      if (!hasEffectiveFires) {
+        windSummary = "No effective fires nearby — wind score is ignored.";
+      } else if (wds > 0) {
         windSummary = "Wind is blowing from an active fire toward your location — elevated threat.";
       } else {
         windSummary = "Wind direction is not carrying fire toward your location.";
@@ -814,7 +826,7 @@
       document.getElementById("summary-wind").textContent = windSummary;
 
       let windFactors = "";
-      windFactors += factorHTML("Wind threat toward home", wds);
+      windFactors += factorHTML("Wind threat toward home" + (!hasEffectiveFires ? " (ignored — no fires)" : ""), wds);
       document.getElementById("factors-wind").innerHTML = windFactors;
 
       document.getElementById("detail-wind").innerHTML =
