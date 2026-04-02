@@ -420,6 +420,7 @@
         <div class="map-legend">
           <div class="legend-item"><div class="legend-dot home"></div> Home (sensor location)</div>
           <div class="legend-item"><div class="legend-dot firms"></div> FIRMS satellite detection</div>
+          <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#fb923c,#ef4444);border:none;width:24px;height:10px;border-radius:3px;"></div> FIRMS heat density</div>
           <div class="legend-item"><div class="legend-dot calfire"></div> NIFC reported incident</div>
         </div>
 
@@ -435,6 +436,7 @@
   <div id="site-footer"></div>
   <script src="script.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
   <script>
     const HOME_LAT   = 34.1;
     const HOME_LON   = -117.6;
@@ -467,6 +469,14 @@
     const firmsLayer   = L.layerGroup().addTo(map);
     const calfireLayer = L.layerGroup().addTo(map);
     const radiusLayer  = L.layerGroup().addTo(map);
+
+    // Heatmap layer (FIRMS brightness-weighted)
+    const heatmapLayer = L.heatLayer([], {
+      radius: 22,
+      blur: 18,
+      maxZoom: 17,
+      gradient: { 0.0: "rgba(251,146,60,0)", 0.35: "#fb923c", 0.65: "#ef4444", 1.0: "#fff7ed" }
+    }).addTo(map);
 
     // Home marker (always on map, not toggled)
     L.circleMarker([HOME_LAT, HOME_LON], {
@@ -501,6 +511,15 @@
         : lastFirmsData;
 
       document.getElementById("count-firms").textContent = fires.length;
+
+      // Update heatmap — brightness_ti4 typically 320–500 K; normalize to 0–1
+      const heatPoints = fires.map(f => {
+        const intensity = f.brightness != null
+          ? Math.min(1, Math.max(0, (f.brightness - 320) / 150))
+          : 0.5;
+        return [f.latitude, f.longitude, intensity];
+      });
+      heatmapLayer.setLatLngs(heatPoints);
 
       fires.forEach(f => {
         const marker = L.circleMarker([f.latitude, f.longitude], {
@@ -605,6 +624,11 @@
               <span class="toc-layer-name">FIRMS</span>
               <div class="toc-toggle"></div>
             </div>
+            <div class="toc-layer-row" data-action="toggle-heatmap">
+              <div class="toc-dot" style="background:linear-gradient(135deg,#fb923c,#ef4444);border:none;"></div>
+              <span class="toc-layer-name">Heat Map</span>
+              <div class="toc-toggle"></div>
+            </div>
             <div class="toc-layer-row" data-action="toggle-calfire">
               <div class="toc-dot calfire"></div>
               <span class="toc-layer-name">NIFC Incidents</span>
@@ -653,6 +677,10 @@
             if (action === "toggle-firms") {
               if (map.hasLayer(firmsLayer)) { map.removeLayer(firmsLayer); row.classList.add("off"); }
               else { map.addLayer(firmsLayer); row.classList.remove("off"); }
+
+            } else if (action === "toggle-heatmap") {
+              if (map.hasLayer(heatmapLayer)) { map.removeLayer(heatmapLayer); row.classList.add("off"); }
+              else { map.addLayer(heatmapLayer); row.classList.remove("off"); }
 
             } else if (action === "toggle-calfire") {
               if (map.hasLayer(calfireLayer)) { map.removeLayer(calfireLayer); row.classList.add("off"); }
