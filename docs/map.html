@@ -31,46 +31,11 @@
 
     #fire-map {
       width: 100%;
-      height: 540px;
+      height: 560px;
       border-radius: var(--radius);
       border: 1px solid var(--card-border);
       box-shadow: var(--shadow);
       background: #1a1f2e;
-    }
-
-    .map-legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      justify-content: center;
-      margin-top: 18px;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 14px;
-      color: var(--muted);
-    }
-
-    .legend-dot {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .legend-dot.home     { background: #60a5fa; border: 2px solid #93c5fd; }
-    .legend-dot.firms    { background: #fb923c; border: 2px solid #fed7aa; }
-    .legend-dot.calfire  { background: #f87171; border: 2px solid #fca5a5; }
-
-    .map-status {
-      text-align: center;
-      margin-top: 14px;
-      font-size: 13px;
-      color: rgba(183, 192, 209, 0.55);
-      min-height: 20px;
     }
 
     .map-counts {
@@ -105,6 +70,14 @@
     .map-count-item .num.firms-color   { color: #fb923c; }
     .map-count-item .num.calfire-color { color: #f87171; }
 
+    .map-status {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 13px;
+      color: rgba(183, 192, 209, 0.55);
+      min-height: 20px;
+    }
+
     .refresh-row {
       text-align: center;
       margin-top: 20px;
@@ -131,8 +104,95 @@
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
     }
 
+    /* Dark theme overrides for Leaflet controls */
+    .leaflet-control-layers,
+    .leaflet-control-zoom {
+      background: rgba(18, 24, 39, 0.92) !important;
+      border: 1px solid rgba(255, 255, 255, 0.14) !important;
+      backdrop-filter: blur(10px);
+      border-radius: 10px !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+    }
+
+    .leaflet-control-layers-expanded {
+      padding: 10px 14px !important;
+      min-width: 170px;
+    }
+
+    .leaflet-control-layers-base label,
+    .leaflet-control-layers-overlays label {
+      color: #d7deea !important;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 0;
+    }
+
+    .leaflet-control-layers-separator {
+      border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+      margin: 6px 0 !important;
+    }
+
+    .leaflet-control-zoom-in,
+    .leaflet-control-zoom-out {
+      color: #d7deea !important;
+      background: transparent !important;
+      border: none !important;
+      font-size: 16px !important;
+    }
+
+    .leaflet-control-zoom-in:hover,
+    .leaflet-control-zoom-out:hover {
+      background: rgba(255, 255, 255, 0.1) !important;
+      color: white !important;
+    }
+
+    .leaflet-control-zoom-disabled {
+      color: rgba(255,255,255,0.25) !important;
+    }
+
+    .leaflet-control-attribution {
+      background: rgba(0, 0, 0, 0.5) !important;
+      color: rgba(255,255,255,0.4) !important;
+      font-size: 10px !important;
+    }
+
+    .leaflet-control-attribution a {
+      color: rgba(255,255,255,0.55) !important;
+    }
+
+    /* Distance label tooltips */
+    .leaflet-tooltip.dist-label {
+      background: rgba(18, 24, 39, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 6px;
+      color: #d7deea;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 6px;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    .leaflet-tooltip.dist-label.firms-tip {
+      border-color: rgba(251, 146, 60, 0.5);
+      color: #fed7aa;
+    }
+
+    .leaflet-tooltip.dist-label.calfire-tip {
+      border-color: rgba(248, 113, 113, 0.5);
+      color: #fca5a5;
+    }
+
+    .leaflet-tooltip.dist-label::before {
+      display: none;
+    }
+
     @media (max-width: 700px) {
-      #fire-map { height: 380px; }
+      #fire-map { height: 420px; }
     }
   </style>
 </head>
@@ -146,7 +206,7 @@
         <div class="eyebrow">Live Fire Map</div>
         <h1>Nearby Fire Activity</h1>
         <p class="section-sub">
-          Showing FIRMS satellite heat detections and CAL FIRE reported incidents within 25 miles of the sensor.
+          Showing FIRMS satellite heat detections and NIFC reported incidents within 25 miles of the sensor.
         </p>
       </div>
 
@@ -158,17 +218,11 @@
           </div>
           <div class="map-count-item">
             <div class="num calfire-color" id="count-calfire">—</div>
-            <div class="label">CAL FIRE Incidents</div>
+            <div class="label">NIFC Incidents</div>
           </div>
         </div>
 
         <div id="fire-map" style="margin-top: 20px;"></div>
-
-        <div class="map-legend">
-          <div class="legend-item"><div class="legend-dot home"></div> Home (sensor location)</div>
-          <div class="legend-item"><div class="legend-dot firms"></div> FIRMS satellite detection</div>
-          <div class="legend-item"><div class="legend-dot calfire"></div> CAL FIRE reported incident</div>
-        </div>
 
         <div class="map-status" id="map-status">Loading fire data…</div>
 
@@ -185,36 +239,65 @@
   <script>
     const HOME_LAT = 34.1;
     const HOME_LON = -117.6;
-    const RADIUS_DEG = 1.2; // bounding box buffer for /api/fires query
+    const RADIUS_DEG = 1.2;
 
-    const map = L.map("fire-map", { zoomControl: true }).setView([HOME_LAT, HOME_LON], 10);
+    // --- Basemaps ---
+    const basemaps = {
+      "Street": L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19
+      }),
+      "Satellite": L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+        attribution: '© <a href="https://www.esri.com">Esri</a>, Maxar, Earthstar Geographics',
+        maxZoom: 19
+      }),
+      "Terrain": L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
+        attribution: '© <a href="https://opentopomap.org">OpenTopoMap</a>, © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 17
+      })
+    };
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 18
-    }).addTo(map);
+    const map = L.map("fire-map", {
+      zoomControl: true,
+      layers: [basemaps["Street"]]
+    }).setView([HOME_LAT, HOME_LON], 10);
+
+    // --- Overlay layers ---
+    const firmsLayer   = L.layerGroup();
+    const calfireLayer = L.layerGroup();
+    const radiusLayer  = L.layerGroup();
 
     // Home marker
-    const homeIcon = L.circleMarker([HOME_LAT, HOME_LON], {
+    L.circleMarker([HOME_LAT, HOME_LON], {
       radius: 9,
       fillColor: "#60a5fa",
       color: "#93c5fd",
       weight: 2,
       fillOpacity: 0.95
-    }).addTo(map).bindPopup("<strong>EmberSensor</strong><br>Sensor location");
+    }).bindPopup("<strong>EmberSensor</strong><br>Sensor location").addTo(map);
 
-    // 25-mile radius circle
+    // 25-mile radius ring
     L.circle([HOME_LAT, HOME_LON], {
       radius: 25 * 1609.34,
-      color: "rgba(255,255,255,0.18)",
-      weight: 1,
+      color: "rgba(255,255,255,0.25)",
+      weight: 1.5,
       fill: false,
       dashArray: "4 6"
-    }).addTo(map);
+    }).addTo(radiusLayer);
 
-    let firmsLayer = L.layerGroup().addTo(map);
-    let calfireLayer = L.layerGroup().addTo(map);
+    // Add all overlays to map by default
+    firmsLayer.addTo(map);
+    calfireLayer.addTo(map);
+    radiusLayer.addTo(map);
 
+    // --- Layer control (TOC) ---
+    L.control.layers(basemaps, {
+      "FIRMS Detections": firmsLayer,
+      "NIFC Incidents":   calfireLayer,
+      "25-mile Radius":   radiusLayer
+    }, { position: "topright", collapsed: false }).addTo(map);
+
+    // --- Data loading ---
     function setStatus(msg) {
       document.getElementById("map-status").textContent = msg;
     }
@@ -238,21 +321,30 @@
         .then(data => {
           document.getElementById("count-firms").textContent = data.count ?? 0;
           (data.fires ?? []).forEach(f => {
-            L.circleMarker([f.latitude, f.longitude], {
+            const marker = L.circleMarker([f.latitude, f.longitude], {
               radius: 6,
               fillColor: "#fb923c",
               color: "#fed7aa",
               weight: 1.5,
               fillOpacity: 0.85
-            })
-              .bindPopup(
-                `<strong>FIRMS Detection</strong><br>` +
-                `${f.distanceMiles} mi away` +
-                (f.confidence ? `<br>Confidence: ${f.confidence}` : "") +
-                (f.satellite ? `<br>Satellite: ${f.satellite}` : "") +
-                (f.acquiredDate ? `<br>Date: ${f.acquiredDate}` : "")
-              )
-              .addTo(firmsLayer);
+            });
+
+            marker.bindPopup(
+              `<strong>FIRMS Detection</strong><br>` +
+              `${f.distanceMiles} mi from sensor` +
+              (f.confidence ? `<br>Confidence: ${f.confidence}` : "") +
+              (f.satellite   ? `<br>Satellite: ${f.satellite}`   : "") +
+              (f.acquiredDate ? `<br>Date: ${f.acquiredDate}`    : "")
+            );
+
+            marker.bindTooltip(`${f.distanceMiles} mi`, {
+              permanent: true,
+              direction: "right",
+              offset: [8, 0],
+              className: "dist-label firms-tip"
+            });
+
+            marker.addTo(firmsLayer);
           });
         });
 
@@ -263,22 +355,31 @@
           (data.fires ?? []).forEach(f => {
             const popup = [
               `<strong>${f.name}</strong>`,
-              `${f.distanceMiles} mi away`,
-              f.acresBurned != null ? `${f.acresBurned.toLocaleString()} acres` : null,
-              f.percentContained != null ? `${f.percentContained}% contained` : null,
-              f.state ? `${f.state}` : null,
+              `${f.distanceMiles} mi from sensor`,
+              f.acresBurned      != null ? `${f.acresBurned.toLocaleString()} acres` : null,
+              f.percentContained != null ? `${f.percentContained}% contained`        : null,
+              f.state  ? f.state : null,
               f.updated ? `Updated: ${new Date(f.updated).toLocaleDateString()}` : null
             ].filter(Boolean).join("<br>");
 
-            L.circleMarker([f.latitude, f.longitude], {
+            const marker = L.circleMarker([f.latitude, f.longitude], {
               radius: 10,
               fillColor: "#f87171",
               color: "#fca5a5",
               weight: 2,
               fillOpacity: 0.9
-            })
-              .bindPopup(popup)
-              .addTo(calfireLayer);
+            });
+
+            marker.bindPopup(popup);
+
+            marker.bindTooltip(`${f.name} · ${f.distanceMiles} mi`, {
+              permanent: true,
+              direction: "right",
+              offset: [12, 0],
+              className: "dist-label calfire-tip"
+            });
+
+            marker.addTo(calfireLayer);
           });
         });
 
