@@ -63,6 +63,20 @@
       color: var(--muted);
     }
 
+    .map-link {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--orange);
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+
+    .map-link:hover {
+      opacity: 0.8;
+    }
+
     .risk-card.high {
       background: rgba(220, 38, 38, 0.1);
       border-color: rgba(220, 38, 38, 0.28);
@@ -429,6 +443,76 @@
             <div class="risk-icon">🔥</div>
             <div id="risk-label" class="risk-label"></div>
             <div id="risk-index-text" class="risk-index-text"></div>
+            <a href="map.html" class="map-link">View Fire Map →</a>
+          </div>
+
+          <!-- Score Breakdown -->
+          <button class="breakdown-toggle" id="breakdown-toggle" onclick="toggleBreakdown()">
+            Score Breakdown <span class="chevron">&#9660;</span>
+          </button>
+
+          <div id="breakdown-panel" class="breakdown-panel">
+
+            <!-- Sensor Score -->
+            <div class="score-section" id="section-sensor">
+              <div class="score-section-header">
+                <div class="score-section-title"><span class="section-icon">🌡</span> Sensor Score</div>
+                <span class="score-badge neutral" id="badge-sensor">— / 4</span>
+              </div>
+              <div class="score-section-summary" id="summary-sensor">—</div>
+              <div id="factors-sensor"></div>
+              <div class="detail-slider-row">
+                <span class="detail-slider-label">More details</span>
+                <label class="detail-switch"><input type="checkbox" onchange="toggleDetail('sensor')"><span class="slider"></span></label>
+              </div>
+              <div class="score-detail-text" id="detail-sensor"></div>
+            </div>
+
+            <!-- Fire Score -->
+            <div class="score-section" id="section-fire">
+              <div class="score-section-header">
+                <div class="score-section-title"><span class="section-icon">🔥</span> Fire Score</div>
+                <span class="score-badge neutral" id="badge-fire">— / 4</span>
+              </div>
+              <div class="score-section-summary" id="summary-fire">—</div>
+              <div id="factors-fire"></div>
+              <div class="detail-slider-row">
+                <span class="detail-slider-label">More details</span>
+                <label class="detail-switch"><input type="checkbox" onchange="toggleDetail('fire')"><span class="slider"></span></label>
+              </div>
+              <div class="score-detail-text" id="detail-fire"></div>
+            </div>
+
+            <!-- Weather Score -->
+            <div class="score-section" id="section-weather">
+              <div class="score-section-header">
+                <div class="score-section-title"><span class="section-icon">🌤</span> Weather Score</div>
+                <span class="score-badge neutral" id="badge-weather">— / 3</span>
+              </div>
+              <div class="score-section-summary" id="summary-weather">—</div>
+              <div id="factors-weather"></div>
+              <div class="detail-slider-row">
+                <span class="detail-slider-label">More details</span>
+                <label class="detail-switch"><input type="checkbox" onchange="toggleDetail('weather')"><span class="slider"></span></label>
+              </div>
+              <div class="score-detail-text" id="detail-weather"></div>
+            </div>
+
+            <!-- Wind Score -->
+            <div class="score-section" id="section-wind">
+              <div class="score-section-header">
+                <div class="score-section-title"><span class="section-icon">🌬</span> Wind Score</div>
+                <span class="score-badge neutral" id="badge-wind">— / 2</span>
+              </div>
+              <div class="score-section-summary" id="summary-wind">—</div>
+              <div id="factors-wind"></div>
+              <div class="detail-slider-row">
+                <span class="detail-slider-label">More details</span>
+                <label class="detail-switch"><input type="checkbox" onchange="toggleDetail('wind')"><span class="slider"></span></label>
+              </div>
+              <div class="score-detail-text" id="detail-wind"></div>
+            </div>
+
           </div>
 
           <!-- Score Breakdown -->
