@@ -399,9 +399,9 @@
   <script src="script.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const HOME_LAT = 34.1;
-    const HOME_LON = -117.6;
-    const RADIUS_DEG = 1.2;
+    const HOME_LAT   = 34.1;
+    const HOME_LON   = -117.6;
+    const RADIUS_MI  = 25;
 
     // --- Basemaps ---
     const basemaps = {
@@ -426,23 +426,119 @@
       layers: [activeBasemap]
     }).setView([HOME_LAT, HOME_LON], 10);
 
-    // --- Overlay layers ---
+    // --- Layers ---
     const firmsLayer   = L.layerGroup().addTo(map);
     const calfireLayer = L.layerGroup().addTo(map);
     const radiusLayer  = L.layerGroup().addTo(map);
 
-    const overlays = { firms: firmsLayer, calfire: calfireLayer, radius: radiusLayer };
-
-    // Home marker
+    // Home marker (always on map, not toggled)
     L.circleMarker([HOME_LAT, HOME_LON], {
       radius: 9, fillColor: "#60a5fa", color: "#93c5fd", weight: 2, fillOpacity: 0.95
     }).bindPopup("<strong>EmberSensor</strong><br>Sensor location").addTo(map);
 
-    // 25-mile radius ring
+    // 25-mile radius ring (lives in radiusLayer)
     L.circle([HOME_LAT, HOME_LON], {
-      radius: 25 * 1609.34,
+      radius: RADIUS_MI * 1609.34,
       color: "rgba(255,255,255,0.25)", weight: 1.5, fill: false, dashArray: "4 6"
     }).addTo(radiusLayer);
+
+    // --- State ---
+    let lastFirmsData = [];   // cache of last fetched FIRMS fires
+    let filter25mi    = true; // when true, only show fires within 25mi
+
+    // --- Helpers ---
+    function setStatus(msg) {
+      document.getElementById("map-status").textContent = msg;
+    }
+
+    function debounce(fn, ms) {
+      let t;
+      return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    }
+
+    // --- Render FIRMS markers from cache, applying 25mi filter if active ---
+    function renderFirmsMarkers() {
+      firmsLayer.clearLayers();
+      const fires = filter25mi
+        ? lastFirmsData.filter(f => f.distanceMiles <= RADIUS_MI)
+        : lastFirmsData;
+
+      document.getElementById("count-firms").textContent = fires.length;
+
+      fires.forEach(f => {
+        const marker = L.circleMarker([f.latitude, f.longitude], {
+          radius: 6, fillColor: "#fb923c", color: "#fed7aa", weight: 1.5, fillOpacity: 0.85
+        });
+        marker.bindPopup(
+          `<strong>FIRMS Detection</strong><br>${f.distanceMiles} mi from sensor` +
+          (f.confidence   ? `<br>Confidence: ${f.confidence}` : "") +
+          (f.satellite    ? `<br>Satellite: ${f.satellite}`   : "") +
+          (f.acquiredDate ? `<br>Date: ${f.acquiredDate}`     : "")
+        );
+        marker.bindTooltip(`${f.distanceMiles} mi`, {
+          permanent: true, direction: "right", offset: [8, 0], className: "dist-label firms-tip"
+        });
+        marker.addTo(firmsLayer);
+      });
+    }
+
+    // --- Fetch FIRMS for current map view extent ---
+    function loadFirmsData() {
+      setStatus("Loading FIRMS data…");
+      document.getElementById("count-firms").textContent = "—";
+      const b = map.getBounds();
+      fetch(
+        `https://embersensor.com/api/fires` +
+        `?minLat=${b.getSouth().toFixed(4)}&maxLat=${b.getNorth().toFixed(4)}` +
+        `&minLon=${b.getWest().toFixed(4)}&maxLon=${b.getEast().toFixed(4)}`
+      )
+        .then(r => r.json())
+        .then(data => {
+          lastFirmsData = data.fires ?? [];
+          renderFirmsMarkers();
+          const dt = new Date();
+          setStatus("Updated " + dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+        })
+        .catch(() => setStatus("Error loading FIRMS data."));
+    }
+
+    // --- Fetch NIFC incidents (not extent-based, always 25mi radius) ---
+    function loadCalfireData() {
+      document.getElementById("count-calfire").textContent = "—";
+      calfireLayer.clearLayers();
+      fetch("https://embersensor.com/api/calfire-fires")
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById("count-calfire").textContent = data.count ?? 0;
+          (data.fires ?? []).forEach(f => {
+            const popup = [
+              `<strong>${f.name}</strong>`,
+              `${f.distanceMiles} mi from sensor`,
+              f.acresBurned      != null ? `${f.acresBurned.toLocaleString()} acres` : null,
+              f.percentContained != null ? `${f.percentContained}% contained`        : null,
+              f.state   ? f.state : null,
+              f.updated ? `Updated: ${new Date(f.updated).toLocaleDateString()}` : null
+            ].filter(Boolean).join("<br>");
+            const marker = L.circleMarker([f.latitude, f.longitude], {
+              radius: 10, fillColor: "#f87171", color: "#fca5a5", weight: 2, fillOpacity: 0.9
+            });
+            marker.bindPopup(popup);
+            marker.bindTooltip(`${f.name} · ${f.distanceMiles} mi`, {
+              permanent: true, direction: "right", offset: [12, 0], className: "dist-label calfire-tip"
+            });
+            marker.addTo(calfireLayer);
+          });
+        })
+        .catch(() => {});
+    }
+
+    function loadMapData() {
+      loadFirmsData();
+      loadCalfireData();
+    }
+
+    // Refetch FIRMS whenever map view changes (debounced 600ms)
+    map.on("moveend zoomend", debounce(loadFirmsData, 600));
 
     // --- Custom TOC control ---
     const TocControl = L.Control.extend({
@@ -467,25 +563,25 @@
             <hr class="toc-divider">
 
             <div class="toc-section-label">Overlays</div>
-            <div class="toc-layer-row" data-layer="firms">
+            <div class="toc-layer-row" data-action="toggle-firms">
               <div class="toc-dot firms"></div>
               <span class="toc-layer-name">FIRMS</span>
               <div class="toc-toggle"></div>
             </div>
-            <div class="toc-layer-row" data-layer="calfire">
+            <div class="toc-layer-row" data-action="toggle-calfire">
               <div class="toc-dot calfire"></div>
               <span class="toc-layer-name">NIFC Incidents</span>
               <div class="toc-toggle"></div>
             </div>
-            <div class="toc-layer-row" data-layer="radius">
+            <div class="toc-layer-row" data-action="toggle-25mi">
               <div class="toc-dot radius"></div>
-              <span class="toc-layer-name">25-mi Radius</span>
+              <span class="toc-layer-name">25-mi Filter</span>
               <div class="toc-toggle"></div>
             </div>
           </div>
         `;
 
-        // Collapse / expand toggle
+        // Collapse / expand
         div.querySelector("#toc-header").addEventListener("click", () => {
           const body    = div.querySelector("#toc-body");
           const chevron = div.querySelector(".toc-chevron");
@@ -507,16 +603,26 @@
           });
         });
 
-        // Overlay toggles
+        // Overlay row actions
         div.querySelectorAll(".toc-layer-row").forEach(row => {
           row.addEventListener("click", () => {
-            const layer = overlays[row.dataset.layer];
-            if (map.hasLayer(layer)) {
-              map.removeLayer(layer);
-              row.classList.add("off");
-            } else {
-              map.addLayer(layer);
-              row.classList.remove("off");
+            const action = row.dataset.action;
+
+            if (action === "toggle-firms") {
+              if (map.hasLayer(firmsLayer)) { map.removeLayer(firmsLayer); row.classList.add("off"); }
+              else { map.addLayer(firmsLayer); row.classList.remove("off"); }
+
+            } else if (action === "toggle-calfire") {
+              if (map.hasLayer(calfireLayer)) { map.removeLayer(calfireLayer); row.classList.add("off"); }
+              else { map.addLayer(calfireLayer); row.classList.remove("off"); }
+
+            } else if (action === "toggle-25mi") {
+              filter25mi = !filter25mi;
+              // Show/hide radius ring to match filter state
+              if (filter25mi) { map.addLayer(radiusLayer); row.classList.remove("off"); }
+              else            { map.removeLayer(radiusLayer); row.classList.add("off"); }
+              // Re-render FIRMS markers with updated filter
+              renderFirmsMarkers();
             }
           });
         });
@@ -527,87 +633,7 @@
 
     new TocControl({ position: "topright" }).addTo(map);
 
-    // --- Data loading ---
-    function setStatus(msg) {
-      document.getElementById("map-status").textContent = msg;
-    }
-
-    function loadMapData() {
-      firmsLayer.clearLayers();
-      calfireLayer.clearLayers();
-      setStatus("Loading fire data…");
-      document.getElementById("count-firms").textContent = "—";
-      document.getElementById("count-calfire").textContent = "—";
-
-      const minLat = HOME_LAT - RADIUS_DEG;
-      const maxLat = HOME_LAT + RADIUS_DEG;
-      const minLon = HOME_LON - RADIUS_DEG;
-      const maxLon = HOME_LON + RADIUS_DEG;
-
-      const firmsPromise = fetch(
-        `https://embersensor.com/api/fires?minLat=${minLat}&maxLat=${maxLat}&minLon=${minLon}&maxLon=${maxLon}`
-      )
-        .then(r => r.json())
-        .then(data => {
-          document.getElementById("count-firms").textContent = data.count ?? 0;
-          (data.fires ?? []).forEach(f => {
-            const marker = L.circleMarker([f.latitude, f.longitude], {
-              radius: 6, fillColor: "#fb923c", color: "#fed7aa", weight: 1.5, fillOpacity: 0.85
-            });
-
-            marker.bindPopup(
-              `<strong>FIRMS Detection</strong><br>${f.distanceMiles} mi from sensor` +
-              (f.confidence  ? `<br>Confidence: ${f.confidence}` : "") +
-              (f.satellite   ? `<br>Satellite: ${f.satellite}`   : "") +
-              (f.acquiredDate ? `<br>Date: ${f.acquiredDate}`    : "")
-            );
-
-            marker.bindTooltip(`${f.distanceMiles} mi`, {
-              permanent: true, direction: "right", offset: [8, 0], className: "dist-label firms-tip"
-            });
-
-            marker.addTo(firmsLayer);
-          });
-        });
-
-      const calfirePromise = fetch("https://embersensor.com/api/calfire-fires")
-        .then(r => r.json())
-        .then(data => {
-          document.getElementById("count-calfire").textContent = data.count ?? 0;
-          (data.fires ?? []).forEach(f => {
-            const popup = [
-              `<strong>${f.name}</strong>`,
-              `${f.distanceMiles} mi from sensor`,
-              f.acresBurned      != null ? `${f.acresBurned.toLocaleString()} acres` : null,
-              f.percentContained != null ? `${f.percentContained}% contained`        : null,
-              f.state   ? f.state : null,
-              f.updated ? `Updated: ${new Date(f.updated).toLocaleDateString()}` : null
-            ].filter(Boolean).join("<br>");
-
-            const marker = L.circleMarker([f.latitude, f.longitude], {
-              radius: 10, fillColor: "#f87171", color: "#fca5a5", weight: 2, fillOpacity: 0.9
-            });
-
-            marker.bindPopup(popup);
-
-            marker.bindTooltip(`${f.name} · ${f.distanceMiles} mi`, {
-              permanent: true, direction: "right", offset: [12, 0], className: "dist-label calfire-tip"
-            });
-
-            marker.addTo(calfireLayer);
-          });
-        });
-
-      Promise.all([firmsPromise, calfirePromise])
-        .then(() => {
-          const dt = new Date();
-          setStatus("Updated " + dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
-        })
-        .catch(() => {
-          setStatus("Error loading fire data. Please try again.");
-        });
-    }
-
+    // Initial load
     loadMapData();
   </script>
 </body>
