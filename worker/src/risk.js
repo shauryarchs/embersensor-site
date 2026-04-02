@@ -37,9 +37,11 @@ export function computeFireScore(nearbyFires, closestDistance, windThreat, calfi
     if (calfireCount >= 2) score += 3;
     else if (calfireCount === 1) score += 2;
 
-    // FIRMS satellite detections — weighted count
-    if (firmsWeighted > 5) score += 2;
-    else if (firmsWeighted > 0) score += 1;
+    // FIRMS satellite detections — 0.5 overall weight (noisy source)
+    // raw score: 6+ detections = 2, 1-5 = 1, then halved (floor)
+    // result:    6+ detections = +1, 1-5 = 0
+    const firmsRawScore = firmsWeighted > 5 ? 2 : firmsWeighted > 0 ? 1 : 0;
+    score += Math.floor(firmsRawScore * 0.5);
 
     // Closest FIRMS detection proximity bonus
     if (firmsWeighted > 0 && closestDistance < 5) score += 1;
