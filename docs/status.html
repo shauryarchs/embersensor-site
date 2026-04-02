@@ -819,8 +819,8 @@
       document.getElementById("badge-wind").className = "score-badge " + scoreBadgeClass(wds);
 
       let windSummary = "";
-      if (!hasEffectiveFires) {
-        windSummary = "No effective fires nearby — wind score is ignored.";
+      if (fs === 0) {
+        windSummary = "Fire score is 0 — wind score is ignored.";
       } else if (wds > 0) {
         windSummary = "Wind is blowing from an active fire toward your location — elevated threat.";
       } else {
@@ -829,14 +829,14 @@
       document.getElementById("summary-wind").textContent = windSummary;
 
       let windFactors = "";
-      windFactors += factorHTML("Wind threat toward home" + (!hasEffectiveFires ? " (ignored — no fires)" : ""), wds);
+      windFactors += factorHTML("Wind threat toward home" + (fs === 0 ? " (ignored — fire score is 0)" : ""), wds);
       document.getElementById("factors-wind").innerHTML = windFactors;
 
       document.getElementById("detail-wind").innerHTML =
         "The wind score checks whether wind is blowing from a detected fire toward your home. " +
-        "If so, it adds +2 to the total risk index. However, if there are no effective fires nearby " +
-        "(no CAL FIRE incidents and no significant FIRMS detections), the wind score is ignored and contributes 0 — " +
-        "wind direction only matters when there is an actual fire to carry. " +
+        "If so, it adds +2 to the total risk index. However, if the fire score is 0, " +
+        "the wind score is also ignored and contributes 0 — wind direction only matters " +
+        "when fires have already been confirmed and scored. " +
         "This is separate from the wind factor in the fire score, which adds +1 when wind threatens your location.";
     }
 

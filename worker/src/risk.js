@@ -78,9 +78,9 @@ export function computeWeatherScore(data, effectiveFireCount = 0) {
     return Math.max(-2, Math.min(score, 3));
 }
 
-export function computeWindScore(windThreat, effectiveFireCount = 0) {
+export function computeWindScore(windThreat, fireScore = 0) {
     if (!windThreat) return 0;
-    if (effectiveFireCount === 0) return 0;
+    if (fireScore === 0) return 0;
     return 2;
 }
 
