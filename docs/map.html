@@ -328,6 +328,32 @@
     .legend-dot.firms   { background: #fb923c; border: 1.5px solid #fed7aa; }
     .legend-dot.calfire { background: #f87171; border: 1.5px solid #fca5a5; }
 
+    /* Zoom to sensor button */
+    .zoom-home-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 12px;
+      background: rgba(11, 15, 26, 0.90);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 10px;
+      color: #d7deea;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .zoom-home-btn:hover {
+      background: rgba(96, 165, 250, 0.2);
+      border-color: rgba(96, 165, 250, 0.4);
+      color: #93c5fd;
+    }
+
     /* Distance label tooltips */
     .leaflet-tooltip.dist-label {
       background: rgba(11, 15, 26, 0.88);
@@ -632,6 +658,21 @@
     });
 
     new TocControl({ position: "topright" }).addTo(map);
+
+    // --- Zoom to sensor button ---
+    const ZoomHomeControl = L.Control.extend({
+      onAdd() {
+        const btn = L.DomUtil.create("button", "zoom-home-btn");
+        L.DomEvent.disableClickPropagation(btn);
+        btn.title = "Zoom to sensor location";
+        btn.innerHTML = "⌖ Sensor";
+        btn.addEventListener("click", () => {
+          map.flyTo([HOME_LAT, HOME_LON], 10, { duration: 0.8 });
+        });
+        return btn;
+      }
+    });
+    new ZoomHomeControl({ position: "bottomright" }).addTo(map);
 
     // Initial load
     loadMapData();
