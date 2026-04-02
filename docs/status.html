@@ -818,10 +818,11 @@
       document.getElementById("factors-wind").innerHTML = windFactors;
 
       document.getElementById("detail-wind").innerHTML =
-        "The wind score is a simple binary check: if wind is blowing from a detected fire toward your home, " +
-        "it adds +2 to the total risk index. Otherwise it contributes 0. " +
-        "This is separate from the wind factor in the fire score — the fire score's wind component adds +1, " +
-        "while this standalone wind score adds +2, reflecting the direct danger of fire-driven wind reaching your location.";
+        "The wind score checks whether wind is blowing from a detected fire toward your home. " +
+        "If so, it adds +2 to the total risk index. However, if there are no effective fires nearby " +
+        "(no CAL FIRE incidents and no significant FIRMS detections), the wind score is ignored and contributes 0 — " +
+        "wind direction only matters when there is an actual fire to carry. " +
+        "This is separate from the wind factor in the fire score, which adds +1 when wind threatens your location.";
     }
 
     function yesNo(val) {

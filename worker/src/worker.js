@@ -209,7 +209,7 @@ export default {
         const sensorScore = computeSensorScore(mergedData);
         const fireScore = computeFireScore(nearby, closestFireDistanceMiles, windThreat, calfireNearby.length);
         const weatherScore = computeWeatherScore(mergedData);
-        const windScore = computeWindScore(windThreat);
+        const windScore = computeWindScore(windThreat, nearby, calfireNearby.length);
 
         let riskIndex = sensorScore + fireScore + weatherScore + windScore;
         riskIndex = Math.max(1, Math.min(10, riskIndex));

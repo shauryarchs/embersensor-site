@@ -75,6 +75,9 @@ export function computeWeatherScore(data) {
     return Math.max(-2, Math.min(score, 3));
 }
 
-export function computeWindScore(windThreat) {
-    return windThreat ? 2 : 0;
+export function computeWindScore(windThreat, nearbyFires, calfireCount = 0) {
+    if (!windThreat) return 0;
+    const firmsWeighted = nearbyFires.reduce((sum, f) => sum + (f._weight ?? 1.0), 0);
+    if (firmsWeighted === 0 && calfireCount === 0) return 0;
+    return 2;
 }
