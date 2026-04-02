@@ -266,7 +266,7 @@
               `${f.distanceMiles} mi away`,
               f.acresBurned != null ? `${f.acresBurned.toLocaleString()} acres` : null,
               f.percentContained != null ? `${f.percentContained}% contained` : null,
-              f.county ? `${f.county} County` : null,
+              f.state ? `${f.state}` : null,
               f.updated ? `Updated: ${new Date(f.updated).toLocaleDateString()}` : null
             ].filter(Boolean).join("<br>");
 

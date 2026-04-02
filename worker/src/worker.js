@@ -184,8 +184,15 @@ export default {
         const weatherData = weatherResult.data;
 
         const forceRefreshCalfire = url.searchParams.get("refreshCalfire") === "1";
-        const calfireResult = await fetchCalfireData(env, forceRefreshCalfire);
-        const calfireNearby = findNearbyCalfireIncidents(calfireResult.incidents, radius);
+        let calfireNearby = [];
+        let calfireSource = "unavailable";
+        try {
+          const calfireResult = await fetchCalfireData(env, forceRefreshCalfire);
+          calfireNearby = findNearbyCalfireIncidents(calfireResult.incidents, radius);
+          calfireSource = calfireResult.source;
+        } catch (_) {
+          // CAL FIRE fetch failed — degrade gracefully, rest of status still works
+        }
 
         const mergedData = {
           ...sensorData,
@@ -221,7 +228,7 @@ export default {
           calfireFires: calfireNearby,
           firmsSource: firmsResult.source,
           weatherSource: weatherResult.source,
-          calfireSource: calfireResult.source,
+          calfireSource,
           generatedAt: new Date().toISOString()
         }), {
           headers: {

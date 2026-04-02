@@ -6,7 +6,16 @@ import {
 } from "./config.js";
 import { distanceMiles } from "./geo.js";
 
-const CALFIRE_API_URL = "https://www.fire.ca.gov/umbraco/Api/IncidentApi/GetIncidents?inactive=false";
+// NIFC Active Fires feature service — public ArcGIS REST API, no auth required.
+// Returns fire perimeter polygons; we request centroids via returnCentroid=true.
+const NIFC_URL =
+  "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/Active_Fires/FeatureServer/0/query" +
+  "?where=1%3D1" +
+  "&outFields=IncidentName,GISAcres,PercentContained,State,CreateDate" +
+  "&returnGeometry=false" +
+  "&returnCentroid=true" +
+  "&outSR=4326" +
+  "&f=json";
 
 export async function fetchCalfireData(env, forceRefresh = false) {
   const hasCache = env.FIRMS_CACHE && typeof env.FIRMS_CACHE.get === "function";
@@ -18,16 +27,29 @@ export async function fetchCalfireData(env, forceRefresh = false) {
     }
   }
 
-  const response = await fetch(CALFIRE_API_URL, {
-    headers: { "Accept": "application/json" }
-  });
+  const response = await fetch(NIFC_URL);
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch CAL FIRE data: ${response.status}`);
+    throw new Error(`Failed to fetch NIFC fire data: ${response.status}`);
   }
 
   const json = await response.json();
-  const incidents = json.Incidents ?? [];
+  const features = json.features ?? [];
+
+  // Normalise into a flat array so the rest of the code stays the same
+  const incidents = features
+    .filter(f => f.centroid)
+    .map(f => ({
+      name: f.attributes.IncidentName ?? "Unknown",
+      latitude: f.centroid.y,
+      longitude: f.centroid.x,
+      acresBurned: f.attributes.GISAcres != null ? Math.round(f.attributes.GISAcres) : null,
+      percentContained: f.attributes.PercentContained ?? null,
+      state: f.attributes.State ?? null,
+      updated: f.attributes.CreateDate
+        ? new Date(f.attributes.CreateDate).toISOString()
+        : null
+    }));
 
   if (hasCache) {
     await env.FIRMS_CACHE.put(CALFIRE_CACHE_KEY, JSON.stringify(incidents), {
@@ -40,22 +62,10 @@ export async function fetchCalfireData(env, forceRefresh = false) {
 
 export function findNearbyCalfireIncidents(incidents, radiusMiles) {
   return incidents
-    .filter(i => i.IsActive && i.Latitude && i.Longitude)
+    .filter(i => i.latitude && i.longitude)
     .map(i => {
-      const lat = parseFloat(i.Latitude);
-      const lon = parseFloat(i.Longitude);
-      const dist = distanceMiles(HOME_LAT, HOME_LON, lat, lon);
-      return {
-        name: i.Name ?? "Unknown",
-        latitude: lat,
-        longitude: lon,
-        distanceMiles: Math.round(dist * 100) / 100,
-        acresBurned: i.AcresBurned ?? null,
-        percentContained: i.PercentContained ?? null,
-        county: i.County ?? null,
-        updated: i.Updated ?? null,
-        started: i.Started ?? null
-      };
+      const dist = distanceMiles(HOME_LAT, HOME_LON, i.latitude, i.longitude);
+      return { ...i, distanceMiles: Math.round(dist * 100) / 100 };
     })
     .filter(i => i.distanceMiles <= radiusMiles);
 }

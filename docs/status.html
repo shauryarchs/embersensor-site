@@ -424,7 +424,7 @@
               const parts = [f.distanceMiles + " mi away"];
               if (f.acresBurned != null) parts.push(f.acresBurned.toLocaleString() + " acres");
               if (f.percentContained != null) parts.push(f.percentContained + "% contained");
-              if (f.county) parts.push(f.county + " County");
+              if (f.state) parts.push(f.state);
               return `<div class="calfire-incident"><strong>${f.name}</strong>${parts.join(" · ")}</div>`;
             }).join("");
           } else {
