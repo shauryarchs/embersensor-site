@@ -223,6 +223,7 @@ export default {
             ? null
             : round2(closestFireDistanceMiles),
           riskIndex,
+          scoreBreakdown: { sensorScore, fireScore, weatherScore, windScore },
           calfireNearby: calfireNearby.length > 0,
           calfireCount: calfireNearby.length,
           calfireFires: calfireNearby,
