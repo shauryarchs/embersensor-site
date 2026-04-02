@@ -25,15 +25,28 @@ export function computeSensorScore(data) {
     return Math.min(score, 4);
 }
 
-export function computeFireScore(nearbyFires, closestDistance, windThreat) {
-    const count = nearbyFires.length;
+export function computeFireScore(nearbyFires, closestDistance, windThreat, calfireCount = 0) {
+    const firmsCount = nearbyFires.length;
 
-    if (count === 0) return 0;
-    if (closestDistance < 5) return 4;
-    if (windThreat) return 4;
-    if (count > 5) return 3;
+    if (firmsCount === 0 && calfireCount === 0) return 0;
 
-    return 2;
+    let score = 0;
+
+    // NIFC confirmed incidents — higher weight (real reported fires)
+    if (calfireCount >= 2) score += 3;
+    else if (calfireCount === 1) score += 2;
+
+    // FIRMS satellite detections — lower weight (thermal anomalies, noisier)
+    if (firmsCount > 5) score += 2;
+    else if (firmsCount > 0) score += 1;
+
+    // Closest FIRMS detection proximity bonus
+    if (firmsCount > 0 && closestDistance < 5) score += 1;
+
+    // Wind carrying fire toward home
+    if (windThreat) score += 1;
+
+    return Math.min(score, 4);
 }
 
 export function computeWeatherScore(data) {

@@ -207,7 +207,7 @@ export default {
         const windThreat = evaluateWindRisk(nearby, windTo);
 
         const sensorScore = computeSensorScore(mergedData);
-        const fireScore = computeFireScore(nearby, closestFireDistanceMiles, windThreat);
+        const fireScore = computeFireScore(nearby, closestFireDistanceMiles, windThreat, calfireNearby.length);
         const weatherScore = computeWeatherScore(mergedData);
         const windScore = computeWindScore(windThreat);
 
