@@ -46,8 +46,8 @@ export function computeFireScore(nearbyFires, closestDistance, windThreat, calfi
     // Closest FIRMS detection proximity bonus
     if (firmsWeighted > 0 && closestDistance < 5) score += 1;
 
-    // Wind carrying fire toward home — only counts when fires are nearby
-    if (windThreat) score += 1;
+    // Wind carrying fire toward home — only counts when fire factors scored > 0
+    if (score > 0 && windThreat) score += 1;
 
     return Math.min(score, 4);
 }
