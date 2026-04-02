@@ -60,9 +60,13 @@ a {
   left: 0;
   width: 100%;
   z-index: 20;
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   background: rgba(11, 15, 26, 0.75);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  /* Force GPU compositing layer — fixes position:fixed on iOS Safari */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 
