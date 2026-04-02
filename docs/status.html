@@ -155,6 +155,27 @@
       to { transform: rotate(360deg); }
     }
 
+    .section-label-row {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .section-label-row .data-label {
+      color: var(--text);
+    }
+
+    .calfire-incident {
+      padding: 10px 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .calfire-incident strong {
+      color: var(--text);
+      display: block;
+      margin-bottom: 2px;
+    }
+
     .generated-at {
       text-align: center;
       margin-top: 18px;
@@ -271,14 +292,17 @@
             </div>
           </div>
 
-          <!-- Wildfire -->
+          <!-- Wildfire — FIRMS -->
           <div class="data-group">
+            <div class="data-row section-label-row">
+              <div class="data-label"><span class="row-icon">🛰</span> <strong>FIRMS Satellite Detections</strong></div>
+            </div>
             <div class="data-row">
               <div class="data-label"><span class="row-icon">🔥</span> Fire Nearby</div>
               <div class="data-value" id="val-fire-nearby">—</div>
             </div>
             <div class="data-row">
-              <div class="data-label"><span class="row-icon">📍</span> Closest Fire</div>
+              <div class="data-label"><span class="row-icon">📍</span> Closest Detection</div>
               <div class="data-value" id="val-closest-fire">—</div>
             </div>
             <div class="data-row">
@@ -286,9 +310,25 @@
               <div class="data-value" id="val-wind-threat">—</div>
             </div>
             <div class="data-row">
-              <div class="data-label"><span class="row-icon">🗺</span> Nearby Fire Count</div>
+              <div class="data-label"><span class="row-icon">🗺</span> Nearby Detection Count</div>
               <div class="data-value" id="val-nearby-count">—</div>
             </div>
+          </div>
+
+          <!-- Wildfire — CAL FIRE -->
+          <div class="data-group">
+            <div class="data-row section-label-row">
+              <div class="data-label"><span class="row-icon">🚒</span> <strong>CAL FIRE Reported Incidents</strong></div>
+            </div>
+            <div class="data-row">
+              <div class="data-label"><span class="row-icon">🔥</span> Incident Nearby</div>
+              <div class="data-value" id="val-calfire-nearby">—</div>
+            </div>
+            <div class="data-row">
+              <div class="data-label"><span class="row-icon">🗺</span> Nearby Incident Count</div>
+              <div class="data-value" id="val-calfire-count">—</div>
+            </div>
+            <div id="calfire-incidents-list"></div>
           </div>
 
           <div id="generated-at" class="generated-at"></div>
@@ -368,11 +408,28 @@
           setVal("val-condition", d.condition || "—");
           setVal("val-rain", d.raining != null ? yesNo(d.raining) : "—", d.raining != null ? yesNoClass(d.raining) : "");
 
-          // Wildfire
+          // Wildfire — FIRMS
           setVal("val-fire-nearby",  yesNo(d.fireNearby),  yesNoClass(d.fireNearby));
           setVal("val-closest-fire", d.closestFireDistanceMiles != null ? d.closestFireDistanceMiles + " mi" : "None");
           setVal("val-wind-threat",  yesNo(d.windTowardsHome), yesNoClass(d.windTowardsHome));
           setVal("val-nearby-count", d.nearbyCount != null ? String(d.nearbyCount) : "—");
+
+          // Wildfire — CAL FIRE
+          setVal("val-calfire-nearby", yesNo(d.calfireNearby), yesNoClass(d.calfireNearby));
+          setVal("val-calfire-count",  d.calfireCount != null ? String(d.calfireCount) : "—");
+
+          const incidentList = document.getElementById("calfire-incidents-list");
+          if (d.calfireFires && d.calfireFires.length > 0) {
+            incidentList.innerHTML = d.calfireFires.map(f => {
+              const parts = [f.distanceMiles + " mi away"];
+              if (f.acresBurned != null) parts.push(f.acresBurned.toLocaleString() + " acres");
+              if (f.percentContained != null) parts.push(f.percentContained + "% contained");
+              if (f.county) parts.push(f.county + " County");
+              return `<div class="calfire-incident"><strong>${f.name}</strong>${parts.join(" · ")}</div>`;
+            }).join("");
+          } else {
+            incidentList.innerHTML = "";
+          }
 
           // Timestamp
           if (d.generatedAt) {

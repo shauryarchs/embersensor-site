@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Fire Map | EmberSensor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Live fire map showing nearby FIRMS satellite detections and CAL FIRE reported incidents." />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    .map-page {
+      padding: 48px 0 72px;
+    }
+
+    .map-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .map-wrap {
+      width: min(960px, 100%);
+      margin: 0 auto;
+    }
+
+    #fire-map {
+      width: 100%;
+      height: 540px;
+      border-radius: var(--radius);
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow);
+      background: #1a1f2e;
+    }
+
+    .map-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 18px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend-dot.home     { background: #60a5fa; border: 2px solid #93c5fd; }
+    .legend-dot.firms    { background: #fb923c; border: 2px solid #fed7aa; }
+    .legend-dot.calfire  { background: #f87171; border: 2px solid #fca5a5; }
+
+    .map-status {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 13px;
+      color: rgba(183, 192, 209, 0.55);
+      min-height: 20px;
+    }
+
+    .map-counts {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    .map-count-item {
+      text-align: center;
+      padding: 14px 22px;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      min-width: 140px;
+    }
+
+    .map-count-item .num {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .map-count-item .label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .map-count-item .num.firms-color   { color: #fb923c; }
+    .map-count-item .num.calfire-color { color: #f87171; }
+
+    .refresh-row {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .refresh-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 20px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .refresh-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+    }
+
+    @media (max-width: 700px) {
+      #fire-map { height: 380px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="site-header"></div>
+
+  <section class="map-page">
+    <div class="container">
+      <div class="map-header">
+        <div class="eyebrow">Live Fire Map</div>
+        <h1>Nearby Fire Activity</h1>
+        <p class="section-sub">
+          Showing FIRMS satellite heat detections and CAL FIRE reported incidents within 25 miles of the sensor.
+        </p>
+      </div>
+
+      <div class="map-wrap">
+        <div class="map-counts">
+          <div class="map-count-item">
+            <div class="num firms-color" id="count-firms">—</div>
+            <div class="label">FIRMS Detections</div>
+          </div>
+          <div class="map-count-item">
+            <div class="num calfire-color" id="count-calfire">—</div>
+            <div class="label">CAL FIRE Incidents</div>
+          </div>
+        </div>
+
+        <div id="fire-map" style="margin-top: 20px;"></div>
+
+        <div class="map-legend">
+          <div class="legend-item"><div class="legend-dot home"></div> Home (sensor location)</div>
+          <div class="legend-item"><div class="legend-dot firms"></div> FIRMS satellite detection</div>
+          <div class="legend-item"><div class="legend-dot calfire"></div> CAL FIRE reported incident</div>
+        </div>
+
+        <div class="map-status" id="map-status">Loading fire data…</div>
+
+        <div class="refresh-row">
+          <button class="refresh-btn" onclick="loadMapData()">⟳ Refresh</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="script.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const HOME_LAT = 34.1;
+    const HOME_LON = -117.6;
+    const RADIUS_DEG = 1.2; // bounding box buffer for /api/fires query
+
+    const map = L.map("fire-map", { zoomControl: true }).setView([HOME_LAT, HOME_LON], 10);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 18
+    }).addTo(map);
+
+    // Home marker
+    const homeIcon = L.circleMarker([HOME_LAT, HOME_LON], {
+      radius: 9,
+      fillColor: "#60a5fa",
+      color: "#93c5fd",
+      weight: 2,
+      fillOpacity: 0.95
+    }).addTo(map).bindPopup("<strong>EmberSensor</strong><br>Sensor location");
+
+    // 25-mile radius circle
+    L.circle([HOME_LAT, HOME_LON], {
+      radius: 25 * 1609.34,
+      color: "rgba(255,255,255,0.18)",
+      weight: 1,
+      fill: false,
+      dashArray: "4 6"
+    }).addTo(map);
+
+    let firmsLayer = L.layerGroup().addTo(map);
+    let calfireLayer = L.layerGroup().addTo(map);
+
+    function setStatus(msg) {
+      document.getElementById("map-status").textContent = msg;
+    }
+
+    function loadMapData() {
+      firmsLayer.clearLayers();
+      calfireLayer.clearLayers();
+      setStatus("Loading fire data…");
+      document.getElementById("count-firms").textContent = "—";
+      document.getElementById("count-calfire").textContent = "—";
+
+      const minLat = HOME_LAT - RADIUS_DEG;
+      const maxLat = HOME_LAT + RADIUS_DEG;
+      const minLon = HOME_LON - RADIUS_DEG;
+      const maxLon = HOME_LON + RADIUS_DEG;
+
+      const firmsPromise = fetch(
+        `https://embersensor.com/api/fires?minLat=${minLat}&maxLat=${maxLat}&minLon=${minLon}&maxLon=${maxLon}`
+      )
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById("count-firms").textContent = data.count ?? 0;
+          (data.fires ?? []).forEach(f => {
+            L.circleMarker([f.latitude, f.longitude], {
+              radius: 6,
+              fillColor: "#fb923c",
+              color: "#fed7aa",
+              weight: 1.5,
+              fillOpacity: 0.85
+            })
+              .bindPopup(
+                `<strong>FIRMS Detection</strong><br>` +
+                `${f.distanceMiles} mi away` +
+                (f.confidence ? `<br>Confidence: ${f.confidence}` : "") +
+                (f.satellite ? `<br>Satellite: ${f.satellite}` : "") +
+                (f.acquiredDate ? `<br>Date: ${f.acquiredDate}` : "")
+              )
+              .addTo(firmsLayer);
+          });
+        });
+
+      const calfirePromise = fetch("https://embersensor.com/api/calfire-fires")
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById("count-calfire").textContent = data.count ?? 0;
+          (data.fires ?? []).forEach(f => {
+            const popup = [
+              `<strong>${f.name}</strong>`,
+              `${f.distanceMiles} mi away`,
+              f.acresBurned != null ? `${f.acresBurned.toLocaleString()} acres` : null,
+              f.percentContained != null ? `${f.percentContained}% contained` : null,
+              f.county ? `${f.county} County` : null,
+              f.updated ? `Updated: ${new Date(f.updated).toLocaleDateString()}` : null
+            ].filter(Boolean).join("<br>");
+
+            L.circleMarker([f.latitude, f.longitude], {
+              radius: 10,
+              fillColor: "#f87171",
+              color: "#fca5a5",
+              weight: 2,
+              fillOpacity: 0.9
+            })
+              .bindPopup(popup)
+              .addTo(calfireLayer);
+          });
+        });
+
+      Promise.all([firmsPromise, calfirePromise])
+        .then(() => {
+          const dt = new Date();
+          setStatus("Updated " + dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+        })
+        .catch(() => {
+          setStatus("Error loading fire data. Please try again.");
+        });
+    }
+
+    loadMapData();
+  </script>
+</body>
+
+</html>
