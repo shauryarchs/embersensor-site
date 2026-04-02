@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <title>Fire Map | EmberSensor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Live fire map showing nearby FIRMS satellite detections and CAL FIRE reported incidents." />
+  <meta name="description" content="Live fire map showing nearby FIRMS satellite detections and NIFC reported incidents." />
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
@@ -104,95 +104,251 @@
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
     }
 
-    /* Dark theme overrides for Leaflet controls */
-    .leaflet-control-layers,
-    .leaflet-control-zoom {
-      background: rgba(18, 24, 39, 0.92) !important;
-      border: 1px solid rgba(255, 255, 255, 0.14) !important;
-      backdrop-filter: blur(10px);
-      border-radius: 10px !important;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
-    }
-
-    .leaflet-control-layers-expanded {
-      padding: 10px 14px !important;
-      min-width: 170px;
-    }
-
-    .leaflet-control-layers-base label,
-    .leaflet-control-layers-overlays label {
-      color: #d7deea !important;
-      font-family: 'Inter', sans-serif;
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 3px 0;
-    }
-
-    .leaflet-control-layers-separator {
-      border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
-      margin: 6px 0 !important;
-    }
-
-    .leaflet-control-zoom-in,
-    .leaflet-control-zoom-out {
-      color: #d7deea !important;
-      background: transparent !important;
-      border: none !important;
-      font-size: 16px !important;
-    }
-
-    .leaflet-control-zoom-in:hover,
-    .leaflet-control-zoom-out:hover {
-      background: rgba(255, 255, 255, 0.1) !important;
-      color: white !important;
-    }
-
-    .leaflet-control-zoom-disabled {
-      color: rgba(255,255,255,0.25) !important;
-    }
-
+    /* Leaflet attribution */
     .leaflet-control-attribution {
       background: rgba(0, 0, 0, 0.5) !important;
       color: rgba(255,255,255,0.4) !important;
       font-size: 10px !important;
     }
+    .leaflet-control-attribution a { color: rgba(255,255,255,0.55) !important; }
 
-    .leaflet-control-attribution a {
-      color: rgba(255,255,255,0.55) !important;
+    /* Zoom control */
+    .leaflet-control-zoom {
+      border: 1px solid rgba(255,255,255,0.12) !important;
+      border-radius: 10px !important;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important;
     }
+    .leaflet-control-zoom-in,
+    .leaflet-control-zoom-out {
+      background: rgba(18,24,39,0.88) !important;
+      color: #d7deea !important;
+      border: none !important;
+      font-size: 16px !important;
+      width: 32px !important;
+      height: 32px !important;
+      line-height: 32px !important;
+    }
+    .leaflet-control-zoom-in:hover,
+    .leaflet-control-zoom-out:hover {
+      background: rgba(255,255,255,0.1) !important;
+      color: white !important;
+    }
+
+    /* Custom TOC panel */
+    .map-toc {
+      font-family: 'Inter', sans-serif;
+      background: rgba(11, 15, 26, 0.90);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      width: 178px;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .toc-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+
+    .toc-header:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .toc-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(183, 192, 209, 0.7);
+    }
+
+    .toc-chevron {
+      font-size: 10px;
+      color: rgba(183, 192, 209, 0.5);
+      transition: transform 0.2s ease;
+    }
+
+    .toc-chevron.open { transform: rotate(180deg); }
+
+    .toc-body {
+      padding: 0 14px 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      overflow: hidden;
+      max-height: 300px;
+      transition: max-height 0.25s ease, padding 0.25s ease, opacity 0.2s ease;
+      opacity: 1;
+    }
+
+    .toc-body.collapsed {
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      opacity: 0;
+    }
+
+    .toc-section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgba(183, 192, 209, 0.45);
+      margin: 10px 0 6px;
+    }
+
+    .toc-basemaps {
+      display: flex;
+      gap: 5px;
+    }
+
+    .toc-basemap-btn {
+      flex: 1;
+      padding: 5px 0;
+      border-radius: 7px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(183, 192, 209, 0.7);
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .toc-basemap-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    .toc-basemap-btn.active {
+      background: rgba(234, 88, 12, 0.22);
+      border-color: rgba(234, 88, 12, 0.5);
+      color: #fb923c;
+    }
+
+    .toc-divider {
+      border: none;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      margin: 10px 0;
+    }
+
+    .toc-layer-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 0;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: opacity 0.15s;
+    }
+
+    .toc-layer-row.off {
+      opacity: 0.4;
+    }
+
+    .toc-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .toc-dot.firms   { background: #fb923c; border: 1.5px solid #fed7aa; }
+    .toc-dot.calfire { background: #f87171; border: 1.5px solid #fca5a5; }
+    .toc-dot.radius  { background: transparent; border: 1.5px solid rgba(255,255,255,0.4); }
+
+    .toc-layer-name {
+      font-size: 12px;
+      color: #d7deea;
+      flex: 1;
+    }
+
+    .toc-toggle {
+      width: 28px;
+      height: 16px;
+      border-radius: 999px;
+      background: rgba(234, 88, 12, 0.7);
+      position: relative;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    .toc-toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: white;
+      transition: transform 0.15s;
+    }
+
+    .toc-layer-row.off .toc-toggle {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .toc-layer-row.off .toc-toggle::after {
+      transform: translateX(-12px);
+    }
+
+    /* Legend */
+    .map-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend-dot.home    { background: #60a5fa; border: 1.5px solid #93c5fd; }
+    .legend-dot.firms   { background: #fb923c; border: 1.5px solid #fed7aa; }
+    .legend-dot.calfire { background: #f87171; border: 1.5px solid #fca5a5; }
 
     /* Distance label tooltips */
     .leaflet-tooltip.dist-label {
-      background: rgba(18, 24, 39, 0.88);
-      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(11, 15, 26, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 6px;
       color: #d7deea;
       font-family: 'Inter', sans-serif;
       font-size: 11px;
       font-weight: 700;
-      padding: 2px 6px;
+      padding: 2px 7px;
       white-space: nowrap;
       box-shadow: 0 2px 8px rgba(0,0,0,0.4);
     }
 
-    .leaflet-tooltip.dist-label.firms-tip {
-      border-color: rgba(251, 146, 60, 0.5);
-      color: #fed7aa;
-    }
-
-    .leaflet-tooltip.dist-label.calfire-tip {
-      border-color: rgba(248, 113, 113, 0.5);
-      color: #fca5a5;
-    }
-
-    .leaflet-tooltip.dist-label::before {
-      display: none;
-    }
+    .leaflet-tooltip.dist-label.firms-tip   { border-color: rgba(251,146,60,0.45); color: #fed7aa; }
+    .leaflet-tooltip.dist-label.calfire-tip { border-color: rgba(248,113,113,0.45); color: #fca5a5; }
+    .leaflet-tooltip.dist-label::before     { display: none; }
 
     @media (max-width: 700px) {
       #fire-map { height: 420px; }
+      .map-toc  { width: 150px; padding: 10px; }
     }
   </style>
 </head>
@@ -224,6 +380,12 @@
 
         <div id="fire-map" style="margin-top: 20px;"></div>
 
+        <div class="map-legend">
+          <div class="legend-item"><div class="legend-dot home"></div> Home (sensor location)</div>
+          <div class="legend-item"><div class="legend-dot firms"></div> FIRMS satellite detection</div>
+          <div class="legend-item"><div class="legend-dot calfire"></div> NIFC reported incident</div>
+        </div>
+
         <div class="map-status" id="map-status">Loading fire data…</div>
 
         <div class="refresh-row">
@@ -252,50 +414,120 @@
         maxZoom: 19
       }),
       "Terrain": L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
-        attribution: '© <a href="https://opentopomap.org">OpenTopoMap</a>, © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        attribution: '© <a href="https://opentopomap.org">OpenTopoMap</a>, © OpenStreetMap',
         maxZoom: 17
       })
     };
 
+    let activeBasemap = basemaps["Street"];
+
     const map = L.map("fire-map", {
       zoomControl: true,
-      layers: [basemaps["Street"]]
+      layers: [activeBasemap]
     }).setView([HOME_LAT, HOME_LON], 10);
 
     // --- Overlay layers ---
-    const firmsLayer   = L.layerGroup();
-    const calfireLayer = L.layerGroup();
-    const radiusLayer  = L.layerGroup();
+    const firmsLayer   = L.layerGroup().addTo(map);
+    const calfireLayer = L.layerGroup().addTo(map);
+    const radiusLayer  = L.layerGroup().addTo(map);
+
+    const overlays = { firms: firmsLayer, calfire: calfireLayer, radius: radiusLayer };
+    const overlayState = { firms: true, calfire: true, radius: true };
 
     // Home marker
     L.circleMarker([HOME_LAT, HOME_LON], {
-      radius: 9,
-      fillColor: "#60a5fa",
-      color: "#93c5fd",
-      weight: 2,
-      fillOpacity: 0.95
+      radius: 9, fillColor: "#60a5fa", color: "#93c5fd", weight: 2, fillOpacity: 0.95
     }).bindPopup("<strong>EmberSensor</strong><br>Sensor location").addTo(map);
 
     // 25-mile radius ring
     L.circle([HOME_LAT, HOME_LON], {
       radius: 25 * 1609.34,
-      color: "rgba(255,255,255,0.25)",
-      weight: 1.5,
-      fill: false,
-      dashArray: "4 6"
+      color: "rgba(255,255,255,0.25)", weight: 1.5, fill: false, dashArray: "4 6"
     }).addTo(radiusLayer);
 
-    // Add all overlays to map by default
-    firmsLayer.addTo(map);
-    calfireLayer.addTo(map);
-    radiusLayer.addTo(map);
+    // --- Custom TOC control ---
+    const TocControl = L.Control.extend({
+      onAdd() {
+        const div = L.DomUtil.create("div", "map-toc");
+        L.DomEvent.disableClickPropagation(div);
+        L.DomEvent.disableScrollPropagation(div);
 
-    // --- Layer control (TOC) ---
-    L.control.layers(basemaps, {
-      "FIRMS Detections": firmsLayer,
-      "NIFC Incidents":   calfireLayer,
-      "25-mile Radius":   radiusLayer
-    }, { position: "topright", collapsed: false }).addTo(map);
+        div.innerHTML = `
+          <div class="toc-header" id="toc-header">
+            <span class="toc-title">Map Layers</span>
+            <span class="toc-chevron open">▼</span>
+          </div>
+          <div class="toc-body" id="toc-body">
+            <div class="toc-section-label">Basemap</div>
+            <div class="toc-basemaps">
+              <button class="toc-basemap-btn active" data-bm="Street">Street</button>
+              <button class="toc-basemap-btn" data-bm="Satellite">Satellite</button>
+              <button class="toc-basemap-btn" data-bm="Terrain">Terrain</button>
+            </div>
+
+            <hr class="toc-divider">
+
+            <div class="toc-section-label">Overlays</div>
+            <div class="toc-layer-row" data-layer="firms">
+              <div class="toc-dot firms"></div>
+              <span class="toc-layer-name">FIRMS</span>
+              <div class="toc-toggle"></div>
+            </div>
+            <div class="toc-layer-row" data-layer="calfire">
+              <div class="toc-dot calfire"></div>
+              <span class="toc-layer-name">NIFC Incidents</span>
+              <div class="toc-toggle"></div>
+            </div>
+            <div class="toc-layer-row" data-layer="radius">
+              <div class="toc-dot radius"></div>
+              <span class="toc-layer-name">25-mi Radius</span>
+              <div class="toc-toggle"></div>
+            </div>
+          </div>
+        `;
+
+        // Collapse / expand toggle
+        div.querySelector("#toc-header").addEventListener("click", () => {
+          const body    = div.querySelector("#toc-body");
+          const chevron = div.querySelector(".toc-chevron");
+          const isOpen  = !body.classList.contains("collapsed");
+          body.classList.toggle("collapsed", isOpen);
+          chevron.classList.toggle("open", !isOpen);
+        });
+
+        // Basemap buttons
+        div.querySelectorAll(".toc-basemap-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const name = btn.dataset.bm;
+            map.removeLayer(activeBasemap);
+            activeBasemap = basemaps[name];
+            map.addLayer(activeBasemap);
+            activeBasemap.bringToBack();
+            div.querySelectorAll(".toc-basemap-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+          });
+        });
+
+        // Overlay toggles
+        div.querySelectorAll(".toc-layer-row").forEach(row => {
+          row.addEventListener("click", () => {
+            const key = row.dataset.layer;
+            overlayState[key] = !overlayState[key];
+            if (overlayState[key]) {
+              map.addLayer(overlays[key]);
+              row.classList.remove("off");
+            } else {
+              map.removeLayer(overlays[key]);
+              row.classList.add("off");
+            }
+          });
+        });
+
+        return div;
+      }
+    });
+
+    new TocControl({ position: "topright" }).addTo(map);
 
     // --- Data loading ---
     function setStatus(msg) {
@@ -322,26 +554,18 @@
           document.getElementById("count-firms").textContent = data.count ?? 0;
           (data.fires ?? []).forEach(f => {
             const marker = L.circleMarker([f.latitude, f.longitude], {
-              radius: 6,
-              fillColor: "#fb923c",
-              color: "#fed7aa",
-              weight: 1.5,
-              fillOpacity: 0.85
+              radius: 6, fillColor: "#fb923c", color: "#fed7aa", weight: 1.5, fillOpacity: 0.85
             });
 
             marker.bindPopup(
-              `<strong>FIRMS Detection</strong><br>` +
-              `${f.distanceMiles} mi from sensor` +
-              (f.confidence ? `<br>Confidence: ${f.confidence}` : "") +
+              `<strong>FIRMS Detection</strong><br>${f.distanceMiles} mi from sensor` +
+              (f.confidence  ? `<br>Confidence: ${f.confidence}` : "") +
               (f.satellite   ? `<br>Satellite: ${f.satellite}`   : "") +
               (f.acquiredDate ? `<br>Date: ${f.acquiredDate}`    : "")
             );
 
             marker.bindTooltip(`${f.distanceMiles} mi`, {
-              permanent: true,
-              direction: "right",
-              offset: [8, 0],
-              className: "dist-label firms-tip"
+              permanent: true, direction: "right", offset: [8, 0], className: "dist-label firms-tip"
             });
 
             marker.addTo(firmsLayer);
@@ -358,25 +582,18 @@
               `${f.distanceMiles} mi from sensor`,
               f.acresBurned      != null ? `${f.acresBurned.toLocaleString()} acres` : null,
               f.percentContained != null ? `${f.percentContained}% contained`        : null,
-              f.state  ? f.state : null,
+              f.state   ? f.state : null,
               f.updated ? `Updated: ${new Date(f.updated).toLocaleDateString()}` : null
             ].filter(Boolean).join("<br>");
 
             const marker = L.circleMarker([f.latitude, f.longitude], {
-              radius: 10,
-              fillColor: "#f87171",
-              color: "#fca5a5",
-              weight: 2,
-              fillOpacity: 0.9
+              radius: 10, fillColor: "#f87171", color: "#fca5a5", weight: 2, fillOpacity: 0.9
             });
 
             marker.bindPopup(popup);
 
             marker.bindTooltip(`${f.name} · ${f.distanceMiles} mi`, {
-              permanent: true,
-              direction: "right",
-              offset: [12, 0],
-              className: "dist-label calfire-tip"
+              permanent: true, direction: "right", offset: [12, 0], className: "dist-label calfire-tip"
             });
 
             marker.addTo(calfireLayer);
