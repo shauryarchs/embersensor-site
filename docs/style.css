@@ -25,6 +25,7 @@ html {
 
 body {
   margin: 0;
+  padding-top: 64px;
   font-family: 'Inter', sans-serif;
   line-height: 1.6;
   color: var(--text);
@@ -62,10 +63,6 @@ a {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Offset page content so it isn't hidden behind the fixed bar */
-body {
-  padding-top: 64px;
-}
 
 .topbar-inner {
   display: flex;
