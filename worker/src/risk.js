@@ -26,9 +26,10 @@ export function computeSensorScore(data) {
 }
 
 export function computeFireScore(nearbyFires, closestDistance, windThreat, calfireCount = 0) {
-    const firmsCount = nearbyFires.length;
+    // Weighted count: high confidence = 1.0, nominal = 0.5, low already filtered out
+    const firmsWeighted = nearbyFires.reduce((sum, f) => sum + (f._weight ?? 1.0), 0);
 
-    if (firmsCount === 0 && calfireCount === 0) return 0;
+    if (firmsWeighted === 0 && calfireCount === 0) return 0;
 
     let score = 0;
 
@@ -36,12 +37,12 @@ export function computeFireScore(nearbyFires, closestDistance, windThreat, calfi
     if (calfireCount >= 2) score += 3;
     else if (calfireCount === 1) score += 2;
 
-    // FIRMS satellite detections — lower weight (thermal anomalies, noisier)
-    if (firmsCount > 5) score += 2;
-    else if (firmsCount > 0) score += 1;
+    // FIRMS satellite detections — weighted count
+    if (firmsWeighted > 5) score += 2;
+    else if (firmsWeighted > 0) score += 1;
 
     // Closest FIRMS detection proximity bonus
-    if (firmsCount > 0 && closestDistance < 5) score += 1;
+    if (firmsWeighted > 0 && closestDistance < 5) score += 1;
 
     // Wind carrying fire toward home
     if (windThreat) score += 1;

@@ -23,11 +23,16 @@ export function findNearbyFires(fires, radius) {
 
             if (isNaN(lat) || isNaN(lon)) return null;
 
+            const conf = (f.confidence ?? "").toLowerCase();
+            if (conf === "low") return null;
+
+            const weight = conf === "high" ? 1.0 : 0.5; // nominal = 0.5
             const dist = distanceMiles(HOME_LAT, HOME_LON, lat, lon);
 
             return {
                 ...f,
-                _distanceMiles: dist
+                _distanceMiles: dist,
+                _weight: weight
             };
         })
         .filter(f => f && f._distanceMiles <= radius);
