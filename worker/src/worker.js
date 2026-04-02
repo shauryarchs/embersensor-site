@@ -17,6 +17,7 @@ import {
 } from "./risk.js";
 import { round2 } from "./utils.js";
 import { fetchYoutubeLiveStatus } from "./youtube.js";
+import { fetchCalfireData, findNearbyCalfireIncidents } from "./calfire.js";
 
 export default {
   async fetch(request, env) {
@@ -139,6 +140,35 @@ export default {
       }
     }
 
+    if (url.pathname === "/api/calfire-fires") {
+      try {
+        const forceRefresh = url.searchParams.get("refresh") === "1";
+        const calfireResult = await fetchCalfireData(env, forceRefresh);
+        const nearby = findNearbyCalfireIncidents(calfireResult.incidents, radius);
+
+        return new Response(JSON.stringify({
+          count: nearby.length,
+          fires: nearby,
+          source: calfireResult.source,
+          generatedAt: new Date().toISOString()
+        }), {
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Access-Control-Allow-Origin": "*"
+          }
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({
+          error: "api/calfire-fires failed",
+          message: String(err)
+        }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+    }
+
     if (url.pathname === "/api/status") {
       try {
         const raw = await env.FIRE_DATA.get("latest");
@@ -153,6 +183,17 @@ export default {
         const weatherResult = await fetchWeatherData(env, forceRefreshWeather);
         const weatherData = weatherResult.data;
 
+        const forceRefreshCalfire = url.searchParams.get("refreshCalfire") === "1";
+        let calfireNearby = [];
+        let calfireSource = "unavailable";
+        try {
+          const calfireResult = await fetchCalfireData(env, forceRefreshCalfire);
+          calfireNearby = findNearbyCalfireIncidents(calfireResult.incidents, radius);
+          calfireSource = calfireResult.source;
+        } catch (_) {
+          // CAL FIRE fetch failed — degrade gracefully, rest of status still works
+        }
+
         const mergedData = {
           ...sensorData,
           ...weatherData
@@ -166,7 +207,7 @@ export default {
         const windThreat = evaluateWindRisk(nearby, windTo);
 
         const sensorScore = computeSensorScore(mergedData);
-        const fireScore = computeFireScore(nearby, closestFireDistanceMiles, windThreat);
+        const fireScore = computeFireScore(nearby, closestFireDistanceMiles, windThreat, calfireNearby.length);
         const weatherScore = computeWeatherScore(mergedData);
         const windScore = computeWindScore(windThreat);
 
@@ -182,8 +223,12 @@ export default {
             ? null
             : round2(closestFireDistanceMiles),
           riskIndex,
+          calfireNearby: calfireNearby.length > 0,
+          calfireCount: calfireNearby.length,
+          calfireFires: calfireNearby,
           firmsSource: firmsResult.source,
           weatherSource: weatherResult.source,
+          calfireSource,
           generatedAt: new Date().toISOString()
         }), {
           headers: {

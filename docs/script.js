@@ -29,6 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <a class="${navClass("index.html")}" href="index.html">Home</a>
           <a class="${navClass("how-it-works.html")}" href="how-it-works.html">How It Works</a>
           <a class="${navClass("status.html")}" href="status.html">Live Fire Risk</a>
+          <a class="${navClass("map.html")}" href="map.html">Fire Map</a>
           <a class="${navClass("live.html")}" href="live.html">Live Camera</a>
           <a class="${navClass("screenshots.html")}" href="screenshots.html">Gallery</a>
         </nav>
