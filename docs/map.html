@@ -432,7 +432,6 @@
     const radiusLayer  = L.layerGroup().addTo(map);
 
     const overlays = { firms: firmsLayer, calfire: calfireLayer, radius: radiusLayer };
-    const overlayState = { firms: true, calfire: true, radius: true };
 
     // Home marker
     L.circleMarker([HOME_LAT, HOME_LON], {
@@ -511,14 +510,13 @@
         // Overlay toggles
         div.querySelectorAll(".toc-layer-row").forEach(row => {
           row.addEventListener("click", () => {
-            const key = row.dataset.layer;
-            overlayState[key] = !overlayState[key];
-            if (overlayState[key]) {
-              map.addLayer(overlays[key]);
-              row.classList.remove("off");
-            } else {
-              map.removeLayer(overlays[key]);
+            const layer = overlays[row.dataset.layer];
+            if (map.hasLayer(layer)) {
+              map.removeLayer(layer);
               row.classList.add("off");
+            } else {
+              map.addLayer(layer);
+              row.classList.remove("off");
             }
           });
         });
