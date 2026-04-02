@@ -304,15 +304,6 @@
   <div id="site-footer"></div>
   <script src="script.js"></script>
   <script>
-    function celsiusToFahrenheit(c) {
-      return (c * 9 / 5) + 32;
-    }
-
-    function formatTemp(val) {
-      if (val == null) return "—";
-      return celsiusToFahrenheit(val).toFixed(1) + " °F";
-    }
-
     function yesNo(val) {
       return val ? "Yes" : "No";
     }
@@ -352,13 +343,13 @@
           label.className = "risk-label " + riskLevel;
           document.getElementById("risk-index-text").textContent = "Risk Index: " + risk + " / 10";
 
-          // Temperature
-          const weatherTempF = d.weatherTemperature != null ? celsiusToFahrenheit(d.weatherTemperature) : null;
-          const sensorTempF  = d.sensorTemperature  != null ? celsiusToFahrenheit(d.sensorTemperature)  : null;
-          setVal("val-weather-temp", d.weatherTemperature != null ? weatherTempF.toFixed(1) + " °F" : "—");
-          setVal("val-sensor-temp",  d.sensorTemperature  != null ? sensorTempF.toFixed(1)  + " °F" : "—");
-          if (weatherTempF != null && sensorTempF != null) {
-            const delta = sensorTempF - weatherTempF;
+          // Temperature (API values are already in °F)
+          const wt = d.weatherTemperature;
+          const st = d.sensorTemperature;
+          setVal("val-weather-temp", wt != null ? wt.toFixed(1) + " °F" : "—");
+          setVal("val-sensor-temp",  st != null ? st.toFixed(1) + " °F" : "—");
+          if (wt != null && st != null) {
+            const delta = st - wt;
             setVal("val-temp-delta", (delta >= 0 ? "+" : "") + delta.toFixed(1) + " °F");
           } else {
             setVal("val-temp-delta", "—");
@@ -366,8 +357,8 @@
 
           // Sensors
           setVal("val-smoke", d.smoke != null ? d.smoke + " ppm" : "—");
-          const flameText = d.flame != null ? (d.flame > 0 ? "Flame" : "No Flame") : "—";
-          const flameClass = d.flame != null ? (d.flame > 0 ? "yes" : "no") : "";
+          const flameText = d.flame != null ? (d.flame === 0 ? "Flame" : "No Flame") : "—";
+          const flameClass = d.flame != null ? (d.flame === 0 ? "yes" : "no") : "";
           setVal("val-flame", flameText, flameClass);
 
           // Weather
