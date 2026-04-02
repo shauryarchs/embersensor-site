@@ -52,12 +52,19 @@ a {
 
 /* Top navigation */
 .topbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  width: 100%;
   z-index: 20;
   backdrop-filter: blur(10px);
   background: rgba(11, 15, 26, 0.75);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Offset page content so it isn't hidden behind the fixed bar */
+body {
+  padding-top: 64px;
 }
 
 .topbar-inner {
