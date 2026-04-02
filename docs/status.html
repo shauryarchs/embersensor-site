@@ -63,6 +63,20 @@
       color: var(--muted);
     }
 
+    .map-link {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--orange);
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+
+    .map-link:hover {
+      opacity: 0.8;
+    }
+
     .risk-card.high {
       background: rgba(220, 38, 38, 0.1);
       border-color: rgba(220, 38, 38, 0.28);
@@ -429,6 +443,7 @@
             <div class="risk-icon">🔥</div>
             <div id="risk-label" class="risk-label"></div>
             <div id="risk-index-text" class="risk-index-text"></div>
+            <a href="map.html" class="map-link">View Fire Map →</a>
           </div>
 
           <!-- Score Breakdown -->
