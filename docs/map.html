@@ -354,6 +354,17 @@
       color: #93c5fd;
     }
 
+    /* Wind arrow marker */
+    .wind-arrow-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .wind-arrow-icon svg {
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+    }
+
     /* Distance label tooltips */
     .leaflet-tooltip.dist-label {
       background: rgba(11, 15, 26, 0.88);
@@ -604,6 +615,11 @@
               <span class="toc-layer-name">25-mi Filter</span>
               <div class="toc-toggle"></div>
             </div>
+            <div class="toc-layer-row off" data-action="toggle-wind">
+              <div class="toc-dot" style="background:#a78bfa;border:1.5px solid #c4b5fd;"></div>
+              <span class="toc-layer-name">Wind Direction</span>
+              <div class="toc-toggle"></div>
+            </div>
           </div>
         `;
 
@@ -642,6 +658,16 @@
               if (map.hasLayer(calfireLayer)) { map.removeLayer(calfireLayer); row.classList.add("off"); }
               else { map.addLayer(calfireLayer); row.classList.remove("off"); }
 
+            } else if (action === "toggle-wind") {
+              if (map.hasLayer(windLayer)) {
+                map.removeLayer(windLayer);
+                row.classList.add("off");
+              } else {
+                loadWindData();
+                map.addLayer(windLayer);
+                row.classList.remove("off");
+              }
+
             } else if (action === "toggle-25mi") {
               filter25mi = !filter25mi;
               // Show/hide radius ring to match filter state
@@ -658,6 +684,40 @@
     });
 
     new TocControl({ position: "topright" }).addTo(map);
+
+    // --- Wind direction layer ---
+    const windLayer = L.layerGroup(); // off by default
+
+    function loadWindData() {
+      windLayer.clearLayers();
+      fetch("https://embersensor.com/api/status")
+        .then(r => r.json())
+        .then(d => {
+          if (d.windDirection == null) return;
+          const speed    = d.wind != null ? d.wind + " m/s" : "—";
+          const fromDeg  = d.windDirection;
+          const toDeg    = (fromDeg + 180) % 360; // direction wind is blowing toward
+
+          const icon = L.divIcon({
+            className: "wind-arrow-icon",
+            html: `<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"
+                        style="transform:rotate(${toDeg}deg)">
+                     <line x1="24" y1="40" x2="24" y2="8" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round"/>
+                     <polygon points="24,4 18,16 30,16" fill="#a78bfa"/>
+                   </svg>`,
+            iconSize: [48, 48],
+            iconAnchor: [24, 24]
+          });
+
+          L.marker([HOME_LAT, HOME_LON], { icon })
+            .bindTooltip(
+              `<strong>Wind</strong><br>From: ${fromDeg}°<br>Speed: ${speed}`,
+              { permanent: false, direction: "right", offset: [16, 0] }
+            )
+            .addTo(windLayer);
+        })
+        .catch(() => {});
+    }
 
     // --- Zoom to sensor button ---
     const ZoomHomeControl = L.Control.extend({
