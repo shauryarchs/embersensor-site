@@ -51,6 +51,8 @@ a {
   margin: 0 auto;
 }
 
+#site-header { display: none; }
+
 /* Top navigation */
 .topbar {
   position: fixed;

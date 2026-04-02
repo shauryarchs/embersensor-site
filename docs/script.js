@@ -43,9 +43,10 @@ document.addEventListener("DOMContentLoaded", () => {
     </footer>
   `;
 
-  const headerTarget = document.getElementById("site-header");
-  const footerTarget = document.getElementById("site-footer");
+  // Inject topbar directly into document.body as first child so no
+  // ancestor element can interfere with position: fixed
+  document.body.insertAdjacentHTML("afterbegin", header);
 
-  if (headerTarget) headerTarget.innerHTML = header;
+  const footerTarget = document.getElementById("site-footer");
   if (footerTarget) footerTarget.innerHTML = footer;
 });
