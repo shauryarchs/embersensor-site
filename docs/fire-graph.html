@@ -698,6 +698,8 @@
       .nl-input-wrap { flex-direction: column; }
     }
 
+    @page { margin: 15mm 10mm; }
+
     @media print {
       /* Override dark theme to print-friendly light colors */
       :root {
@@ -724,9 +726,8 @@
         font-size: 22px;
         font-weight: 700;
         color: #111 !important;
-        margin: 0 !important;
-        padding: 8px 0 10px !important;
-        page-break-after: avoid;
+        margin: 0 0 10px 0 !important;
+        padding: 0 !important;
       }
 
       .graph-page { padding: 0 !important; }
