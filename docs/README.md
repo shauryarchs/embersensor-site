@@ -9,6 +9,9 @@ Static website for EmberSensor. Hosted on GitHub Pages at `embersensor.com`.
 | `index.html` | `/` | Landing page — hero, feature cards, system diagrams, about section |
 | `how-it-works.html` | `/how-it-works.html` | 4-step explainer + embedded YouTube demo video |
 | `live.html` | `/live.html` | Password-gated live camera feed (4-digit code) |
+| `map.html` | `/map.html` | Live fire map — FIRMS satellite detections and NIFC incidents within 25 mi |
+| `status.html` | `/status.html` | Live fire risk dashboard — sensor data, weather, fire score breakdown |
+| `fire-graph.html` | `/fire-graph.html` | Wildfire Analysis — interactive graph of fire causation data from Neo4j |
 | `screenshots.html` | `/screenshots.html` | Photo gallery — awards and build photos |
 
 ## Shared assets
