@@ -698,12 +698,12 @@
           </div>
           <div class="filter-body" id="filter-body">
             <div class="filter-tabs">
-              <div class="filter-tab active" data-tab="filters">Filters</div>
-              <div class="filter-tab" data-tab="queries">Quick Queries</div>
+              <div class="filter-tab active" data-tab="queries">Quick Analysis</div>
+              <div class="filter-tab" data-tab="filters">Filters</div>
               <div class="filter-tab" data-tab="nlquery">Ask a Question</div>
             </div>
 
-            <div class="filter-tab-content active" id="tab-filters">
+            <div class="filter-tab-content" id="tab-filters">
             <div class="filter-row">
               <div class="filter-group">
                 <div class="filter-group-label">Year</div>
@@ -766,15 +766,19 @@
             </div>
             </div><!-- end tab-filters -->
 
-            <div class="filter-tab-content" id="tab-queries">
+            <div class="filter-tab-content active" id="tab-queries">
               <div class="qq-grid">
                 <div class="qq-item" data-qq="ember-spread">
                   <span class="qq-check">&#10003;</span>
                   <span class="qq-label">Fires where spread was caused by <strong>flying embers</strong></span>
                 </div>
-                <div class="qq-item" data-qq="santa-ana">
+                <div class="qq-item" data-qq="wind-fires">
                   <span class="qq-check">&#10003;</span>
-                  <span class="qq-label">Fires contributed to by <strong>Santa Ana Winds</strong></span>
+                  <span class="qq-label">Fires contributed by <strong>winds</strong></span>
+                </div>
+                <div class="qq-item" data-qq="flying-ember-factor">
+                  <span class="qq-check">&#10003;</span>
+                  <span class="qq-label">Fires where <strong>flying embers</strong> were a contributing factor</span>
                 </div>
                 <div class="qq-item" data-qq="drought-fires">
                   <span class="qq-check">&#10003;</span>
@@ -1657,18 +1661,23 @@
                 RETURN f AS Fire, type(r) AS rel, labels(s)[0] AS targetLabel, s AS target,
                        elementId(f) AS fId, elementId(s) AS nId`
       },
-      "santa-ana": {
-        label: "Fires contributed to by Santa Ana Winds",
-        query: `MATCH (f:Fire)-[r:CONTRIBUTED_BY]->(c:ContributingFactor)
-                WHERE c.name = 'Santa Ana Winds'
-                WITH f, collect({node: c, rel: type(r)}) AS factors
-                OPTIONAL MATCH (f)-[r2]->(n) WHERE NOT n:ContributingFactor OR n.name <> 'Santa Ana Winds'
-                RETURN f AS Fire, type(r2) AS rel, labels(n)[0] AS targetLabel, n AS target,
-                       elementId(f) AS fId, elementId(n) AS nId
-                UNION
-                MATCH (f:Fire)-[r:CONTRIBUTED_BY]->(c:ContributingFactor {name: 'Santa Ana Winds'})
-                RETURN f AS Fire, type(r) AS rel, labels(c)[0] AS targetLabel, c AS target,
-                       elementId(f) AS fId, elementId(c) AS nId`
+      "wind-fires": {
+        label: "Fires contributed by winds",
+        query: `MATCH (f:Fire)-[:CONTRIBUTED_BY]->(c:ContributingFactor)
+                WHERE c.name CONTAINS 'Wind' OR c.name CONTAINS 'wind'
+                WITH f
+                MATCH (f)-[r]->(n)
+                RETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target,
+                       elementId(f) AS fId, elementId(n) AS nId`
+      },
+      "flying-ember-factor": {
+        label: "Fires where flying embers were a contributing factor",
+        query: `MATCH (f:Fire)-[:CONTRIBUTED_BY]->(c:ContributingFactor)
+                WHERE c.name CONTAINS 'Ember' OR c.name CONTAINS 'ember'
+                WITH f
+                MATCH (f)-[r]->(n)
+                RETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target,
+                       elementId(f) AS fId, elementId(n) AS nId`
       },
       "drought-fires": {
         label: "Fires linked to drought",
