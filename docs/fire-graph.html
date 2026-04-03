@@ -719,15 +719,18 @@
       .graph-tooltip, .print-btn,
       nav, header, .nav, .site-header { display: none !important; }
 
-      .print-title {
+      #print-report-title.print-title {
         display: block !important;
+        visibility: visible !important;
         text-align: center;
         font-family: 'Inter', sans-serif;
         font-size: 22px;
         font-weight: 700;
         color: #111 !important;
-        margin: 0 0 10px 0 !important;
+        margin: 0 0 12px 0 !important;
         padding: 0 !important;
+        height: auto !important;
+        overflow: visible !important;
       }
 
       .graph-page { padding: 0 !important; }
@@ -795,7 +798,7 @@
       </div>
 
       <div class="graph-wrap">
-        <div class="print-title">Wildfire Analysis Report</div>
+        <h1 id="print-report-title" class="print-title">Wildfire Analysis Report</h1>
         <div class="filter-panel" id="filter-panel">
           <div class="filter-panel-header" id="filter-toggle">
             <span class="filter-panel-title">Filters</span>
