@@ -768,7 +768,7 @@
 
             <div class="filter-tab-content active" id="tab-queries">
               <div class="qq-grid">
-                <div class="qq-item" data-qq="ember-spread">
+                <div class="qq-item active" data-qq="ember-spread">
                   <span class="qq-check">&#10003;</span>
                   <span class="qq-label">Fires where spread was caused by <strong>flying embers</strong></span>
                 </div>
@@ -1202,8 +1202,9 @@
       g = svg.append("g");
       svg.call(d3.zoom().scaleExtent([0.3, 4]).on("zoom", (e) => g.attr("transform", e.transform)));
 
-      // Cluster labels
+      // Cluster labels (skip Fire — redundant since fire nodes have their own labels)
       typeOrder.forEach(t => {
+        if (t === "Fire") return;
         const c = clusterCenters[t];
         g.append("text").attr("x", c.x).attr("y", c.y - Math.min(width, height) * 0.16)
           .attr("text-anchor", "middle").attr("fill", COLORS[t])
@@ -1602,7 +1603,14 @@
 
         cachedGraphData = { nodes: Array.from(nodesMap.values()), links };
         populateFilters();
-        applyFilters();
+
+        // If a quick query is pre-selected, run it instead of default filters
+        const preselected = document.querySelector(".qq-item.active");
+        if (preselected) {
+          runQuickQuery(preselected.dataset.qq);
+        } else {
+          applyFilters();
+        }
 
         const dt = new Date();
         setStatus(`${cachedGraphData.nodes.length} nodes, ${cachedGraphData.links.length} connections — updated ${dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`);
