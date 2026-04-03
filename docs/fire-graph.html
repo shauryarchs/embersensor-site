@@ -557,9 +557,13 @@
         .on("mouseout", () => { tooltip.style.opacity = "0"; });
     }
 
+    // Truncate long names for labels
+    function truncate(str, max) {
+      return str.length > max ? str.slice(0, max - 1) + "…" : str;
+    }
+
     // --- Force layout ---
     function renderForce(graphData) {
-      // Deep copy nodes/links so force simulation doesn't mutate cached data
       const nodes = graphData.nodes.map(n => ({ ...n }));
       const links = graphData.links.map(l => ({
         source: typeof l.source === "object" ? l.source.id : l.source,
@@ -576,10 +580,10 @@
       svg.call(d3.zoom().scaleExtent([0.3, 4]).on("zoom", (e) => g.attr("transform", e.transform)));
 
       simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(120))
-        .force("charge", d3.forceManyBody().strength(-300))
+        .force("link", d3.forceLink(links).id(d => d.id).distance(160))
+        .force("charge", d3.forceManyBody().strength(-500))
         .force("center", d3.forceCenter(width / 2, height / 2))
-        .force("collide", d3.forceCollide(35));
+        .force("collide", d3.forceCollide(50));
 
       const link = g.append("g").selectAll("line").data(links).join("line")
         .attr("stroke", "rgba(255,255,255,0.15)").attr("stroke-width", 1.5);
@@ -602,8 +606,8 @@
       attachTooltipEvents(node);
 
       const label = g.append("g").selectAll("text").data(nodes).join("text")
-        .text(d => d.name).attr("fill", "white")
-        .attr("font-size", d => d.type === "Fire" ? "12px" : "10px")
+        .text(d => truncate(d.name, 22)).attr("fill", "white")
+        .attr("font-size", d => d.type === "Fire" ? "11px" : "9px")
         .attr("font-weight", d => d.type === "Fire" ? "700" : "400")
         .attr("text-anchor", "middle")
         .attr("dy", d => (RADIUS[d.type] || 10) + 14)
@@ -618,7 +622,7 @@
       });
     }
 
-    // --- Tree layout (top-down) ---
+    // --- Tree layout (horizontal left-to-right) ---
     function renderTree(graphData) {
       const hierarchy = buildHierarchy(graphData);
       const width = container.clientWidth;
@@ -627,38 +631,55 @@
       d3.select("#fire-graph svg").remove();
       svg = d3.select("#fire-graph").append("svg").attr("width", width).attr("height", height);
       g = svg.append("g");
-      svg.call(d3.zoom().scaleExtent([0.3, 4]).on("zoom", (e) => g.attr("transform", e.transform)));
+      svg.call(d3.zoom().scaleExtent([0.2, 5]).on("zoom", (e) => g.attr("transform", e.transform)));
 
       const root = d3.hierarchy(hierarchy);
-      const treeLayout = d3.tree().size([width - 120, height - 120]);
+      const leafCount = root.leaves().length;
+      const treeHeight = Math.max(height - 80, leafCount * 28);
+      const treeWidth = Math.max(width - 280, root.height * 200);
+
+      // Horizontal tree: size is [height, width], then we swap x/y
+      const treeLayout = d3.tree().size([treeHeight, treeWidth]).separation((a, b) => a.parent === b.parent ? 1 : 1.4);
       treeLayout(root);
 
-      // Center the tree
-      g.attr("transform", `translate(60, 60)`);
+      // Offset so root isn't clipped; auto-fit if tree is larger than viewport
+      const initialScale = Math.min(1, (height - 40) / treeHeight, (width - 40) / (treeWidth + 200));
+      const offsetX = 40;
+      const offsetY = (height - treeHeight * initialScale) / 2;
+      g.attr("transform", `translate(${offsetX}, ${offsetY}) scale(${initialScale})`);
 
-      // Links as curved paths
+      // Links — horizontal curved paths
       g.append("g").selectAll("path").data(root.links()).join("path")
-        .attr("d", d3.linkVertical().x(d => d.x).y(d => d.y))
+        .attr("d", d => {
+          return `M${d.source.y},${d.source.x} C${(d.source.y + d.target.y) / 2},${d.source.x} ${(d.source.y + d.target.y) / 2},${d.target.x} ${d.target.y},${d.target.x}`;
+        })
         .attr("fill", "none").attr("stroke", "rgba(255,255,255,0.15)").attr("stroke-width", 1.5);
 
-      // Nodes
+      // Nodes — positioned with swapped x/y for horizontal layout
       const node = g.append("g").selectAll("circle").data(root.descendants()).join("circle")
-        .attr("cx", d => d.x).attr("cy", d => d.y)
-        .attr("r", d => d.data.type === "Root" ? 14 : d.data.type === "Group" ? 6 : (RADIUS[d.data.type] || 10))
+        .attr("cx", d => d.y).attr("cy", d => d.x)
+        .attr("r", d => d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10))
         .attr("fill", d => d.data.type === "Root" ? "#fff" : d.data.type === "Group" ? "rgba(183,192,209,0.3)" : (COLORS[d.data.type] || "#888"))
         .attr("stroke", d => d.data.type === "Root" ? "#aaa" : d.data.type === "Group" ? "transparent" : d3.color(COLORS[d.data.type] || "#888").brighter(0.6))
         .attr("stroke-width", 2);
 
       attachTooltipEvents(node.filter(d => d.data.type !== "Root" && d.data.type !== "Group"));
 
-      // Labels
+      // Labels — to the right of each node (or left for root)
       g.append("g").selectAll("text").data(root.descendants()).join("text")
-        .attr("x", d => d.x).attr("y", d => d.y)
-        .attr("dy", d => (d.data.type === "Root" ? 14 : d.data.type === "Group" ? 6 : (RADIUS[d.data.type] || 10)) + 14)
-        .text(d => d.data.name).attr("fill", d => d.data.type === "Group" ? "rgba(183,192,209,0.5)" : "white")
-        .attr("font-size", d => d.data.type === "Fire" ? "12px" : d.data.type === "Group" ? "9px" : "10px")
+        .attr("x", d => {
+          const r = d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10);
+          // Leaf nodes: label to the right; internal nodes: label to the left if they have children
+          return d.children ? d.y - r - 6 : d.y + r + 6;
+        })
+        .attr("y", d => d.x)
+        .attr("dy", "0.35em")
+        .attr("text-anchor", d => d.children ? "end" : "start")
+        .text(d => truncate(d.data.name, 30))
+        .attr("fill", d => d.data.type === "Group" ? "rgba(183,192,209,0.5)" : "white")
+        .attr("font-size", d => d.data.type === "Fire" ? "11px" : d.data.type === "Group" ? "9px" : "10px")
         .attr("font-weight", d => d.data.type === "Fire" ? "700" : "400")
-        .attr("text-anchor", "middle").attr("pointer-events", "none");
+        .attr("pointer-events", "none");
     }
 
     // --- Radial layout ---
@@ -666,12 +687,13 @@
       const hierarchy = buildHierarchy(graphData);
       const width = container.clientWidth;
       const height = container.clientHeight;
-      const radius = Math.min(width, height) / 2 - 80;
+      const leafCount = d3.hierarchy(hierarchy).leaves().length;
+      const radius = Math.max(Math.min(width, height) / 2 - 80, leafCount * 10);
 
       d3.select("#fire-graph svg").remove();
       svg = d3.select("#fire-graph").append("svg").attr("width", width).attr("height", height);
       g = svg.append("g").attr("transform", `translate(${width / 2}, ${height / 2})`);
-      svg.call(d3.zoom().scaleExtent([0.3, 4]).on("zoom", (e) => g.attr("transform", e.transform)));
+      svg.call(d3.zoom().scaleExtent([0.2, 5]).on("zoom", (e) => g.attr("transform", e.transform)));
 
       const root = d3.hierarchy(hierarchy);
       const treeLayout = d3.tree().size([2 * Math.PI, radius]).separation((a, b) => (a.parent === b.parent ? 1 : 2) / a.depth);
@@ -685,7 +707,7 @@
       // Nodes
       const node = g.append("g").selectAll("circle").data(root.descendants()).join("circle")
         .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y}, 0)`)
-        .attr("r", d => d.data.type === "Root" ? 14 : d.data.type === "Group" ? 6 : (RADIUS[d.data.type] || 10))
+        .attr("r", d => d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10))
         .attr("fill", d => d.data.type === "Root" ? "#fff" : d.data.type === "Group" ? "rgba(183,192,209,0.3)" : (COLORS[d.data.type] || "#888"))
         .attr("stroke", d => d.data.type === "Root" ? "#aaa" : d.data.type === "Group" ? "transparent" : d3.color(COLORS[d.data.type] || "#888").brighter(0.6))
         .attr("stroke-width", 2);
@@ -703,13 +725,13 @@
         .attr("x", d => {
           if (d.depth === 0) return 0;
           const flip = d.x > Math.PI;
-          const r = d.data.type === "Group" ? 6 : (RADIUS[d.data.type] || 10);
+          const r = d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10);
           return flip ? -(r + 6) : (r + 6);
         })
         .attr("text-anchor", d => d.depth === 0 ? "middle" : (d.x > Math.PI ? "end" : "start"))
-        .text(d => d.data.name)
+        .text(d => truncate(d.data.name, 26))
         .attr("fill", d => d.data.type === "Group" ? "rgba(183,192,209,0.5)" : "white")
-        .attr("font-size", d => d.data.type === "Fire" ? "12px" : d.data.type === "Group" ? "9px" : "10px")
+        .attr("font-size", d => d.data.type === "Fire" ? "11px" : d.data.type === "Group" ? "9px" : "10px")
         .attr("font-weight", d => d.data.type === "Fire" ? "700" : "400")
         .attr("pointer-events", "none");
     }
@@ -752,11 +774,11 @@
       });
 
       simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(100).strength(0.3))
-        .force("charge", d3.forceManyBody().strength(-150))
+        .force("link", d3.forceLink(links).id(d => d.id).distance(120).strength(0.3))
+        .force("charge", d3.forceManyBody().strength(-250))
         .force("cluster", d3.forceX(d => clusterCenters[d.type]?.x || width / 2).strength(0.4))
         .force("clusterY", d3.forceY(d => clusterCenters[d.type]?.y || height / 2).strength(0.4))
-        .force("collide", d3.forceCollide(30));
+        .force("collide", d3.forceCollide(45));
 
       const link = g.append("g").selectAll("line").data(links).join("line")
         .attr("stroke", "rgba(255,255,255,0.1)").attr("stroke-width", 1).attr("stroke-dasharray", "4 3");
@@ -775,8 +797,8 @@
       attachTooltipEvents(node);
 
       const label = g.append("g").selectAll("text").data(nodes).join("text")
-        .text(d => d.name).attr("fill", "white")
-        .attr("font-size", d => d.type === "Fire" ? "12px" : "10px")
+        .text(d => truncate(d.name, 22)).attr("fill", "white")
+        .attr("font-size", d => d.type === "Fire" ? "11px" : "9px")
         .attr("font-weight", d => d.type === "Fire" ? "700" : "400")
         .attr("text-anchor", "middle").attr("dy", d => (RADIUS[d.type] || 10) + 14)
         .attr("pointer-events", "none");
