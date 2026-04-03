@@ -38,3 +38,17 @@ Adding a new page requires updating the nav in `script.js`.
 ## Images
 
 All images live in `docs/images/`. Referenced directly in HTML with relative paths.
+
+### Website Screenshots
+
+![Homepage — hero section with project description, feature cards, and science fair photo](images/website/homepage.png)
+
+![Live Fire Risk — dashboard showing LOW RISK status with sensor readings, weather data, FIRMS detections, and CAL FIRE incidents](images/website/fire-risk.png)
+
+![Score Breakdown — Sensor Score detail panel with individual point contributions and explanation](images/website/fire-risk-breakdown.png)
+
+![Fire Map — Leaflet map showing nearby FIRMS satellite detections and NIFC incidents with layer controls](images/website/fire-map.png)
+
+![Wildfire Analysis — interactive tree graph of California wildfire causation data from Neo4j](images/website/wildfire-analysis.png)
+
+![Live Camera — password-gated live camera feed with access granted view](images/website/live-camera.png)

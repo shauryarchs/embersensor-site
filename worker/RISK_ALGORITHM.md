@@ -2,6 +2,10 @@
 
 The Fire Risk Index is a composite score from **1 to 10** that quantifies how dangerous current fire conditions are at the monitored location. It combines four independent sub-scores computed from real-time data sources.
 
+![Live Fire Risk page showing LOW RISK status with sensor readings, weather data, FIRMS detections, and CAL FIRE incidents](../docs/images/website/fire-risk.png)
+
+![Score Breakdown panel showing Sensor Score 2/4 with individual point contributions and detailed explanation](../docs/images/website/fire-risk-breakdown.png)
+
 ## High-Level Overview
 
 ```
