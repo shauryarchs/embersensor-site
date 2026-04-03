@@ -805,24 +805,40 @@
             </div><!-- end tab-queries -->
 
             <div class="filter-tab-content" id="tab-nlquery">
-              <p class="nl-hint">Ask a question about California wildfires in plain English. Powered by Llama 3.2 via Cloudflare Workers AI.</p>
-              <div class="nl-input-wrap">
-                <input type="text" class="nl-input" id="nl-question"
-                       placeholder="e.g. Which fires were caused by power lines?"
-                       maxlength="300">
-                <button class="nl-btn" id="nl-submit">Ask</button>
+              <!-- Code gate -->
+              <div id="nl-code-gate">
+                <p class="nl-hint">Enter the 4-digit access code to unlock AI-powered questions.</p>
+                <div class="nl-input-wrap">
+                  <input type="password" class="nl-input" id="nl-code-input"
+                         placeholder="Enter 4-digit code" maxlength="4"
+                         inputmode="numeric" pattern="[0-9]*"
+                         style="max-width:180px; text-align:center; letter-spacing:0.3em;">
+                  <button class="nl-btn" id="nl-code-submit">Unlock</button>
+                </div>
+                <div class="nl-status" id="nl-code-status"></div>
               </div>
-              <div class="nl-cypher-preview" id="nl-cypher" style="display:none;">
-                <span class="nl-cypher-label">Generated Cypher:</span>
-                <code id="nl-cypher-text"></code>
-              </div>
-              <div class="nl-status" id="nl-status"></div>
-              <div class="nl-examples">
-                <span class="nl-examples-label">Try:</span>
-                <span class="nl-example-chip" data-q="What caused the Camp Fire?">What caused the Camp Fire?</span>
-                <span class="nl-example-chip" data-q="Fires in Los Angeles county">Fires in Los Angeles county</span>
-                <span class="nl-example-chip" data-q="Which fires spread by spot fires?">Which fires spread by spot fires?</span>
-                <span class="nl-example-chip" data-q="Fires linked to power lines">Fires linked to power lines</span>
+
+              <!-- Query UI (hidden until code is verified) -->
+              <div id="nl-query-area" style="display:none;">
+                <p class="nl-hint">Ask a question about California wildfires in plain English. Powered by Llama 3.2 via Cloudflare Workers AI.</p>
+                <div class="nl-input-wrap">
+                  <input type="text" class="nl-input" id="nl-question"
+                         placeholder="e.g. Which fires were caused by power lines?"
+                         maxlength="300">
+                  <button class="nl-btn" id="nl-submit">Ask</button>
+                </div>
+                <div class="nl-cypher-preview" id="nl-cypher" style="display:none;">
+                  <span class="nl-cypher-label">Generated Cypher:</span>
+                  <code id="nl-cypher-text"></code>
+                </div>
+                <div class="nl-status" id="nl-status"></div>
+                <div class="nl-examples">
+                  <span class="nl-examples-label">Try:</span>
+                  <span class="nl-example-chip" data-q="What caused the Camp Fire?">What caused the Camp Fire?</span>
+                  <span class="nl-example-chip" data-q="Fires in Los Angeles county">Fires in Los Angeles county</span>
+                  <span class="nl-example-chip" data-q="Which fires spread by spot fires?">Which fires spread by spot fires?</span>
+                  <span class="nl-example-chip" data-q="Fires linked to power lines">Fires linked to power lines</span>
+                </div>
               </div>
             </div><!-- end tab-nlquery -->
 
@@ -1774,6 +1790,58 @@
     });
 
     // --- Ask a Question (NL to Cypher) ---
+    let nlAccessCode = null; // stored after successful unlock
+
+    // Code gate
+    async function unlockNlQuery() {
+      const code = document.getElementById("nl-code-input").value.trim();
+      const statusEl = document.getElementById("nl-code-status");
+      const btn = document.getElementById("nl-code-submit");
+
+      if (!code || code.length !== 4) {
+        statusEl.className = "nl-status error";
+        statusEl.textContent = "Enter a 4-digit code.";
+        return;
+      }
+
+      btn.disabled = true;
+      statusEl.className = "nl-status";
+      statusEl.textContent = "Verifying...";
+
+      try {
+        // Validate code by making a test request
+        const resp = await fetch("/api/nl2cypher", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code, question: "test" })
+        });
+
+        if (resp.status === 401) {
+          statusEl.className = "nl-status error";
+          statusEl.textContent = "Invalid code. Try again.";
+          btn.disabled = false;
+          return;
+        }
+
+        // Code accepted — unlock the query UI
+        nlAccessCode = code;
+        document.getElementById("nl-code-gate").style.display = "none";
+        document.getElementById("nl-query-area").style.display = "block";
+        document.getElementById("nl-question").focus();
+      } catch (err) {
+        statusEl.className = "nl-status error";
+        statusEl.textContent = "Error verifying code.";
+      }
+
+      btn.disabled = false;
+    }
+
+    document.getElementById("nl-code-submit").addEventListener("click", unlockNlQuery);
+    document.getElementById("nl-code-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") unlockNlQuery();
+    });
+
+    // NL query handler
     async function runNlQuery(question) {
       const statusEl = document.getElementById("nl-status");
       const cypherEl = document.getElementById("nl-cypher");
@@ -1789,10 +1857,21 @@
         const resp = await fetch("/api/nl2cypher", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question })
+          body: JSON.stringify({ code: nlAccessCode, question })
         });
 
         const data = await resp.json();
+
+        if (data.error === "Invalid access code") {
+          // Code expired or invalid — re-show gate
+          nlAccessCode = null;
+          document.getElementById("nl-code-gate").style.display = "block";
+          document.getElementById("nl-query-area").style.display = "none";
+          document.getElementById("nl-code-status").className = "nl-status error";
+          document.getElementById("nl-code-status").textContent = "Session expired. Re-enter code.";
+          btn.disabled = false;
+          return;
+        }
 
         if (data.error) {
           statusEl.className = "nl-status error";

@@ -77,6 +77,15 @@ export async function handleNl2Cypher(request, env) {
     });
   }
 
+  // Validate access code (same code as camera access)
+  const accessCode = env.CAMERA_ACCESS_CODE;
+  if (!accessCode || body.code !== accessCode) {
+    return new Response(JSON.stringify({ error: "Invalid access code" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const question = body.question;
   if (!question || typeof question !== "string" || question.trim().length === 0) {
     return new Response(JSON.stringify({ error: "Missing or empty 'question' field" }), {
