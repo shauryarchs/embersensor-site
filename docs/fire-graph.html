@@ -261,56 +261,119 @@
       color: var(--text);
     }
 
-    .filter-checkboxes {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
+    .fire-multiselect {
+      position: relative;
     }
 
-    .filter-chip {
+    .fire-multiselect-btn {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 5px 12px;
-      border-radius: 999px;
+      justify-content: space-between;
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 10px;
       border: 1px solid rgba(255, 255, 255, 0.12);
       background: rgba(255, 255, 255, 0.06);
-      color: var(--muted);
-      font-size: 12px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
       cursor: pointer;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
-      user-select: none;
     }
 
-    .filter-chip:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
+    .fire-multiselect-arrow {
+      font-size: 10px;
+      color: var(--muted);
+      transition: transform 0.2s;
     }
 
-    .filter-chip.active {
-      background: rgba(234, 88, 12, 0.18);
-      border-color: rgba(234, 88, 12, 0.4);
+    .fire-multiselect.open .fire-multiselect-arrow {
+      transform: rotate(180deg);
+    }
+
+    .fire-multiselect-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      min-width: 260px;
+      max-height: 280px;
+      overflow-y: auto;
+      background: rgba(18, 24, 39, 0.97);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+      z-index: 20;
+      padding: 6px 0;
+    }
+
+    .fire-multiselect.open .fire-multiselect-dropdown {
+      display: block;
+    }
+
+    .fire-multiselect-actions {
+      display: flex;
+      gap: 12px;
+      padding: 6px 14px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .fire-multiselect-actions span {
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+
+    .fire-multiselect-actions span:first-child {
       color: #fb923c;
     }
 
-    .filter-chip input[type="checkbox"] { display: none; }
+    .fire-multiselect-actions span:last-child {
+      color: var(--muted);
+    }
 
-    .filter-chip .chip-check {
-      width: 14px;
-      height: 14px;
+    .fire-multiselect-actions span:hover {
+      color: #fff;
+    }
+
+    .fire-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 14px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--muted);
+      transition: background 0.12s;
+      user-select: none;
+    }
+
+    .fire-dropdown-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .fire-dropdown-item.active {
+      color: var(--text);
+    }
+
+    .fire-dropdown-check {
+      width: 16px;
+      height: 16px;
       border-radius: 4px;
-      border: 1.5px solid rgba(255, 255, 255, 0.25);
+      border: 1.5px solid rgba(255, 255, 255, 0.2);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 10px;
+      font-size: 11px;
       flex-shrink: 0;
-      transition: background 0.15s, border-color 0.15s;
+      color: transparent;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
 
-    .filter-chip.active .chip-check {
+    .fire-dropdown-item.active .fire-dropdown-check {
       background: rgba(234, 88, 12, 0.6);
       border-color: #ea580c;
+      color: #fff;
     }
 
     .filter-actions {
@@ -448,14 +511,21 @@
               </div>
             </div>
             <div class="filter-row" style="margin-top: 14px;">
-              <div class="filter-group" style="flex: 2;">
-                <div class="filter-group-label" style="display:flex;align-items:center;gap:10px;">
-                  Fires
-                  <span id="filter-select-all" style="font-size:11px;font-weight:600;text-transform:none;letter-spacing:0;color:#fb923c;cursor:pointer;">Select All</span>
-                  <span style="color:rgba(183,192,209,0.3);">|</span>
-                  <span id="filter-clear-all" style="font-size:11px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--muted);cursor:pointer;">Clear All</span>
+              <div class="filter-group">
+                <div class="filter-group-label">Fires</div>
+                <div class="fire-multiselect" id="fire-multiselect">
+                  <div class="fire-multiselect-btn" id="fire-multiselect-btn">
+                    <span id="fire-multiselect-label">All fires selected</span>
+                    <span class="fire-multiselect-arrow">&#9660;</span>
+                  </div>
+                  <div class="fire-multiselect-dropdown" id="fire-multiselect-dropdown">
+                    <div class="fire-multiselect-actions">
+                      <span id="filter-select-all">Select All</span>
+                      <span id="filter-clear-all">Clear All</span>
+                    </div>
+                    <div id="filter-fires"></div>
+                  </div>
                 </div>
-                <div class="filter-checkboxes" id="filter-fires"></div>
               </div>
               <div class="filter-actions">
                 <button class="filter-reset-btn" id="filter-reset">Reset All</button>
@@ -908,30 +978,45 @@
         spreadSelect.innerHTML += `<option value="${m}">${m}</option>`;
       });
 
-      // Fire checkboxes
+      // Fire dropdown items
       const fireContainer = document.getElementById("filter-fires");
       fireContainer.innerHTML = "";
       fires.sort((a, b) => (b.props.year || 0) - (a.props.year || 0)).forEach(f => {
-        const chip = document.createElement("label");
-        chip.className = "filter-chip active";
-        chip.dataset.fireId = f.id;
-        chip.innerHTML = `<span class="chip-check">&#10003;</span><input type="checkbox" checked>${f.name}`;
-        chip.addEventListener("click", (e) => {
-          e.preventDefault();
-          const cb = chip.querySelector("input");
-          cb.checked = !cb.checked;
-          chip.classList.toggle("active", cb.checked);
+        const item = document.createElement("div");
+        item.className = "fire-dropdown-item active";
+        item.dataset.fireId = f.id;
+        const yr = f.props.year ? ` (${f.props.year})` : "";
+        item.innerHTML = `<span class="fire-dropdown-check">&#10003;</span>${f.name}${yr}`;
+        item.addEventListener("click", () => {
+          item.classList.toggle("active");
+          updateFireLabel();
           applyFilters();
         });
-        fireContainer.appendChild(chip);
+        fireContainer.appendChild(item);
       });
+      updateFireLabel();
+    }
+
+    function updateFireLabel() {
+      const items = document.querySelectorAll("#filter-fires .fire-dropdown-item");
+      const active = document.querySelectorAll("#filter-fires .fire-dropdown-item.active");
+      const label = document.getElementById("fire-multiselect-label");
+      if (active.length === items.length) {
+        label.textContent = "All fires selected";
+      } else if (active.length === 0) {
+        label.textContent = "No fires selected";
+      } else if (active.length <= 2) {
+        label.textContent = [...active].map(el => el.dataset.fireId ? el.textContent.replace("✓", "").trim() : "").join(", ");
+      } else {
+        label.textContent = `${active.length} of ${items.length} fires selected`;
+      }
     }
 
     function getActiveFireIds() {
-      const chips = document.querySelectorAll("#filter-fires .filter-chip");
+      const items = document.querySelectorAll("#filter-fires .fire-dropdown-item");
       const ids = new Set();
-      chips.forEach(chip => {
-        if (chip.classList.contains("active")) ids.add(chip.dataset.fireId);
+      items.forEach(item => {
+        if (item.classList.contains("active")) ids.add(item.dataset.fireId);
       });
       return ids;
     }
@@ -1091,19 +1176,26 @@
     document.getElementById("filter-spread").addEventListener("change", applyFilters);
 
     document.getElementById("filter-select-all").addEventListener("click", () => {
-      document.querySelectorAll("#filter-fires .filter-chip").forEach(chip => {
-        chip.classList.add("active");
-        chip.querySelector("input").checked = true;
-      });
+      document.querySelectorAll("#filter-fires .fire-dropdown-item").forEach(item => item.classList.add("active"));
+      updateFireLabel();
       applyFilters();
     });
 
     document.getElementById("filter-clear-all").addEventListener("click", () => {
-      document.querySelectorAll("#filter-fires .filter-chip").forEach(chip => {
-        chip.classList.remove("active");
-        chip.querySelector("input").checked = false;
-      });
+      document.querySelectorAll("#filter-fires .fire-dropdown-item").forEach(item => item.classList.remove("active"));
+      updateFireLabel();
       applyFilters();
+    });
+
+    // Toggle dropdown open/close
+    document.getElementById("fire-multiselect-btn").addEventListener("click", () => {
+      document.getElementById("fire-multiselect").classList.toggle("open");
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener("click", (e) => {
+      const ms = document.getElementById("fire-multiselect");
+      if (!ms.contains(e.target)) ms.classList.remove("open");
     });
 
     document.getElementById("filter-reset").addEventListener("click", () => {
@@ -1112,10 +1204,8 @@
       document.getElementById("filter-acres").value = "0";
       document.getElementById("filter-factor").value = "all";
       document.getElementById("filter-spread").value = "all";
-      document.querySelectorAll("#filter-fires .filter-chip").forEach(chip => {
-        chip.classList.add("active");
-        chip.querySelector("input").checked = true;
-      });
+      document.querySelectorAll("#filter-fires .fire-dropdown-item").forEach(item => item.classList.add("active"));
+      updateFireLabel();
       applyFilters();
     });
 
