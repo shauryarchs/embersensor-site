@@ -776,10 +776,6 @@
                   <span class="qq-check">&#10003;</span>
                   <span class="qq-label">Fires contributed by <strong>winds</strong></span>
                 </div>
-                <div class="qq-item" data-qq="flying-ember-factor">
-                  <span class="qq-check">&#10003;</span>
-                  <span class="qq-label">Fires where <strong>flying embers</strong> were a contributing factor</span>
-                </div>
                 <div class="qq-item" data-qq="drought-fires">
                   <span class="qq-check">&#10003;</span>
                   <span class="qq-label">Fires linked to <strong>drought</strong> conditions</span>
@@ -1650,14 +1646,7 @@
     const QQ_CYPHER = {
       "ember-spread": {
         label: "Fires spread by flying embers",
-        query: `MATCH (f:Fire)-[r:HAS_DOCUMENTED_SPREAD_MECHANISM]->(s:SpreadMechanism)
-                WHERE s.name = 'Flying Ember'
-                WITH f, collect({node: s, rel: type(r)}) AS mechs
-                OPTIONAL MATCH (f)-[r2]->(n) WHERE NOT n:SpreadMechanism OR n.name <> 'Flying Ember'
-                RETURN f AS Fire, type(r2) AS rel, labels(n)[0] AS targetLabel, n AS target,
-                       elementId(f) AS fId, elementId(n) AS nId
-                UNION
-                MATCH (f:Fire)-[r:HAS_DOCUMENTED_SPREAD_MECHANISM]->(s:SpreadMechanism {name: 'Flying Ember'})
+        query: `MATCH (f:Fire)-[r:HAS_DOCUMENTED_SPREAD_MECHANISM]->(s:SpreadMechanism {name: 'Flying Ember'})
                 RETURN f AS Fire, type(r) AS rel, labels(s)[0] AS targetLabel, s AS target,
                        elementId(f) AS fId, elementId(s) AS nId`
       },
@@ -1670,15 +1659,7 @@
                 RETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target,
                        elementId(f) AS fId, elementId(n) AS nId`
       },
-      "flying-ember-factor": {
-        label: "Fires where flying embers were a contributing factor",
-        query: `MATCH (f:Fire)-[:CONTRIBUTED_BY]->(c:ContributingFactor)
-                WHERE c.name CONTAINS 'Ember' OR c.name CONTAINS 'ember'
-                WITH f
-                MATCH (f)-[r]->(n)
-                RETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target,
-                       elementId(f) AS fId, elementId(n) AS nId`
-      },
+
       "drought-fires": {
         label: "Fires linked to drought",
         query: `MATCH (f:Fire)-[r:CONTRIBUTED_BY]->(c:ContributingFactor)
