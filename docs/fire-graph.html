@@ -642,9 +642,12 @@
       const treeLayout = d3.tree().size([treeHeight, treeWidth]).separation((a, b) => a.parent === b.parent ? 1 : 1.4);
       treeLayout(root);
 
-      // Offset so root isn't clipped; auto-fit if tree is larger than viewport
-      const initialScale = Math.min(1, (height - 40) / treeHeight, (width - 40) / (treeWidth + 200));
-      const offsetX = 40;
+      // Auto-fit and center the tree in the viewport
+      const padding = 60;
+      const labelSpace = 180; // extra width for labels on leaf nodes
+      const totalW = treeWidth + labelSpace;
+      const initialScale = Math.min(1, (height - padding * 2) / treeHeight, (width - padding * 2) / totalW);
+      const offsetX = (width - totalW * initialScale) / 2;
       const offsetY = (height - treeHeight * initialScale) / 2;
       g.attr("transform", `translate(${offsetX}, ${offsetY}) scale(${initialScale})`);
 
