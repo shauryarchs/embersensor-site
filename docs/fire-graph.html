@@ -98,7 +98,7 @@
     }
 
     .legend-dot.fire { background: #ea580c; border: 1.5px solid #fb923c; }
-    .legend-dot.factor { background: #d97706; border: 1.5px solid #fbbf24; }
+    .legend-dot.factor { background: #4ade80; border: 1.5px solid #86efac; }
     .legend-dot.spread { background: #2563eb; border: 1.5px solid #60a5fa; }
     .legend-dot.vuln { background: #10b981; border: 1.5px solid #6ee7b7; }
 
@@ -667,6 +667,8 @@
       background: rgba(234, 88, 12, 0.06);
     }
 
+    .print-title { display: none; }
+
     .print-btn {
       display: inline-flex;
       align-items: center;
@@ -709,11 +711,23 @@
 
       body { background: #fff !important; color: #111 !important; margin: 0; padding: 0; }
 
-      #site-header, #site-footer, .graph-header, .filter-panel,
+      #site-header, #site-header *, #site-footer, #site-footer *,
+      .graph-header, .filter-panel,
       .graph-status, .refresh-row, .layout-row,
-      .graph-tooltip, .print-btn { display: none !important; }
+      .graph-tooltip, .print-btn,
+      nav, header, .nav, .site-header { display: none !important; }
 
-      .graph-page { padding: 10px 0 0 !important; }
+      .print-title {
+        display: block !important;
+        text-align: center;
+        font-family: 'Inter', sans-serif;
+        font-size: 22px;
+        font-weight: 700;
+        color: #111 !important;
+        padding: 20px 0 10px;
+      }
+
+      .graph-page { padding: 0 !important; }
       .container, .graph-wrap { width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
 
       #fire-graph {
@@ -767,6 +781,7 @@
 <body>
   <div id="site-header"></div>
 
+  <div class="print-title">Wildfire Analysis Report</div>
   <section class="graph-page">
     <div class="container">
       <div class="graph-header">
@@ -971,10 +986,10 @@
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
   <script>
     const COLORS = {
-      Fire: "#ea580c",
-      ContributingFactor: "#d97706",
-      SpreadMechanism: "#2563eb",
-      PropertyVulnerability: "#10b981"
+      Fire: "rgba(234, 88, 12, 0.5)",
+      ContributingFactor: "rgba(74, 222, 128, 0.5)",
+      SpreadMechanism: "rgba(37, 99, 235, 0.5)",
+      PropertyVulnerability: "rgba(16, 185, 129, 0.5)"
     };
 
     const RADIUS = {
