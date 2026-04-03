@@ -1619,13 +1619,24 @@
         tab.classList.add("active");
         document.getElementById("tab-" + tab.dataset.tab).classList.add("active");
 
-        // When switching back to Filters tab, clear quick query and NL state
-        if (tab.dataset.tab === "filters") {
-          document.querySelectorAll(".qq-item.active").forEach(q => q.classList.remove("active"));
-          document.getElementById("qq-status").textContent = "";
+        // Always lock the NL query when leaving that tab
+        if (nlAccessCode) {
+          if (nlLockTimer) { clearTimeout(nlLockTimer); nlLockTimer = null; }
+          nlAccessCode = null;
+          document.getElementById("nl-code-gate").style.display = "block";
+          document.getElementById("nl-query-area").style.display = "none";
+          document.getElementById("nl-code-input").value = "";
+          document.getElementById("nl-code-status").className = "nl-status";
+          document.getElementById("nl-code-status").textContent = "";
           document.getElementById("nl-status").textContent = "";
           document.getElementById("nl-status").className = "nl-status";
           document.getElementById("nl-cypher").style.display = "none";
+        }
+
+        // When switching back to Filters tab, clear quick query state and revert graph
+        if (tab.dataset.tab === "filters") {
+          document.querySelectorAll(".qq-item.active").forEach(q => q.classList.remove("active"));
+          document.getElementById("qq-status").textContent = "";
           if (cachedGraphData) applyFilters();
         }
       });
@@ -1791,6 +1802,25 @@
 
     // --- Ask a Question (NL to Cypher) ---
     let nlAccessCode = null; // stored after successful unlock
+    let nlLockTimer = null;
+    const NL_LOCK_TIMEOUT = 30000; // 30 seconds
+
+    function lockNlQuery() {
+      nlAccessCode = null;
+      if (nlLockTimer) { clearTimeout(nlLockTimer); nlLockTimer = null; }
+      document.getElementById("nl-code-gate").style.display = "block";
+      document.getElementById("nl-query-area").style.display = "none";
+      document.getElementById("nl-code-input").value = "";
+      document.getElementById("nl-code-status").className = "nl-status";
+      document.getElementById("nl-code-status").textContent = "Session expired. Re-enter code.";
+    }
+
+    function resetNlLockTimer() {
+      if (nlLockTimer) clearTimeout(nlLockTimer);
+      if (nlAccessCode) {
+        nlLockTimer = setTimeout(lockNlQuery, NL_LOCK_TIMEOUT);
+      }
+    }
 
     // Code gate
     async function unlockNlQuery() {
@@ -1828,6 +1858,7 @@
         document.getElementById("nl-code-gate").style.display = "none";
         document.getElementById("nl-query-area").style.display = "block";
         document.getElementById("nl-question").focus();
+        resetNlLockTimer();
       } catch (err) {
         statusEl.className = "nl-status error";
         statusEl.textContent = "Error verifying code.";
@@ -1852,6 +1883,7 @@
       statusEl.textContent = "Thinking...";
       cypherEl.style.display = "none";
       btn.disabled = true;
+      resetNlLockTimer();
 
       try {
         const resp = await fetch("/api/nl2cypher", {
@@ -1864,9 +1896,11 @@
 
         if (data.error === "Invalid access code") {
           // Code expired or invalid — re-show gate
+          if (nlLockTimer) { clearTimeout(nlLockTimer); nlLockTimer = null; }
           nlAccessCode = null;
           document.getElementById("nl-code-gate").style.display = "block";
           document.getElementById("nl-query-area").style.display = "none";
+          document.getElementById("nl-code-input").value = "";
           document.getElementById("nl-code-status").className = "nl-status error";
           document.getElementById("nl-code-status").textContent = "Session expired. Re-enter code.";
           btn.disabled = false;
