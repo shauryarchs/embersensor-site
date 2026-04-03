@@ -24,5 +24,8 @@
       "id": "d7a63cc0170f49cfbb2c61f07c8029df",
 			"remote": true
     }
-	]
+	],
+	"ai": {
+		"binding": "AI"
+	}
 }

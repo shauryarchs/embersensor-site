@@ -1,0 +1,88 @@
+{
+  "description": "Neo4j graph database schema for California wildfire causation data",
+  "nodes": [
+    {
+      "label": "Fire",
+      "description": "Major California wildfires",
+      "properties": [
+        { "name": "name", "type": "string", "description": "Fire name (e.g. Camp Fire, Palisades Fire)" },
+        { "name": "year", "type": "integer", "description": "Year the fire occurred" },
+        { "name": "county", "type": "string", "description": "California county where the fire started" },
+        { "name": "acresBurned", "type": "integer", "description": "Total acres burned" },
+        { "name": "directCause", "type": "string", "description": "Specific cause (e.g. Power line failure, Campfire)" },
+        { "name": "directCauseCategory", "type": "string", "description": "Cause category (e.g. Electrical, Human, Arson, Natural, Under investigation)" }
+      ]
+    },
+    {
+      "label": "ContributingFactor",
+      "description": "Conditions that caused or worsened fires",
+      "properties": [
+        { "name": "name", "type": "string", "description": "Factor name (e.g. Drought, Santa Ana Winds, High Wind, Low Humidity)" },
+        { "name": "factorType", "type": "string", "description": "Category of the factor" }
+      ]
+    },
+    {
+      "label": "SpreadMechanism",
+      "description": "How fires spread to structures and new areas",
+      "properties": [
+        { "name": "name", "type": "string", "description": "Mechanism name (e.g. Flying Ember, Spot Fire, Pyrocumulonimbus)" },
+        { "name": "mechanismType", "type": "string", "description": "Category of the mechanism" },
+        { "name": "notes", "type": "string", "description": "Additional details" }
+      ]
+    },
+    {
+      "label": "PropertyVulnerability",
+      "description": "Home features that increase ignition risk",
+      "properties": [
+        { "name": "name", "type": "string", "description": "Vulnerability name (e.g. Debris-filled gutters, Unprotected vents)" },
+        { "name": "category", "type": "string", "description": "Category of vulnerability" },
+        { "name": "notes", "type": "string", "description": "Additional details" }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "type": "CONTRIBUTED_BY",
+      "from": "Fire",
+      "to": "ContributingFactor",
+      "description": "What caused or worsened the fire"
+    },
+    {
+      "type": "HAS_DOCUMENTED_SPREAD_MECHANISM",
+      "from": "Fire",
+      "to": "SpreadMechanism",
+      "description": "How the fire spread"
+    }
+  ],
+  "returnClause": "RETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target, elementId(f) AS fId, elementId(n) AS nId",
+  "examples": [
+    {
+      "question": "Which fires were spread by flying embers?",
+      "cypher": "MATCH (f:Fire)-[r:HAS_DOCUMENTED_SPREAD_MECHANISM]->(s:SpreadMechanism {name: 'Flying Ember'})\nWITH f, collect(s) AS mechs\nMATCH (f)-[r]->(n)\nRETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target, elementId(f) AS fId, elementId(n) AS nId"
+    },
+    {
+      "question": "Show fires contributed to by Santa Ana Winds",
+      "cypher": "MATCH (f:Fire)-[:CONTRIBUTED_BY]->(c:ContributingFactor {name: 'Santa Ana Winds'})\nWITH f\nMATCH (f)-[r]->(n)\nRETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target, elementId(f) AS fId, elementId(n) AS nId"
+    },
+    {
+      "question": "Fires that burned more than 100000 acres",
+      "cypher": "MATCH (f:Fire)-[r]->(n) WHERE f.acresBurned >= 100000\nRETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target, elementId(f) AS fId, elementId(n) AS nId"
+    },
+    {
+      "question": "Fires in Los Angeles county",
+      "cypher": "MATCH (f:Fire)-[r]->(n) WHERE f.county = 'Los Angeles'\nRETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target, elementId(f) AS fId, elementId(n) AS nId"
+    },
+    {
+      "question": "What caused the Palisades Fire?",
+      "cypher": "MATCH (f:Fire {name: 'Palisades Fire'})-[r]->(n)\nRETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target, elementId(f) AS fId, elementId(n) AS nId"
+    },
+    {
+      "question": "Fires from 2020 to 2025",
+      "cypher": "MATCH (f:Fire)-[r]->(n) WHERE f.year >= 2020 AND f.year <= 2025\nRETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target, elementId(f) AS fId, elementId(n) AS nId"
+    },
+    {
+      "question": "Fires linked to drought",
+      "cypher": "MATCH (f:Fire)-[:CONTRIBUTED_BY]->(c:ContributingFactor {name: 'Drought'})\nWITH f\nMATCH (f)-[r]->(n)\nRETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target, elementId(f) AS fId, elementId(n) AS nId"
+    }
+  ]
+}
