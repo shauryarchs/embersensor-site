@@ -792,6 +792,10 @@
                   <span class="qq-check">&#10003;</span>
                   <span class="qq-label">Fires that burned <strong>100,000+ acres</strong></span>
                 </div>
+                <div class="qq-item" data-qq="top-factors">
+                  <span class="qq-check">&#10003;</span>
+                  <span class="qq-label">Most common <strong>contributing factors</strong> and their fires</span>
+                </div>
                 <div class="qq-item" data-qq="shared-factors">
                   <span class="qq-check">&#10003;</span>
                   <span class="qq-label">Contributing factors shared by <strong>3+ fires</strong></span>
@@ -902,6 +906,7 @@
     let currentLayout = "tree";
     let cachedGraphData = null;   // raw from API
     let filteredGraphData = null; // after filters applied
+    let useReversedHierarchy = false;
 
     function setStatus(msg) {
       document.getElementById("graph-status").textContent = msg;
@@ -970,6 +975,42 @@
         });
 
         root.children.push(fireChild);
+      });
+
+      return root;
+    }
+
+    // Reversed hierarchy: factors as parents → fires as children (no root node shown)
+    function buildReversedHierarchy(graphData) {
+      const root = { id: "root", name: "", type: "Root", props: {}, children: [] };
+      const nodeById = new Map(graphData.nodes.map(n => [n.id, n]));
+
+      // Group fires by contributing factor
+      const factorToFires = new Map();
+      graphData.links.forEach(l => {
+        const srcId = typeof l.source === "object" ? l.source.id : l.source;
+        const tgtId = typeof l.target === "object" ? l.target.id : l.target;
+        const target = nodeById.get(tgtId);
+        if (!target || target.type !== "ContributingFactor") return;
+        if (!factorToFires.has(tgtId)) factorToFires.set(tgtId, []);
+        factorToFires.get(tgtId).push(srcId);
+      });
+
+      // Sort factors by fire count (most common first)
+      const sortedFactors = [...factorToFires.entries()]
+        .sort((a, b) => b[1].length - a[1].length);
+
+      sortedFactors.forEach(([factorId, fireIds]) => {
+        const factor = nodeById.get(factorId);
+        if (!factor) return;
+        const factorChild = {
+          ...factor,
+          children: [...new Set(fireIds)].map(fId => {
+            const fire = nodeById.get(fId);
+            return fire ? { ...fire, children: [] } : null;
+          }).filter(Boolean)
+        };
+        root.children.push(factorChild);
       });
 
       return root;
@@ -1060,7 +1101,7 @@
 
     // --- Tree layout (horizontal left-to-right) ---
     function renderTree(graphData) {
-      const hierarchy = buildHierarchy(graphData);
+      const hierarchy = useReversedHierarchy ? buildReversedHierarchy(graphData) : buildHierarchy(graphData);
       const width = container.clientWidth;
       const height = container.clientHeight;
 
@@ -1123,7 +1164,7 @@
 
     // --- Radial layout ---
     function renderRadial(graphData) {
-      const hierarchy = buildHierarchy(graphData);
+      const hierarchy = useReversedHierarchy ? buildReversedHierarchy(graphData) : buildHierarchy(graphData);
       const width = container.clientWidth;
       const height = container.clientHeight;
       const leafCount = d3.hierarchy(hierarchy).leaves().length;
@@ -1645,6 +1686,7 @@
         if (tab.dataset.tab === "filters") {
           document.querySelectorAll(".qq-item.active").forEach(q => q.classList.remove("active"));
           document.getElementById("qq-status").textContent = "";
+          useReversedHierarchy = false;
           if (cachedGraphData) applyFilters();
         }
 
@@ -1709,6 +1751,17 @@
         query: `MATCH (f:Fire)-[r]->(n) WHERE f.year >= ${new Date().getFullYear() - 1}
                 RETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target,
                        elementId(f) AS fId, elementId(n) AS nId`
+      },
+      "top-factors": {
+        label: "Most common contributing factors and their fires",
+        query: `MATCH (f:Fire)-[:CONTRIBUTED_BY]->(c:ContributingFactor)
+                WITH c, collect(f) AS fires, count(f) AS cnt
+                ORDER BY cnt DESC
+                UNWIND fires AS f
+                MATCH (f)-[r:CONTRIBUTED_BY]->(c)
+                RETURN f AS Fire, type(r) AS rel, labels(c)[0] AS targetLabel, c AS target,
+                       elementId(f) AS fId, elementId(c) AS nId`,
+        reverseGraph: true
       },
       "shared-factors": {
         label: "Contributing factors shared by 3+ fires",
@@ -1775,6 +1828,7 @@
 
         const graphData = parseQueryResult(data);
         filteredGraphData = graphData;
+        useReversedHierarchy = !!qq.reverseGraph;
         renderCurrentLayout();
         updateSummary();
 
@@ -1797,6 +1851,7 @@
         if (wasActive) {
           // Toggled off — revert to full cached data with filters
           document.getElementById("qq-status").textContent = "";
+          useReversedHierarchy = false;
           if (cachedGraphData) applyFilters();
         } else {
           item.classList.add("active");
