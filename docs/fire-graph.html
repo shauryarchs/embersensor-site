@@ -136,6 +136,37 @@
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
     }
 
+    .layout-row {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .layout-btn {
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .layout-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    .layout-btn.active {
+      background: rgba(234, 88, 12, 0.22);
+      border-color: rgba(234, 88, 12, 0.5);
+      color: #fb923c;
+    }
+
     @media (max-width: 700px) {
       #fire-graph { height: 420px; }
     }
@@ -156,6 +187,13 @@
       </div>
 
       <div class="graph-wrap">
+        <div class="layout-row">
+          <button class="layout-btn active" data-layout="force">Force</button>
+          <button class="layout-btn" data-layout="tree">Tree</button>
+          <button class="layout-btn" data-layout="radial">Radial</button>
+          <button class="layout-btn" data-layout="cluster">Cluster</button>
+        </div>
+
         <div id="fire-graph">
           <div class="graph-tooltip" id="tooltip"></div>
         </div>
@@ -202,6 +240,8 @@
     const container = document.getElementById("fire-graph");
     const tooltip = document.getElementById("tooltip");
     let svg, g, simulation;
+    let currentLayout = "force";
+    let cachedGraphData = null;
 
     function setStatus(msg) {
       document.getElementById("graph-status").textContent = msg;
@@ -228,157 +268,322 @@
       return html;
     }
 
-    function parseNeo4jResults(results) {
-      const nodesMap = new Map();
-      const links = [];
+    // Build a tree hierarchy from flat graph data for tree/radial/cluster layouts
+    function buildHierarchy(graphData) {
+      const root = { id: "root", name: "California Wildfires", type: "Root", props: {}, children: [] };
 
-      if (!results || !results.length) return { nodes: [], links: [] };
-
-      const result = results[0];
-      const cols = result.columns;
-      const rows = result.data;
-
-      rows.forEach(row => {
-        const data = row.row;
-        const meta = row.meta;
-
-        for (let i = 0; i < data.length; i++) {
-          if (!data[i] || !meta[i]) continue;
-
-          if (meta[i].type === "node" && !nodesMap.has(meta[i].id)) {
-            const props = data[i];
-            const label = cols[i];
-            nodesMap.set(meta[i].id, {
-              id: meta[i].id,
-              name: props.name || props.fireId || "Unknown",
-              type: label,
-              props: props
-            });
-          }
-
-          if (meta[i].type === "relationship") {
-            links.push({
-              source: meta[i].startNodeElementId,
-              target: meta[i].endNodeElementId,
-              relType: meta[i].type === "relationship" ? data[i] : ""
-            });
-          }
-        }
+      // Group links by fire
+      const fireNodes = graphData.nodes.filter(n => n.type === "Fire");
+      const linksByFire = new Map();
+      graphData.links.forEach(l => {
+        const srcId = typeof l.source === "object" ? l.source.id : l.source;
+        if (!linksByFire.has(srcId)) linksByFire.set(srcId, []);
+        linksByFire.get(srcId).push(l);
       });
 
-      return { nodes: Array.from(nodesMap.values()), links };
+      const nodeById = new Map(graphData.nodes.map(n => [n.id, n]));
+
+      fireNodes.forEach(fire => {
+        const fireChild = { ...fire, children: [] };
+        const links = linksByFire.get(fire.id) || [];
+
+        // Group targets by relationship type
+        const byRel = new Map();
+        links.forEach(l => {
+          const targetId = typeof l.target === "object" ? l.target.id : l.target;
+          const target = nodeById.get(targetId);
+          if (!target) return;
+          if (!byRel.has(l.relType)) byRel.set(l.relType, []);
+          byRel.get(l.relType).push(target);
+        });
+
+        byRel.forEach((targets, relType) => {
+          const groupLabel = LINK_LABELS[relType] || relType;
+          const groupNode = {
+            id: fire.id + "_" + relType,
+            name: groupLabel,
+            type: "Group",
+            props: {},
+            children: targets.map(t => ({ ...t, children: [] }))
+          };
+          fireChild.children.push(groupNode);
+        });
+
+        root.children.push(fireChild);
+      });
+
+      return root;
     }
 
-    function renderGraph(graphData) {
-      const { nodes, links } = graphData;
+    function attachTooltipEvents(selection) {
+      selection
+        .on("mouseover", (e, d) => {
+          if (d.type === "Root" || d.type === "Group") return;
+          tooltip.innerHTML = buildTooltipHtml(d);
+          tooltip.style.opacity = "1";
+          tooltip.style.left = (e.offsetX + 16) + "px";
+          tooltip.style.top = (e.offsetY - 10) + "px";
+        })
+        .on("mousemove", (e) => {
+          tooltip.style.left = (e.offsetX + 16) + "px";
+          tooltip.style.top = (e.offsetY - 10) + "px";
+        })
+        .on("mouseout", () => { tooltip.style.opacity = "0"; });
+    }
+
+    // --- Force layout ---
+    function renderForce(graphData) {
+      // Deep copy nodes/links so force simulation doesn't mutate cached data
+      const nodes = graphData.nodes.map(n => ({ ...n }));
+      const links = graphData.links.map(l => ({
+        source: typeof l.source === "object" ? l.source.id : l.source,
+        target: typeof l.target === "object" ? l.target.id : l.target,
+        relType: l.relType
+      }));
+
       const width = container.clientWidth;
       const height = container.clientHeight;
 
-      // Clear previous
       d3.select("#fire-graph svg").remove();
-
-      svg = d3.select("#fire-graph")
-        .append("svg")
-        .attr("width", width)
-        .attr("height", height);
-
+      svg = d3.select("#fire-graph").append("svg").attr("width", width).attr("height", height);
       g = svg.append("g");
+      svg.call(d3.zoom().scaleExtent([0.3, 4]).on("zoom", (e) => g.attr("transform", e.transform)));
 
-      // Zoom
-      svg.call(d3.zoom()
-        .scaleExtent([0.3, 4])
-        .on("zoom", (e) => g.attr("transform", e.transform))
-      );
-
-      // Simulation
       simulation = d3.forceSimulation(nodes)
         .force("link", d3.forceLink(links).id(d => d.id).distance(120))
         .force("charge", d3.forceManyBody().strength(-300))
         .force("center", d3.forceCenter(width / 2, height / 2))
         .force("collide", d3.forceCollide(35));
 
-      // Links
-      const link = g.append("g")
-        .selectAll("line")
-        .data(links)
-        .join("line")
-        .attr("stroke", "rgba(255,255,255,0.15)")
-        .attr("stroke-width", 1.5);
+      const link = g.append("g").selectAll("line").data(links).join("line")
+        .attr("stroke", "rgba(255,255,255,0.15)").attr("stroke-width", 1.5);
 
-      // Link labels
-      const linkLabel = g.append("g")
-        .selectAll("text")
-        .data(links)
-        .join("text")
+      const linkLabel = g.append("g").selectAll("text").data(links).join("text")
         .text(d => LINK_LABELS[d.relType] || d.relType)
-        .attr("fill", "rgba(183,192,209,0.4)")
-        .attr("font-size", "9px")
-        .attr("text-anchor", "middle");
+        .attr("fill", "rgba(183,192,209,0.4)").attr("font-size", "9px").attr("text-anchor", "middle");
 
-      // Nodes
-      const node = g.append("g")
-        .selectAll("circle")
-        .data(nodes)
-        .join("circle")
+      const node = g.append("g").selectAll("circle").data(nodes).join("circle")
         .attr("r", d => RADIUS[d.type] || 10)
         .attr("fill", d => COLORS[d.type] || "#888")
         .attr("stroke", d => d3.color(COLORS[d.type] || "#888").brighter(0.6))
-        .attr("stroke-width", 2)
-        .attr("cursor", "grab")
+        .attr("stroke-width", 2).attr("cursor", "grab")
         .call(d3.drag()
-          .on("start", (e, d) => {
-            if (!e.active) simulation.alphaTarget(0.3).restart();
-            d.fx = d.x; d.fy = d.y;
-          })
+          .on("start", (e, d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
           .on("drag", (e, d) => { d.fx = e.x; d.fy = e.y; })
-          .on("end", (e, d) => {
-            if (!e.active) simulation.alphaTarget(0);
-            d.fx = null; d.fy = null;
-          })
+          .on("end", (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
         );
 
-      // Tooltip events
-      node.on("mouseover", (e, d) => {
-        tooltip.innerHTML = buildTooltipHtml(d);
-        tooltip.style.opacity = "1";
-        tooltip.style.left = (e.offsetX + 16) + "px";
-        tooltip.style.top = (e.offsetY - 10) + "px";
-      })
-      .on("mousemove", (e) => {
-        tooltip.style.left = (e.offsetX + 16) + "px";
-        tooltip.style.top = (e.offsetY - 10) + "px";
-      })
-      .on("mouseout", () => {
-        tooltip.style.opacity = "0";
-      });
+      attachTooltipEvents(node);
 
-      // Labels
-      const label = g.append("g")
-        .selectAll("text")
-        .data(nodes)
-        .join("text")
-        .text(d => d.name)
-        .attr("fill", "white")
+      const label = g.append("g").selectAll("text").data(nodes).join("text")
+        .text(d => d.name).attr("fill", "white")
         .attr("font-size", d => d.type === "Fire" ? "12px" : "10px")
         .attr("font-weight", d => d.type === "Fire" ? "700" : "400")
         .attr("text-anchor", "middle")
         .attr("dy", d => (RADIUS[d.type] || 10) + 14)
         .attr("pointer-events", "none");
 
-      // Tick
       simulation.on("tick", () => {
-        link
-          .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+        link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
           .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
-
-        linkLabel
-          .attr("x", d => (d.source.x + d.target.x) / 2)
-          .attr("y", d => (d.source.y + d.target.y) / 2);
-
+        linkLabel.attr("x", d => (d.source.x + d.target.x) / 2).attr("y", d => (d.source.y + d.target.y) / 2);
         node.attr("cx", d => d.x).attr("cy", d => d.y);
         label.attr("x", d => d.x).attr("y", d => d.y);
       });
     }
+
+    // --- Tree layout (top-down) ---
+    function renderTree(graphData) {
+      const hierarchy = buildHierarchy(graphData);
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      d3.select("#fire-graph svg").remove();
+      svg = d3.select("#fire-graph").append("svg").attr("width", width).attr("height", height);
+      g = svg.append("g");
+      svg.call(d3.zoom().scaleExtent([0.3, 4]).on("zoom", (e) => g.attr("transform", e.transform)));
+
+      const root = d3.hierarchy(hierarchy);
+      const treeLayout = d3.tree().size([width - 120, height - 120]);
+      treeLayout(root);
+
+      // Center the tree
+      g.attr("transform", `translate(60, 60)`);
+
+      // Links as curved paths
+      g.append("g").selectAll("path").data(root.links()).join("path")
+        .attr("d", d3.linkVertical().x(d => d.x).y(d => d.y))
+        .attr("fill", "none").attr("stroke", "rgba(255,255,255,0.15)").attr("stroke-width", 1.5);
+
+      // Nodes
+      const node = g.append("g").selectAll("circle").data(root.descendants()).join("circle")
+        .attr("cx", d => d.x).attr("cy", d => d.y)
+        .attr("r", d => d.data.type === "Root" ? 14 : d.data.type === "Group" ? 6 : (RADIUS[d.data.type] || 10))
+        .attr("fill", d => d.data.type === "Root" ? "#fff" : d.data.type === "Group" ? "rgba(183,192,209,0.3)" : (COLORS[d.data.type] || "#888"))
+        .attr("stroke", d => d.data.type === "Root" ? "#aaa" : d.data.type === "Group" ? "transparent" : d3.color(COLORS[d.data.type] || "#888").brighter(0.6))
+        .attr("stroke-width", 2);
+
+      attachTooltipEvents(node.filter(d => d.data.type !== "Root" && d.data.type !== "Group"));
+
+      // Labels
+      g.append("g").selectAll("text").data(root.descendants()).join("text")
+        .attr("x", d => d.x).attr("y", d => d.y)
+        .attr("dy", d => (d.data.type === "Root" ? 14 : d.data.type === "Group" ? 6 : (RADIUS[d.data.type] || 10)) + 14)
+        .text(d => d.data.name).attr("fill", d => d.data.type === "Group" ? "rgba(183,192,209,0.5)" : "white")
+        .attr("font-size", d => d.data.type === "Fire" ? "12px" : d.data.type === "Group" ? "9px" : "10px")
+        .attr("font-weight", d => d.data.type === "Fire" ? "700" : "400")
+        .attr("text-anchor", "middle").attr("pointer-events", "none");
+    }
+
+    // --- Radial layout ---
+    function renderRadial(graphData) {
+      const hierarchy = buildHierarchy(graphData);
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      const radius = Math.min(width, height) / 2 - 80;
+
+      d3.select("#fire-graph svg").remove();
+      svg = d3.select("#fire-graph").append("svg").attr("width", width).attr("height", height);
+      g = svg.append("g").attr("transform", `translate(${width / 2}, ${height / 2})`);
+      svg.call(d3.zoom().scaleExtent([0.3, 4]).on("zoom", (e) => g.attr("transform", e.transform)));
+
+      const root = d3.hierarchy(hierarchy);
+      const treeLayout = d3.tree().size([2 * Math.PI, radius]).separation((a, b) => (a.parent === b.parent ? 1 : 2) / a.depth);
+      treeLayout(root);
+
+      // Links
+      g.append("g").selectAll("path").data(root.links()).join("path")
+        .attr("d", d3.linkRadial().angle(d => d.x).radius(d => d.y))
+        .attr("fill", "none").attr("stroke", "rgba(255,255,255,0.15)").attr("stroke-width", 1.5);
+
+      // Nodes
+      const node = g.append("g").selectAll("circle").data(root.descendants()).join("circle")
+        .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y}, 0)`)
+        .attr("r", d => d.data.type === "Root" ? 14 : d.data.type === "Group" ? 6 : (RADIUS[d.data.type] || 10))
+        .attr("fill", d => d.data.type === "Root" ? "#fff" : d.data.type === "Group" ? "rgba(183,192,209,0.3)" : (COLORS[d.data.type] || "#888"))
+        .attr("stroke", d => d.data.type === "Root" ? "#aaa" : d.data.type === "Group" ? "transparent" : d3.color(COLORS[d.data.type] || "#888").brighter(0.6))
+        .attr("stroke-width", 2);
+
+      attachTooltipEvents(node.filter(d => d.data.type !== "Root" && d.data.type !== "Group"));
+
+      // Labels
+      g.append("g").selectAll("text").data(root.descendants()).join("text")
+        .attr("transform", d => {
+          const angle = d.x * 180 / Math.PI - 90;
+          const flip = d.x > Math.PI;
+          return `rotate(${angle}) translate(${d.y}, 0) rotate(${flip ? 180 : 0})`;
+        })
+        .attr("dy", "0.35em")
+        .attr("x", d => {
+          if (d.depth === 0) return 0;
+          const flip = d.x > Math.PI;
+          const r = d.data.type === "Group" ? 6 : (RADIUS[d.data.type] || 10);
+          return flip ? -(r + 6) : (r + 6);
+        })
+        .attr("text-anchor", d => d.depth === 0 ? "middle" : (d.x > Math.PI ? "end" : "start"))
+        .text(d => d.data.name)
+        .attr("fill", d => d.data.type === "Group" ? "rgba(183,192,209,0.5)" : "white")
+        .attr("font-size", d => d.data.type === "Fire" ? "12px" : d.data.type === "Group" ? "9px" : "10px")
+        .attr("font-weight", d => d.data.type === "Fire" ? "700" : "400")
+        .attr("pointer-events", "none");
+    }
+
+    // --- Cluster layout (grouped by type) ---
+    function renderCluster(graphData) {
+      // Deep copy for simulation
+      const nodes = graphData.nodes.map(n => ({ ...n }));
+      const links = graphData.links.map(l => ({
+        source: typeof l.source === "object" ? l.source.id : l.source,
+        target: typeof l.target === "object" ? l.target.id : l.target,
+        relType: l.relType
+      }));
+
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      // Assign cluster centers by type
+      const typeOrder = ["Fire", "ContributingFactor", "SpreadMechanism", "PropertyVulnerability"];
+      const clusterCenters = {};
+      typeOrder.forEach((t, i) => {
+        const angle = (i / typeOrder.length) * 2 * Math.PI - Math.PI / 2;
+        const r = Math.min(width, height) * 0.28;
+        clusterCenters[t] = { x: width / 2 + r * Math.cos(angle), y: height / 2 + r * Math.sin(angle) };
+      });
+
+      d3.select("#fire-graph svg").remove();
+      svg = d3.select("#fire-graph").append("svg").attr("width", width).attr("height", height);
+      g = svg.append("g");
+      svg.call(d3.zoom().scaleExtent([0.3, 4]).on("zoom", (e) => g.attr("transform", e.transform)));
+
+      // Cluster labels
+      typeOrder.forEach(t => {
+        const c = clusterCenters[t];
+        g.append("text").attr("x", c.x).attr("y", c.y - Math.min(width, height) * 0.16)
+          .attr("text-anchor", "middle").attr("fill", COLORS[t])
+          .attr("font-size", "11px").attr("font-weight", "700")
+          .attr("letter-spacing", "0.06em").attr("opacity", 0.6)
+          .text(t.replace(/([A-Z])/g, " $1").trim().toUpperCase());
+      });
+
+      simulation = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links).id(d => d.id).distance(100).strength(0.3))
+        .force("charge", d3.forceManyBody().strength(-150))
+        .force("cluster", d3.forceX(d => clusterCenters[d.type]?.x || width / 2).strength(0.4))
+        .force("clusterY", d3.forceY(d => clusterCenters[d.type]?.y || height / 2).strength(0.4))
+        .force("collide", d3.forceCollide(30));
+
+      const link = g.append("g").selectAll("line").data(links).join("line")
+        .attr("stroke", "rgba(255,255,255,0.1)").attr("stroke-width", 1).attr("stroke-dasharray", "4 3");
+
+      const node = g.append("g").selectAll("circle").data(nodes).join("circle")
+        .attr("r", d => RADIUS[d.type] || 10)
+        .attr("fill", d => COLORS[d.type] || "#888")
+        .attr("stroke", d => d3.color(COLORS[d.type] || "#888").brighter(0.6))
+        .attr("stroke-width", 2).attr("cursor", "grab")
+        .call(d3.drag()
+          .on("start", (e, d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+          .on("drag", (e, d) => { d.fx = e.x; d.fy = e.y; })
+          .on("end", (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
+        );
+
+      attachTooltipEvents(node);
+
+      const label = g.append("g").selectAll("text").data(nodes).join("text")
+        .text(d => d.name).attr("fill", "white")
+        .attr("font-size", d => d.type === "Fire" ? "12px" : "10px")
+        .attr("font-weight", d => d.type === "Fire" ? "700" : "400")
+        .attr("text-anchor", "middle").attr("dy", d => (RADIUS[d.type] || 10) + 14)
+        .attr("pointer-events", "none");
+
+      simulation.on("tick", () => {
+        link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+        node.attr("cx", d => d.x).attr("cy", d => d.y);
+        label.attr("x", d => d.x).attr("y", d => d.y);
+      });
+    }
+
+    // --- Layout switcher ---
+    function renderCurrentLayout() {
+      if (!cachedGraphData) return;
+      if (simulation) simulation.stop();
+
+      switch (currentLayout) {
+        case "force":   renderForce(cachedGraphData); break;
+        case "tree":    renderTree(cachedGraphData); break;
+        case "radial":  renderRadial(cachedGraphData); break;
+        case "cluster": renderCluster(cachedGraphData); break;
+      }
+    }
+
+    document.querySelectorAll(".layout-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".layout-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentLayout = btn.dataset.layout;
+        renderCurrentLayout();
+      });
+    });
 
     async function loadGraphData() {
       setStatus("Loading graph data...");
@@ -429,11 +634,11 @@
           }
         });
 
-        const graphData = { nodes: Array.from(nodesMap.values()), links };
-        renderGraph(graphData);
+        cachedGraphData = { nodes: Array.from(nodesMap.values()), links };
+        renderCurrentLayout();
 
         const dt = new Date();
-        setStatus(`${graphData.nodes.length} nodes, ${graphData.links.length} connections — updated ${dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`);
+        setStatus(`${cachedGraphData.nodes.length} nodes, ${cachedGraphData.links.length} connections — updated ${dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`);
       } catch (err) {
         setStatus("Error loading graph: " + err.message);
       }
