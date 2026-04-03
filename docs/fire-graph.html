@@ -852,7 +852,8 @@
         <div id="fire-graph">
           <div class="layout-row">
             <button class="layout-btn" data-layout="force">Force</button>
-            <button class="layout-btn active" data-layout="tree">Tree</button>
+            <button class="layout-btn active" data-layout="tree-lr">Tree ↔</button>
+            <button class="layout-btn" data-layout="tree-tb">Tree ↕</button>
             <button class="layout-btn" data-layout="radial">Radial</button>
             <button class="layout-btn" data-layout="cluster">Cluster</button>
           </div>
@@ -903,7 +904,7 @@
     const container = document.getElementById("fire-graph");
     const tooltip = document.getElementById("tooltip");
     let svg, g, simulation;
-    let currentLayout = "tree";
+    let currentLayout = "tree-lr";
     let cachedGraphData = null;   // raw from API
     let filteredGraphData = null; // after filters applied
     let useReversedHierarchy = false;
@@ -1099,8 +1100,9 @@
       });
     }
 
-    // --- Tree layout (horizontal left-to-right) ---
-    function renderTree(graphData) {
+    // --- Tree layout (lr = left-to-right, tb = top-to-bottom) ---
+    function renderTree(graphData, direction) {
+      const isVertical = direction === "tb";
       const hierarchy = useReversedHierarchy ? buildReversedHierarchy(graphData) : buildHierarchy(graphData);
       const width = container.clientWidth;
       const height = container.clientHeight;
@@ -1112,60 +1114,105 @@
 
       const root = d3.hierarchy(hierarchy);
       const leafCount = root.leaves().length;
-      const treeHeight = Math.max(height - 80, leafCount * 28);
-      const treeWidth = Math.max(width - 280, root.height * 200);
-
-      // Horizontal tree: size is [height, width], then we swap x/y
-      const treeLayout = d3.tree().size([treeHeight, treeWidth]).separation((a, b) => a.parent === b.parent ? 1 : 1.4);
-      treeLayout(root);
-
-      // Auto-fit and center the tree in the viewport
-      const padding = 60;
-      const labelSpace = 180; // extra width for labels on leaf nodes
-      const totalW = treeWidth + labelSpace;
-      const initialScale = Math.min(1, (height - padding * 2) / treeHeight, (width - padding * 2) / totalW);
-      const offsetX = (width - totalW * initialScale) / 2 + width * 0.10;
-      const offsetY = (height - treeHeight * initialScale) / 2;
-      g.attr("transform", `translate(${offsetX}, ${offsetY}) scale(${initialScale})`);
-
-      // Links — horizontal curved paths
-      g.append("g").selectAll("path").data(root.links()).join("path")
-        .attr("d", d => {
-          return `M${d.source.y},${d.source.x} C${(d.source.y + d.target.y) / 2},${d.source.x} ${(d.source.y + d.target.y) / 2},${d.target.x} ${d.target.y},${d.target.x}`;
-        })
-        .attr("fill", "none").attr("stroke", "rgba(255,255,255,0.15)").attr("stroke-width", 1.5);
-
-      // Nodes — positioned with swapped x/y for horizontal layout
       const hideRoot = useReversedHierarchy;
-      const node = g.append("g").selectAll("circle").data(root.descendants()).join("circle")
-        .attr("cx", d => d.y).attr("cy", d => d.x)
-        .attr("r", d => (hideRoot && d.data.type === "Root") ? 0 : d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10))
-        .attr("fill", d => d.data.type === "Root" ? "#fff" : d.data.type === "Group" ? "rgba(183,192,209,0.3)" : (COLORS[d.data.type] || "#888"))
-        .attr("stroke", d => (hideRoot && d.data.type === "Root") ? "transparent" : d.data.type === "Root" ? "#aaa" : d.data.type === "Group" ? "transparent" : d3.color(COLORS[d.data.type] || "#888").brighter(0.6))
-        .attr("stroke-width", 2);
 
-      attachTooltipEvents(node.filter(d => d.data.type !== "Root" && d.data.type !== "Group"));
+      let treeLayout;
+      if (isVertical) {
+        const treeW = Math.max(width - 80, leafCount * 50);
+        const treeH = Math.max(height - 120, root.height * 140);
+        treeLayout = d3.tree().size([treeW, treeH]).separation((a, b) => a.parent === b.parent ? 1 : 1.4);
+        treeLayout(root);
 
-      // Links from root are hidden when reversed
-      if (hideRoot) {
-        g.selectAll("path").attr("stroke", d => d.source.data.type === "Root" ? "transparent" : "rgba(255,255,255,0.15)");
+        const padding = 60;
+        const labelSpace = 40;
+        const totalH = treeH + labelSpace;
+        const initialScale = Math.min(1, (width - padding * 2) / treeW, (height - padding * 2) / totalH);
+        const offsetX = (width - treeW * initialScale) / 2;
+        const offsetY = (height - totalH * initialScale) / 2 + padding * 0.5;
+        g.attr("transform", `translate(${offsetX}, ${offsetY}) scale(${initialScale})`);
+
+        // Links — vertical curved paths
+        g.append("g").selectAll("path").data(root.links()).join("path")
+          .attr("d", d => `M${d.source.x},${d.source.y} C${d.source.x},${(d.source.y + d.target.y) / 2} ${d.target.x},${(d.source.y + d.target.y) / 2} ${d.target.x},${d.target.y}`)
+          .attr("fill", "none").attr("stroke", "rgba(255,255,255,0.15)").attr("stroke-width", 1.5);
+
+        // Nodes
+        const node = g.append("g").selectAll("circle").data(root.descendants()).join("circle")
+          .attr("cx", d => d.x).attr("cy", d => d.y)
+          .attr("r", d => (hideRoot && d.data.type === "Root") ? 0 : d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10))
+          .attr("fill", d => d.data.type === "Root" ? "#fff" : d.data.type === "Group" ? "rgba(183,192,209,0.3)" : (COLORS[d.data.type] || "#888"))
+          .attr("stroke", d => (hideRoot && d.data.type === "Root") ? "transparent" : d.data.type === "Root" ? "#aaa" : d.data.type === "Group" ? "transparent" : d3.color(COLORS[d.data.type] || "#888").brighter(0.6))
+          .attr("stroke-width", 2);
+
+        attachTooltipEvents(node.filter(d => d.data.type !== "Root" && d.data.type !== "Group"));
+
+        if (hideRoot) {
+          g.selectAll("path").attr("stroke", d => d.source.data.type === "Root" ? "transparent" : "rgba(255,255,255,0.15)");
+        }
+
+        // Labels — below each node
+        g.append("g").selectAll("text").data(root.descendants().filter(d => !(hideRoot && d.data.type === "Root"))).join("text")
+          .attr("x", d => d.x)
+          .attr("y", d => {
+            const r = d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10);
+            return d.children ? d.y - r - 6 : d.y + r + 14;
+          })
+          .attr("text-anchor", "middle")
+          .text(d => truncate(d.data.name, 22))
+          .attr("fill", d => d.data.type === "Group" ? "rgba(183,192,209,0.5)" : "white")
+          .attr("font-size", d => d.data.type === "Fire" ? "11px" : d.data.type === "Group" ? "9px" : "10px")
+          .attr("font-weight", d => d.data.type === "Fire" ? "700" : "400")
+          .attr("pointer-events", "none");
+
+      } else {
+        // Horizontal left-to-right
+        const treeHeight = Math.max(height - 80, leafCount * 28);
+        const treeWidth = Math.max(width - 280, root.height * 200);
+        treeLayout = d3.tree().size([treeHeight, treeWidth]).separation((a, b) => a.parent === b.parent ? 1 : 1.4);
+        treeLayout(root);
+
+        const padding = 60;
+        const labelSpace = 180;
+        const totalW = treeWidth + labelSpace;
+        const initialScale = Math.min(1, (height - padding * 2) / treeHeight, (width - padding * 2) / totalW);
+        const offsetX = (width - totalW * initialScale) / 2 + width * 0.10;
+        const offsetY = (height - treeHeight * initialScale) / 2;
+        g.attr("transform", `translate(${offsetX}, ${offsetY}) scale(${initialScale})`);
+
+        // Links — horizontal curved paths
+        g.append("g").selectAll("path").data(root.links()).join("path")
+          .attr("d", d => `M${d.source.y},${d.source.x} C${(d.source.y + d.target.y) / 2},${d.source.x} ${(d.source.y + d.target.y) / 2},${d.target.x} ${d.target.y},${d.target.x}`)
+          .attr("fill", "none").attr("stroke", "rgba(255,255,255,0.15)").attr("stroke-width", 1.5);
+
+        // Nodes
+        const node = g.append("g").selectAll("circle").data(root.descendants()).join("circle")
+          .attr("cx", d => d.y).attr("cy", d => d.x)
+          .attr("r", d => (hideRoot && d.data.type === "Root") ? 0 : d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10))
+          .attr("fill", d => d.data.type === "Root" ? "#fff" : d.data.type === "Group" ? "rgba(183,192,209,0.3)" : (COLORS[d.data.type] || "#888"))
+          .attr("stroke", d => (hideRoot && d.data.type === "Root") ? "transparent" : d.data.type === "Root" ? "#aaa" : d.data.type === "Group" ? "transparent" : d3.color(COLORS[d.data.type] || "#888").brighter(0.6))
+          .attr("stroke-width", 2);
+
+        attachTooltipEvents(node.filter(d => d.data.type !== "Root" && d.data.type !== "Group"));
+
+        if (hideRoot) {
+          g.selectAll("path").attr("stroke", d => d.source.data.type === "Root" ? "transparent" : "rgba(255,255,255,0.15)");
+        }
+
+        // Labels — to the right of each node (or left for root)
+        g.append("g").selectAll("text").data(root.descendants().filter(d => !(hideRoot && d.data.type === "Root"))).join("text")
+          .attr("x", d => {
+            const r = d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10);
+            return d.children ? d.y - r - 6 : d.y + r + 6;
+          })
+          .attr("y", d => d.x)
+          .attr("dy", "0.35em")
+          .attr("text-anchor", d => d.children ? "end" : "start")
+          .text(d => truncate(d.data.name, 30))
+          .attr("fill", d => d.data.type === "Group" ? "rgba(183,192,209,0.5)" : "white")
+          .attr("font-size", d => d.data.type === "Fire" ? "11px" : d.data.type === "Group" ? "9px" : "10px")
+          .attr("font-weight", d => d.data.type === "Fire" ? "700" : "400")
+          .attr("pointer-events", "none");
       }
-
-      // Labels — to the right of each node (or left for root)
-      g.append("g").selectAll("text").data(root.descendants().filter(d => !(hideRoot && d.data.type === "Root"))).join("text")
-        .attr("x", d => {
-          const r = d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10);
-          // Leaf nodes: label to the right; internal nodes: label to the left if they have children
-          return d.children ? d.y - r - 6 : d.y + r + 6;
-        })
-        .attr("y", d => d.x)
-        .attr("dy", "0.35em")
-        .attr("text-anchor", d => d.children ? "end" : "start")
-        .text(d => truncate(d.data.name, 30))
-        .attr("fill", d => d.data.type === "Group" ? "rgba(183,192,209,0.5)" : "white")
-        .attr("font-size", d => d.data.type === "Fire" ? "11px" : d.data.type === "Group" ? "9px" : "10px")
-        .attr("font-weight", d => d.data.type === "Fire" ? "700" : "400")
-        .attr("pointer-events", "none");
     }
 
     // --- Radial layout ---
@@ -1587,7 +1634,8 @@
 
       switch (currentLayout) {
         case "force":   renderForce(data); break;
-        case "tree":    renderTree(data); break;
+        case "tree-lr": renderTree(data, "lr"); break;
+        case "tree-tb": renderTree(data, "tb"); break;
         case "radial":  renderRadial(data); break;
         case "cluster": renderCluster(data); break;
       }
