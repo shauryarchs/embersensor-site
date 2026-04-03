@@ -20,6 +20,7 @@ import { round2 } from "./utils.js";
 import { fetchYoutubeLiveStatus } from "./youtube.js";
 import { fetchCalfireData, findNearbyCalfireIncidents } from "./calfire.js";
 import { handleGraphQuery } from "./neo4j.js";
+import { handleNl2Cypher } from "./nl2cypher.js";
 
 export default {
   async fetch(request, env) {
@@ -173,6 +174,10 @@ export default {
 
     if (url.pathname === "/api/graphQuery") {
       return handleGraphQuery(request, env);
+    }
+
+    if (url.pathname === "/api/nl2cypher") {
+      return handleNl2Cypher(request, env);
     }
 
     if (url.pathname === "/api/status") {

@@ -553,11 +553,126 @@
       min-height: 18px;
     }
 
+    /* --- Ask a Question tab --- */
+    .nl-hint {
+      font-size: 12px;
+      color: rgba(183, 192, 209, 0.45);
+      margin: 0 0 12px;
+      line-height: 1.5;
+    }
+
+    .nl-input-wrap {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nl-input {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .nl-input::placeholder { color: rgba(183, 192, 209, 0.35); }
+    .nl-input:focus { border-color: rgba(234, 88, 12, 0.5); }
+
+    .nl-btn {
+      padding: 10px 22px;
+      border-radius: 10px;
+      border: none;
+      background: rgba(234, 88, 12, 0.6);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    .nl-btn:hover { background: rgba(234, 88, 12, 0.8); }
+    .nl-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .nl-cypher-preview {
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      overflow-x: auto;
+    }
+
+    .nl-cypher-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(183, 192, 209, 0.4);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .nl-cypher-preview code {
+      font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+      font-size: 11px;
+      color: rgba(183, 192, 209, 0.75);
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .nl-status {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 12px;
+      color: rgba(183, 192, 209, 0.45);
+      min-height: 18px;
+    }
+
+    .nl-status.error { color: #f87171; }
+
+    .nl-examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      margin-top: 12px;
+    }
+
+    .nl-examples-label {
+      font-size: 11px;
+      color: rgba(183, 192, 209, 0.4);
+      font-weight: 600;
+    }
+
+    .nl-example-chip {
+      padding: 5px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.03);
+      font-size: 11px;
+      color: rgba(183, 192, 209, 0.6);
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+
+    .nl-example-chip:hover {
+      color: #fb923c;
+      border-color: rgba(234, 88, 12, 0.3);
+      background: rgba(234, 88, 12, 0.06);
+    }
+
     @media (max-width: 700px) {
       #fire-graph { height: 420px; }
       .filter-row { flex-direction: column; gap: 12px; }
       .filter-group { min-width: 100%; }
       .qq-grid { grid-template-columns: 1fr; }
+      .nl-input-wrap { flex-direction: column; }
     }
   </style>
 </head>
@@ -585,6 +700,7 @@
             <div class="filter-tabs">
               <div class="filter-tab active" data-tab="filters">Filters</div>
               <div class="filter-tab" data-tab="queries">Quick Queries</div>
+              <div class="filter-tab" data-tab="nlquery">Ask a Question</div>
             </div>
 
             <div class="filter-tab-content active" id="tab-filters">
@@ -687,6 +803,28 @@
               </div>
               <div class="qq-status" id="qq-status"></div>
             </div><!-- end tab-queries -->
+
+            <div class="filter-tab-content" id="tab-nlquery">
+              <p class="nl-hint">Ask a question about California wildfires in plain English. Powered by Llama 3.2 via Cloudflare Workers AI.</p>
+              <div class="nl-input-wrap">
+                <input type="text" class="nl-input" id="nl-question"
+                       placeholder="e.g. Which fires were caused by power lines?"
+                       maxlength="300">
+                <button class="nl-btn" id="nl-submit">Ask</button>
+              </div>
+              <div class="nl-cypher-preview" id="nl-cypher" style="display:none;">
+                <span class="nl-cypher-label">Generated Cypher:</span>
+                <code id="nl-cypher-text"></code>
+              </div>
+              <div class="nl-status" id="nl-status"></div>
+              <div class="nl-examples">
+                <span class="nl-examples-label">Try:</span>
+                <span class="nl-example-chip" data-q="What caused the Camp Fire?">What caused the Camp Fire?</span>
+                <span class="nl-example-chip" data-q="Fires in Los Angeles county">Fires in Los Angeles county</span>
+                <span class="nl-example-chip" data-q="Which fires spread by spot fires?">Which fires spread by spot fires?</span>
+                <span class="nl-example-chip" data-q="Fires linked to power lines">Fires linked to power lines</span>
+              </div>
+            </div><!-- end tab-nlquery -->
 
           </div>
         </div>
@@ -1465,10 +1603,13 @@
         tab.classList.add("active");
         document.getElementById("tab-" + tab.dataset.tab).classList.add("active");
 
-        // When switching back to Filters tab, clear any active quick query
+        // When switching back to Filters tab, clear quick query and NL state
         if (tab.dataset.tab === "filters") {
           document.querySelectorAll(".qq-item.active").forEach(q => q.classList.remove("active"));
           document.getElementById("qq-status").textContent = "";
+          document.getElementById("nl-status").textContent = "";
+          document.getElementById("nl-status").className = "nl-status";
+          document.getElementById("nl-cypher").style.display = "none";
           if (cachedGraphData) applyFilters();
         }
       });
@@ -1629,6 +1770,81 @@
           item.classList.add("active");
           runQuickQuery(item.dataset.qq);
         }
+      });
+    });
+
+    // --- Ask a Question (NL to Cypher) ---
+    async function runNlQuery(question) {
+      const statusEl = document.getElementById("nl-status");
+      const cypherEl = document.getElementById("nl-cypher");
+      const cypherText = document.getElementById("nl-cypher-text");
+      const btn = document.getElementById("nl-submit");
+
+      statusEl.className = "nl-status";
+      statusEl.textContent = "Thinking...";
+      cypherEl.style.display = "none";
+      btn.disabled = true;
+
+      try {
+        const resp = await fetch("/api/nl2cypher", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question })
+        });
+
+        const data = await resp.json();
+
+        if (data.error) {
+          statusEl.className = "nl-status error";
+          statusEl.textContent = data.message || "Could not process that question.";
+          if (data.cypher) {
+            cypherText.textContent = data.cypher;
+            cypherEl.style.display = "block";
+          }
+          btn.disabled = false;
+          return;
+        }
+
+        // Show the generated Cypher
+        cypherText.textContent = data.cypher;
+        cypherEl.style.display = "block";
+
+        // Parse and render the results
+        const graphData = parseQueryResult(data);
+        filteredGraphData = graphData;
+        renderCurrentLayout();
+        updateSummary();
+
+        const fireCount = graphData.nodes.filter(n => n.type === "Fire").length;
+        statusEl.textContent = fireCount === 0
+          ? "No fires matched that question. Try rephrasing."
+          : `${fireCount} fire${fireCount !== 1 ? "s" : ""}, ${graphData.nodes.length} nodes`;
+      } catch (err) {
+        statusEl.className = "nl-status error";
+        statusEl.textContent = "Error: " + err.message;
+      }
+
+      btn.disabled = false;
+    }
+
+    document.getElementById("nl-submit").addEventListener("click", () => {
+      const q = document.getElementById("nl-question").value.trim();
+      if (q) runNlQuery(q);
+    });
+
+    document.getElementById("nl-question").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        const q = e.target.value.trim();
+        if (q) runNlQuery(q);
+      }
+    });
+
+    // Example chip clicks
+    document.querySelectorAll(".nl-example-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        const q = chip.dataset.q;
+        document.getElementById("nl-question").value = q;
+        runNlQuery(q);
       });
     });
 
