@@ -399,6 +399,20 @@
               </div>
             </div>
             <div class="filter-row" style="margin-top: 14px;">
+              <div class="filter-group">
+                <div class="filter-group-label">Contributing Factor</div>
+                <select class="filter-select" id="filter-factor">
+                  <option value="all">All Factors</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <div class="filter-group-label">Spread Mechanism</div>
+                <select class="filter-select" id="filter-spread">
+                  <option value="all">All Mechanisms</option>
+                </select>
+              </div>
+            </div>
+            <div class="filter-row" style="margin-top: 14px;">
               <div class="filter-group" style="flex: 2;">
                 <div class="filter-group-label" style="display:flex;align-items:center;gap:10px;">
                   Fires
@@ -841,6 +855,22 @@
         causeSelect.innerHTML += `<option value="${c}">${c}</option>`;
       });
 
+      // Contributing Factor dropdown
+      const factors = cachedGraphData.nodes.filter(n => n.type === "ContributingFactor").map(n => n.name).sort();
+      const factorSelect = document.getElementById("filter-factor");
+      factorSelect.innerHTML = '<option value="all">All Factors</option>';
+      factors.forEach(f => {
+        factorSelect.innerHTML += `<option value="${f}">${f}</option>`;
+      });
+
+      // Spread Mechanism dropdown
+      const mechanisms = cachedGraphData.nodes.filter(n => n.type === "SpreadMechanism").map(n => n.name).sort();
+      const spreadSelect = document.getElementById("filter-spread");
+      spreadSelect.innerHTML = '<option value="all">All Mechanisms</option>';
+      mechanisms.forEach(m => {
+        spreadSelect.innerHTML += `<option value="${m}">${m}</option>`;
+      });
+
       // Fire checkboxes
       const fireContainer = document.getElementById("filter-fires");
       fireContainer.innerHTML = "";
@@ -875,7 +905,20 @@
       const yearVal = document.getElementById("filter-year").value;
       const causeVal = document.getElementById("filter-cause").value;
       const acresVal = parseInt(document.getElementById("filter-acres").value);
+      const factorVal = document.getElementById("filter-factor").value;
+      const spreadVal = document.getElementById("filter-spread").value;
       const activeFireIds = getActiveFireIds();
+
+      // Build lookup: which fire IDs connect to a given target node name?
+      const fireToTargets = new Map();
+      cachedGraphData.links.forEach(l => {
+        const srcId = typeof l.source === "object" ? l.source.id : l.source;
+        const tgtId = typeof l.target === "object" ? l.target.id : l.target;
+        if (!fireToTargets.has(srcId)) fireToTargets.set(srcId, []);
+        fireToTargets.get(srcId).push({ targetId: tgtId, relType: l.relType });
+      });
+
+      const nodeById = new Map(cachedGraphData.nodes.map(n => [n.id, n]));
 
       // Filter fire nodes
       const filteredFireIds = new Set();
@@ -885,6 +928,27 @@
         if (yearVal !== "all" && String(n.props.year) !== yearVal) return;
         if (causeVal !== "all" && n.props.directCauseCategory !== causeVal) return;
         if (acresVal > 0 && (n.props.acresBurned || 0) < acresVal) return;
+
+        // Check contributing factor filter
+        if (factorVal !== "all") {
+          const targets = fireToTargets.get(n.id) || [];
+          const hasMatch = targets.some(t => {
+            const tgt = nodeById.get(t.targetId);
+            return tgt && tgt.type === "ContributingFactor" && tgt.name === factorVal;
+          });
+          if (!hasMatch) return;
+        }
+
+        // Check spread mechanism filter
+        if (spreadVal !== "all") {
+          const targets = fireToTargets.get(n.id) || [];
+          const hasMatch = targets.some(t => {
+            const tgt = nodeById.get(t.targetId);
+            return tgt && tgt.type === "SpreadMechanism" && tgt.name === spreadVal;
+          });
+          if (!hasMatch) return;
+        }
+
         filteredFireIds.add(n.id);
       });
 
@@ -918,6 +982,8 @@
     document.getElementById("filter-year").addEventListener("change", applyFilters);
     document.getElementById("filter-cause").addEventListener("change", applyFilters);
     document.getElementById("filter-acres").addEventListener("change", applyFilters);
+    document.getElementById("filter-factor").addEventListener("change", applyFilters);
+    document.getElementById("filter-spread").addEventListener("change", applyFilters);
 
     document.getElementById("filter-select-all").addEventListener("click", () => {
       document.querySelectorAll("#filter-fires .filter-chip").forEach(chip => {
@@ -939,6 +1005,8 @@
       document.getElementById("filter-year").value = "all";
       document.getElementById("filter-cause").value = "all";
       document.getElementById("filter-acres").value = "0";
+      document.getElementById("filter-factor").value = "all";
+      document.getElementById("filter-spread").value = "all";
       document.querySelectorAll("#filter-fires .filter-chip").forEach(chip => {
         chip.classList.add("active");
         chip.querySelector("input").checked = true;
