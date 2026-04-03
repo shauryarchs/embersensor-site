@@ -140,7 +140,11 @@
       display: flex;
       justify-content: center;
       gap: 6px;
-      margin-bottom: 16px;
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
     }
 
     .layout-btn {
@@ -364,13 +368,6 @@
       </div>
 
       <div class="graph-wrap">
-        <div class="layout-row">
-          <button class="layout-btn" data-layout="force">Force</button>
-          <button class="layout-btn active" data-layout="tree">Tree</button>
-          <button class="layout-btn" data-layout="radial">Radial</button>
-          <button class="layout-btn" data-layout="cluster">Cluster</button>
-        </div>
-
         <div class="filter-panel" id="filter-panel">
           <div class="filter-panel-header" id="filter-toggle">
             <span class="filter-panel-title">Filters</span>
@@ -420,6 +417,12 @@
         </div>
 
         <div id="fire-graph">
+          <div class="layout-row">
+            <button class="layout-btn" data-layout="force">Force</button>
+            <button class="layout-btn active" data-layout="tree">Tree</button>
+            <button class="layout-btn" data-layout="radial">Radial</button>
+            <button class="layout-btn" data-layout="cluster">Cluster</button>
+          </div>
           <div class="graph-tooltip" id="tooltip"></div>
         </div>
 
