@@ -547,8 +547,10 @@
     function attachTooltipEvents(selection) {
       selection
         .on("mouseover", (e, d) => {
-          if (d.type === "Root" || d.type === "Group") return;
-          tooltip.innerHTML = buildTooltipHtml(d);
+          // Hierarchy nodes wrap data in d.data; force nodes have d.type directly
+          const node = d.data || d;
+          if (node.type === "Root" || node.type === "Group") return;
+          tooltip.innerHTML = buildTooltipHtml(node);
           tooltip.style.opacity = "1";
           tooltip.style.left = (e.offsetX + 16) + "px";
           tooltip.style.top = (e.offsetY - 10) + "px";
