@@ -1136,17 +1136,23 @@
         .attr("fill", "none").attr("stroke", "rgba(255,255,255,0.15)").attr("stroke-width", 1.5);
 
       // Nodes — positioned with swapped x/y for horizontal layout
+      const hideRoot = useReversedHierarchy;
       const node = g.append("g").selectAll("circle").data(root.descendants()).join("circle")
         .attr("cx", d => d.y).attr("cy", d => d.x)
-        .attr("r", d => d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10))
+        .attr("r", d => (hideRoot && d.data.type === "Root") ? 0 : d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10))
         .attr("fill", d => d.data.type === "Root" ? "#fff" : d.data.type === "Group" ? "rgba(183,192,209,0.3)" : (COLORS[d.data.type] || "#888"))
-        .attr("stroke", d => d.data.type === "Root" ? "#aaa" : d.data.type === "Group" ? "transparent" : d3.color(COLORS[d.data.type] || "#888").brighter(0.6))
+        .attr("stroke", d => (hideRoot && d.data.type === "Root") ? "transparent" : d.data.type === "Root" ? "#aaa" : d.data.type === "Group" ? "transparent" : d3.color(COLORS[d.data.type] || "#888").brighter(0.6))
         .attr("stroke-width", 2);
 
       attachTooltipEvents(node.filter(d => d.data.type !== "Root" && d.data.type !== "Group"));
 
+      // Links from root are hidden when reversed
+      if (hideRoot) {
+        g.selectAll("path").attr("stroke", d => d.source.data.type === "Root" ? "transparent" : "rgba(255,255,255,0.15)");
+      }
+
       // Labels — to the right of each node (or left for root)
-      g.append("g").selectAll("text").data(root.descendants()).join("text")
+      g.append("g").selectAll("text").data(root.descendants().filter(d => !(hideRoot && d.data.type === "Root"))).join("text")
         .attr("x", d => {
           const r = d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10);
           // Leaf nodes: label to the right; internal nodes: label to the left if they have children
@@ -1180,22 +1186,25 @@
       treeLayout(root);
 
       // Links
+      const hideRootRadial = useReversedHierarchy;
       g.append("g").selectAll("path").data(root.links()).join("path")
         .attr("d", d3.linkRadial().angle(d => d.x).radius(d => d.y))
-        .attr("fill", "none").attr("stroke", "rgba(255,255,255,0.15)").attr("stroke-width", 1.5);
+        .attr("fill", "none")
+        .attr("stroke", d => (hideRootRadial && d.source.data.type === "Root") ? "transparent" : "rgba(255,255,255,0.15)")
+        .attr("stroke-width", 1.5);
 
       // Nodes
       const node = g.append("g").selectAll("circle").data(root.descendants()).join("circle")
         .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y}, 0)`)
-        .attr("r", d => d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10))
+        .attr("r", d => (hideRootRadial && d.data.type === "Root") ? 0 : d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10))
         .attr("fill", d => d.data.type === "Root" ? "#fff" : d.data.type === "Group" ? "rgba(183,192,209,0.3)" : (COLORS[d.data.type] || "#888"))
-        .attr("stroke", d => d.data.type === "Root" ? "#aaa" : d.data.type === "Group" ? "transparent" : d3.color(COLORS[d.data.type] || "#888").brighter(0.6))
+        .attr("stroke", d => (hideRootRadial && d.data.type === "Root") ? "transparent" : d.data.type === "Root" ? "#aaa" : d.data.type === "Group" ? "transparent" : d3.color(COLORS[d.data.type] || "#888").brighter(0.6))
         .attr("stroke-width", 2);
 
       attachTooltipEvents(node.filter(d => d.data.type !== "Root" && d.data.type !== "Group"));
 
       // Labels
-      g.append("g").selectAll("text").data(root.descendants()).join("text")
+      g.append("g").selectAll("text").data(root.descendants().filter(d => !(hideRootRadial && d.data.type === "Root"))).join("text")
         .attr("transform", d => {
           const angle = d.x * 180 / Math.PI - 90;
           const flip = d.x > Math.PI;
