@@ -647,7 +647,7 @@
       const labelSpace = 180; // extra width for labels on leaf nodes
       const totalW = treeWidth + labelSpace;
       const initialScale = Math.min(1, (height - padding * 2) / treeHeight, (width - padding * 2) / totalW);
-      const offsetX = (width - totalW * initialScale) / 2;
+      const offsetX = (width - totalW * initialScale) / 2 + width * 0.10;
       const offsetY = (height - treeHeight * initialScale) / 2;
       g.attr("transform", `translate(${offsetX}, ${offsetY}) scale(${initialScale})`);
 
