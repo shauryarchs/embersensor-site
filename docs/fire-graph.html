@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Fire Graph | EmberSensor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Interactive graph showing California wildfires traced to their root causes, contributing factors, and spread mechanisms." />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .graph-page {
+      padding: 48px 0 72px;
+    }
+
+    .graph-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .graph-wrap {
+      width: min(1060px, 100%);
+      margin: 0 auto;
+    }
+
+    #fire-graph {
+      width: 100%;
+      height: 600px;
+      border-radius: var(--radius);
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow);
+      background: #1a1f2e;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #fire-graph svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .graph-tooltip {
+      position: absolute;
+      padding: 10px 14px;
+      background: rgba(18, 24, 39, 0.95);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.5;
+      pointer-events: none;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+      max-width: 280px;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 10;
+    }
+
+    .graph-tooltip strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .graph-tooltip .tt-type {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+      opacity: 0.6;
+    }
+
+    .graph-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend-dot.fire { background: #ea580c; border: 1.5px solid #fb923c; }
+    .legend-dot.factor { background: #facc15; border: 1.5px solid #fde68a; }
+    .legend-dot.spread { background: #2563eb; border: 1.5px solid #60a5fa; }
+    .legend-dot.vuln { background: #10b981; border: 1.5px solid #6ee7b7; }
+
+    .graph-status {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 13px;
+      color: rgba(183, 192, 209, 0.55);
+      min-height: 20px;
+    }
+
+    .refresh-row {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .refresh-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 20px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .refresh-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+    }
+
+    @media (max-width: 700px) {
+      #fire-graph { height: 420px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="site-header"></div>
+
+  <section class="graph-page">
+    <div class="container">
+      <div class="graph-header">
+        <div class="eyebrow">Fire Causation Knowledge Graph</div>
+        <h1>Root Cause Analysis</h1>
+        <p class="section-sub">
+          Interactive graph tracing California wildfires to their contributing factors, spread mechanisms, and property vulnerabilities.
+        </p>
+      </div>
+
+      <div class="graph-wrap">
+        <div id="fire-graph">
+          <div class="graph-tooltip" id="tooltip"></div>
+        </div>
+
+        <div class="graph-legend">
+          <div class="legend-item"><div class="legend-dot fire"></div> Fire</div>
+          <div class="legend-item"><div class="legend-dot factor"></div> Contributing Factor</div>
+          <div class="legend-item"><div class="legend-dot spread"></div> Spread Mechanism</div>
+          <div class="legend-item"><div class="legend-dot vuln"></div> Property Vulnerability</div>
+        </div>
+
+        <div class="graph-status" id="graph-status">Loading graph data...</div>
+
+        <div class="refresh-row">
+          <button class="refresh-btn" onclick="loadGraphData()">Refresh</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="script.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script>
+    const COLORS = {
+      Fire: "#ea580c",
+      ContributingFactor: "#facc15",
+      SpreadMechanism: "#2563eb",
+      PropertyVulnerability: "#10b981"
+    };
+
+    const RADIUS = {
+      Fire: 18,
+      ContributingFactor: 12,
+      SpreadMechanism: 12,
+      PropertyVulnerability: 12
+    };
+
+    const LINK_LABELS = {
+      CONTRIBUTED_BY: "contributed by",
+      HAS_DOCUMENTED_SPREAD_MECHANISM: "spread via"
+    };
+
+    const container = document.getElementById("fire-graph");
+    const tooltip = document.getElementById("tooltip");
+    let svg, g, simulation;
+
+    function setStatus(msg) {
+      document.getElementById("graph-status").textContent = msg;
+    }
+
+    function buildTooltipHtml(d) {
+      let html = `<div class="tt-type">${d.type.replace(/([A-Z])/g, " $1").trim()}</div>`;
+      html += `<strong>${d.name}</strong>`;
+
+      if (d.type === "Fire") {
+        if (d.props.year) html += `Year: ${d.props.year}<br>`;
+        if (d.props.county) html += `County: ${d.props.county}<br>`;
+        if (d.props.acresBurned) html += `Acres: ${d.props.acresBurned.toLocaleString()}<br>`;
+        if (d.props.directCause) html += `Cause: ${d.props.directCause}<br>`;
+      } else if (d.type === "ContributingFactor") {
+        if (d.props.factorType) html += `Type: ${d.props.factorType}<br>`;
+      } else if (d.type === "SpreadMechanism") {
+        if (d.props.mechanismType) html += `Type: ${d.props.mechanismType}<br>`;
+        if (d.props.notes) html += `<br>${d.props.notes}`;
+      } else if (d.type === "PropertyVulnerability") {
+        if (d.props.category) html += `Category: ${d.props.category}<br>`;
+        if (d.props.notes) html += `<br>${d.props.notes}`;
+      }
+      return html;
+    }
+
+    function parseNeo4jResults(results) {
+      const nodesMap = new Map();
+      const links = [];
+
+      if (!results || !results.length) return { nodes: [], links: [] };
+
+      const result = results[0];
+      const cols = result.columns;
+      const rows = result.data;
+
+      rows.forEach(row => {
+        const data = row.row;
+        const meta = row.meta;
+
+        for (let i = 0; i < data.length; i++) {
+          if (!data[i] || !meta[i]) continue;
+
+          if (meta[i].type === "node" && !nodesMap.has(meta[i].id)) {
+            const props = data[i];
+            const label = cols[i];
+            nodesMap.set(meta[i].id, {
+              id: meta[i].id,
+              name: props.name || props.fireId || "Unknown",
+              type: label,
+              props: props
+            });
+          }
+
+          if (meta[i].type === "relationship") {
+            links.push({
+              source: meta[i].startNodeElementId,
+              target: meta[i].endNodeElementId,
+              relType: meta[i].type === "relationship" ? data[i] : ""
+            });
+          }
+        }
+      });
+
+      return { nodes: Array.from(nodesMap.values()), links };
+    }
+
+    function renderGraph(graphData) {
+      const { nodes, links } = graphData;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      // Clear previous
+      d3.select("#fire-graph svg").remove();
+
+      svg = d3.select("#fire-graph")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+      g = svg.append("g");
+
+      // Zoom
+      svg.call(d3.zoom()
+        .scaleExtent([0.3, 4])
+        .on("zoom", (e) => g.attr("transform", e.transform))
+      );
+
+      // Simulation
+      simulation = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links).id(d => d.id).distance(120))
+        .force("charge", d3.forceManyBody().strength(-300))
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force("collide", d3.forceCollide(35));
+
+      // Links
+      const link = g.append("g")
+        .selectAll("line")
+        .data(links)
+        .join("line")
+        .attr("stroke", "rgba(255,255,255,0.15)")
+        .attr("stroke-width", 1.5);
+
+      // Link labels
+      const linkLabel = g.append("g")
+        .selectAll("text")
+        .data(links)
+        .join("text")
+        .text(d => LINK_LABELS[d.relType] || d.relType)
+        .attr("fill", "rgba(183,192,209,0.4)")
+        .attr("font-size", "9px")
+        .attr("text-anchor", "middle");
+
+      // Nodes
+      const node = g.append("g")
+        .selectAll("circle")
+        .data(nodes)
+        .join("circle")
+        .attr("r", d => RADIUS[d.type] || 10)
+        .attr("fill", d => COLORS[d.type] || "#888")
+        .attr("stroke", d => d3.color(COLORS[d.type] || "#888").brighter(0.6))
+        .attr("stroke-width", 2)
+        .attr("cursor", "grab")
+        .call(d3.drag()
+          .on("start", (e, d) => {
+            if (!e.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x; d.fy = d.y;
+          })
+          .on("drag", (e, d) => { d.fx = e.x; d.fy = e.y; })
+          .on("end", (e, d) => {
+            if (!e.active) simulation.alphaTarget(0);
+            d.fx = null; d.fy = null;
+          })
+        );
+
+      // Tooltip events
+      node.on("mouseover", (e, d) => {
+        tooltip.innerHTML = buildTooltipHtml(d);
+        tooltip.style.opacity = "1";
+        tooltip.style.left = (e.offsetX + 16) + "px";
+        tooltip.style.top = (e.offsetY - 10) + "px";
+      })
+      .on("mousemove", (e) => {
+        tooltip.style.left = (e.offsetX + 16) + "px";
+        tooltip.style.top = (e.offsetY - 10) + "px";
+      })
+      .on("mouseout", () => {
+        tooltip.style.opacity = "0";
+      });
+
+      // Labels
+      const label = g.append("g")
+        .selectAll("text")
+        .data(nodes)
+        .join("text")
+        .text(d => d.name)
+        .attr("fill", "white")
+        .attr("font-size", d => d.type === "Fire" ? "12px" : "10px")
+        .attr("font-weight", d => d.type === "Fire" ? "700" : "400")
+        .attr("text-anchor", "middle")
+        .attr("dy", d => (RADIUS[d.type] || 10) + 14)
+        .attr("pointer-events", "none");
+
+      // Tick
+      simulation.on("tick", () => {
+        link
+          .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+
+        linkLabel
+          .attr("x", d => (d.source.x + d.target.x) / 2)
+          .attr("y", d => (d.source.y + d.target.y) / 2);
+
+        node.attr("cx", d => d.x).attr("cy", d => d.y);
+        label.attr("x", d => d.x).attr("y", d => d.y);
+      });
+    }
+
+    async function loadGraphData() {
+      setStatus("Loading graph data...");
+
+      const cypher = `
+        MATCH (f:Fire)-[r]->(n)
+        RETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target,
+               elementId(f) AS fId, elementId(n) AS nId
+      `;
+
+      try {
+        const resp = await fetch("/api/graphQuery", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: cypher })
+        });
+
+        const data = await resp.json();
+        if (data.error) throw new Error(data.message || data.error);
+
+        const result = data.results[0];
+        const nodesMap = new Map();
+        const links = [];
+
+        result.data.forEach(row => {
+          const [fireProps, relType, targetLabel, targetProps, fId, nId] = row.row;
+
+          if (!nodesMap.has(fId)) {
+            nodesMap.set(fId, {
+              id: fId,
+              name: fireProps.name,
+              type: "Fire",
+              props: fireProps
+            });
+          }
+
+          if (targetProps && !nodesMap.has(nId)) {
+            nodesMap.set(nId, {
+              id: nId,
+              name: targetProps.name,
+              type: targetLabel,
+              props: targetProps
+            });
+          }
+
+          if (targetProps) {
+            links.push({ source: fId, target: nId, relType: relType });
+          }
+        });
+
+        const graphData = { nodes: Array.from(nodesMap.values()), links };
+        renderGraph(graphData);
+
+        const dt = new Date();
+        setStatus(`${graphData.nodes.length} nodes, ${graphData.links.length} connections — updated ${dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`);
+      } catch (err) {
+        setStatus("Error loading graph: " + err.message);
+      }
+    }
+
+    loadGraphData();
+  </script>
+</body>
+
+</html>
