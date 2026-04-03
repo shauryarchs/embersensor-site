@@ -20,6 +20,7 @@ Project context:
 - API compatibility matters because frontend and mobile clients may already rely on field names
 
 General rules:
+- All new git branches should start with `shaurya/` unless specifically instructed otherwise
 - Do not change API response shapes unless explicitly asked
 - If an API change is necessary, explain it first and identify affected clients
 - Do not remove or rename endpoints unless explicitly asked
