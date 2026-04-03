@@ -405,11 +405,11 @@
 
       <div class="map-wrap">
         <div class="map-counts">
-          <div class="map-count-item">
+          <div class="map-count-item" title="NASA Fire Information for Resource Management System — satellite-detected heat sources">
             <div class="num firms-color" id="count-firms">—</div>
             <div class="label">FIRMS Detections</div>
           </div>
-          <div class="map-count-item">
+          <div class="map-count-item" title="National Interagency Fire Center — confirmed wildfire incidents reported by federal and state agencies">
             <div class="num calfire-color" id="count-calfire">—</div>
             <div class="label">NIFC Incidents</div>
           </div>
@@ -419,9 +419,9 @@
 
         <div class="map-legend">
           <div class="legend-item"><div class="legend-dot home"></div> Home (sensor location)</div>
-          <div class="legend-item"><div class="legend-dot firms"></div> FIRMS satellite detection</div>
-          <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#fb923c,#ef4444);border:none;width:24px;height:10px;border-radius:3px;"></div> FIRMS heat density</div>
-          <div class="legend-item"><div class="legend-dot calfire"></div> NIFC reported incident</div>
+          <div class="legend-item" title="NASA Fire Information for Resource Management System — satellite-detected heat sources"><div class="legend-dot firms"></div> FIRMS satellite detection</div>
+          <div class="legend-item" title="Heatmap of FIRMS detections weighted by thermal brightness"><div class="legend-dot" style="background:linear-gradient(135deg,#fb923c,#ef4444);border:none;width:24px;height:10px;border-radius:3px;"></div> FIRMS heat density</div>
+          <div class="legend-item" title="National Interagency Fire Center — confirmed wildfire incidents reported by federal and state agencies"><div class="legend-dot calfire"></div> NIFC reported incident</div>
         </div>
 
         <div class="map-status" id="map-status">Loading fire data…</div>
@@ -619,17 +619,17 @@
             <hr class="toc-divider">
 
             <div class="toc-section-label">Overlays</div>
-            <div class="toc-layer-row" data-action="toggle-firms">
+            <div class="toc-layer-row" data-action="toggle-firms" title="NASA FIRMS — satellite-detected heat sources">
               <div class="toc-dot firms"></div>
               <span class="toc-layer-name">FIRMS</span>
               <div class="toc-toggle"></div>
             </div>
-            <div class="toc-layer-row" data-action="toggle-heatmap">
+            <div class="toc-layer-row" data-action="toggle-heatmap" title="Heatmap of FIRMS detections weighted by thermal brightness">
               <div class="toc-dot" style="background:linear-gradient(135deg,#fb923c,#ef4444);border:none;"></div>
               <span class="toc-layer-name">Heat Map</span>
               <div class="toc-toggle"></div>
             </div>
-            <div class="toc-layer-row" data-action="toggle-calfire">
+            <div class="toc-layer-row" data-action="toggle-calfire" title="National Interagency Fire Center — confirmed wildfire incidents">
               <div class="toc-dot calfire"></div>
               <span class="toc-layer-name">NIFC Incidents</span>
               <div class="toc-toggle"></div>
