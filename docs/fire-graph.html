@@ -446,10 +446,118 @@
       margin-top: 10px;
     }
 
+    /* --- Filter tab switcher --- */
+    .filter-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 14px;
+    }
+
+    .filter-tab {
+      flex: 1;
+      padding: 9px 0;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgba(183, 192, 209, 0.5);
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s, border-color 0.15s;
+    }
+
+    .filter-tab:first-child { border-radius: 8px 0 0 8px; }
+    .filter-tab:last-child  { border-radius: 0 8px 8px 0; }
+
+    .filter-tab.active {
+      color: #fb923c;
+      background: rgba(234, 88, 12, 0.12);
+      border-color: rgba(234, 88, 12, 0.35);
+    }
+
+    .filter-tab:hover:not(.active) {
+      color: rgba(183, 192, 209, 0.8);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .filter-tab-content { display: none; }
+    .filter-tab-content.active { display: block; }
+
+    /* --- Quick Queries panel --- */
+    .qq-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .qq-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      user-select: none;
+    }
+
+    .qq-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .qq-item.active {
+      border-color: rgba(234, 88, 12, 0.45);
+      background: rgba(234, 88, 12, 0.08);
+    }
+
+    .qq-check {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 255, 255, 0.2);
+      flex-shrink: 0;
+      margin-top: 1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: transparent;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .qq-item.active .qq-check {
+      background: rgba(234, 88, 12, 0.6);
+      border-color: #ea580c;
+      color: #fff;
+    }
+
+    .qq-label {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .qq-item.active .qq-label {
+      color: var(--text);
+    }
+
+    .qq-status {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 12px;
+      color: rgba(183, 192, 209, 0.45);
+      min-height: 18px;
+    }
+
     @media (max-width: 700px) {
       #fire-graph { height: 420px; }
       .filter-row { flex-direction: column; gap: 12px; }
       .filter-group { min-width: 100%; }
+      .qq-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -474,6 +582,12 @@
             <span class="filter-chevron open" id="filter-chevron">&#9660;</span>
           </div>
           <div class="filter-body" id="filter-body">
+            <div class="filter-tabs">
+              <div class="filter-tab active" data-tab="filters">Filters</div>
+              <div class="filter-tab" data-tab="queries">Quick Queries</div>
+            </div>
+
+            <div class="filter-tab-content active" id="tab-filters">
             <div class="filter-row">
               <div class="filter-group">
                 <div class="filter-group-label">Year</div>
@@ -534,6 +648,46 @@
                 <span class="filter-count" id="filter-count"></span>
               </div>
             </div>
+            </div><!-- end tab-filters -->
+
+            <div class="filter-tab-content" id="tab-queries">
+              <div class="qq-grid">
+                <div class="qq-item" data-qq="ember-spread">
+                  <span class="qq-check">&#10003;</span>
+                  <span class="qq-label">Fires where spread was caused by <strong>flying embers</strong></span>
+                </div>
+                <div class="qq-item" data-qq="santa-ana">
+                  <span class="qq-check">&#10003;</span>
+                  <span class="qq-label">Fires contributed to by <strong>Santa Ana Winds</strong></span>
+                </div>
+                <div class="qq-item" data-qq="drought-fires">
+                  <span class="qq-check">&#10003;</span>
+                  <span class="qq-label">Fires linked to <strong>drought</strong> conditions</span>
+                </div>
+                <div class="qq-item" data-qq="arson">
+                  <span class="qq-check">&#10003;</span>
+                  <span class="qq-label">Fires caused by <strong>arson</strong> or human activity</span>
+                </div>
+                <div class="qq-item" data-qq="large-fires">
+                  <span class="qq-check">&#10003;</span>
+                  <span class="qq-label">Fires that burned <strong>100,000+ acres</strong></span>
+                </div>
+                <div class="qq-item" data-qq="multi-mechanism">
+                  <span class="qq-check">&#10003;</span>
+                  <span class="qq-label">Fires with <strong>multiple spread mechanisms</strong></span>
+                </div>
+                <div class="qq-item" data-qq="shared-factors">
+                  <span class="qq-check">&#10003;</span>
+                  <span class="qq-label">Contributing factors shared by <strong>3+ fires</strong></span>
+                </div>
+                <div class="qq-item" data-qq="recent">
+                  <span class="qq-check">&#10003;</span>
+                  <span class="qq-label">Fires from the <strong>last 5 years</strong> (2020–2025)</span>
+                </div>
+              </div>
+              <div class="qq-status" id="qq-status"></div>
+            </div><!-- end tab-queries -->
+
           </div>
         </div>
 
@@ -1302,6 +1456,181 @@
         setStatus("Error loading graph: " + err.message);
       }
     }
+
+    // --- Tab switcher ---
+    document.querySelectorAll(".filter-tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".filter-tab").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".filter-tab-content").forEach(c => c.classList.remove("active"));
+        tab.classList.add("active");
+        document.getElementById("tab-" + tab.dataset.tab).classList.add("active");
+
+        // When switching back to Filters tab, clear any active quick query
+        if (tab.dataset.tab === "filters") {
+          document.querySelectorAll(".qq-item.active").forEach(q => q.classList.remove("active"));
+          document.getElementById("qq-status").textContent = "";
+          if (cachedGraphData) applyFilters();
+        }
+      });
+    });
+
+    // --- Quick Queries ---
+    const QQ_CYPHER = {
+      "ember-spread": {
+        label: "Fires spread by flying embers",
+        query: `MATCH (f:Fire)-[r:HAS_DOCUMENTED_SPREAD_MECHANISM]->(s:SpreadMechanism)
+                WHERE s.name = 'Flying Ember'
+                WITH f, collect({node: s, rel: type(r)}) AS mechs
+                OPTIONAL MATCH (f)-[r2]->(n) WHERE NOT n:SpreadMechanism OR n.name <> 'Flying Ember'
+                RETURN f AS Fire, type(r2) AS rel, labels(n)[0] AS targetLabel, n AS target,
+                       elementId(f) AS fId, elementId(n) AS nId
+                UNION
+                MATCH (f:Fire)-[r:HAS_DOCUMENTED_SPREAD_MECHANISM]->(s:SpreadMechanism {name: 'Flying Ember'})
+                RETURN f AS Fire, type(r) AS rel, labels(s)[0] AS targetLabel, s AS target,
+                       elementId(f) AS fId, elementId(s) AS nId`
+      },
+      "santa-ana": {
+        label: "Fires contributed to by Santa Ana Winds",
+        query: `MATCH (f:Fire)-[r:CONTRIBUTED_BY]->(c:ContributingFactor)
+                WHERE c.name = 'Santa Ana Winds'
+                WITH f, collect({node: c, rel: type(r)}) AS factors
+                OPTIONAL MATCH (f)-[r2]->(n) WHERE NOT n:ContributingFactor OR n.name <> 'Santa Ana Winds'
+                RETURN f AS Fire, type(r2) AS rel, labels(n)[0] AS targetLabel, n AS target,
+                       elementId(f) AS fId, elementId(n) AS nId
+                UNION
+                MATCH (f:Fire)-[r:CONTRIBUTED_BY]->(c:ContributingFactor {name: 'Santa Ana Winds'})
+                RETURN f AS Fire, type(r) AS rel, labels(c)[0] AS targetLabel, c AS target,
+                       elementId(f) AS fId, elementId(c) AS nId`
+      },
+      "drought-fires": {
+        label: "Fires linked to drought",
+        query: `MATCH (f:Fire)-[r:CONTRIBUTED_BY]->(c:ContributingFactor)
+                WHERE c.name = 'Drought'
+                WITH f, collect({node: c, rel: type(r)}) AS factors
+                OPTIONAL MATCH (f)-[r2]->(n) WHERE NOT n:ContributingFactor OR n.name <> 'Drought'
+                RETURN f AS Fire, type(r2) AS rel, labels(n)[0] AS targetLabel, n AS target,
+                       elementId(f) AS fId, elementId(n) AS nId
+                UNION
+                MATCH (f:Fire)-[r:CONTRIBUTED_BY]->(c:ContributingFactor {name: 'Drought'})
+                RETURN f AS Fire, type(r) AS rel, labels(c)[0] AS targetLabel, c AS target,
+                       elementId(f) AS fId, elementId(c) AS nId`
+      },
+      "arson": {
+        label: "Fires caused by arson or human activity",
+        query: `MATCH (f:Fire)-[r]->(n)
+                WHERE f.directCauseCategory IN ['Arson', 'Human', 'Human activity']
+                RETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target,
+                       elementId(f) AS fId, elementId(n) AS nId`
+      },
+      "large-fires": {
+        label: "Fires that burned 100,000+ acres",
+        query: `MATCH (f:Fire)-[r]->(n)
+                WHERE f.acresBurned >= 100000
+                RETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target,
+                       elementId(f) AS fId, elementId(n) AS nId`
+      },
+      "multi-mechanism": {
+        label: "Fires with multiple spread mechanisms",
+        query: `MATCH (f:Fire)-[:HAS_DOCUMENTED_SPREAD_MECHANISM]->(s:SpreadMechanism)
+                WITH f, count(s) AS mechCount WHERE mechCount >= 2
+                MATCH (f)-[r]->(n)
+                RETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target,
+                       elementId(f) AS fId, elementId(n) AS nId`
+      },
+      "shared-factors": {
+        label: "Contributing factors shared by 3+ fires",
+        query: `MATCH (f:Fire)-[:CONTRIBUTED_BY]->(c:ContributingFactor)
+                WITH c, collect(f) AS fires WHERE size(fires) >= 3
+                UNWIND fires AS f
+                MATCH (f)-[r]->(n)
+                RETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target,
+                       elementId(f) AS fId, elementId(n) AS nId`
+      },
+      "recent": {
+        label: "Fires from the last 5 years",
+        query: `MATCH (f:Fire)-[r]->(n)
+                WHERE f.year >= 2020
+                RETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target,
+                       elementId(f) AS fId, elementId(n) AS nId`
+      }
+    };
+
+    function parseQueryResult(data) {
+      const result = data.results[0];
+      const nodesMap = new Map();
+      const links = [];
+
+      result.data.forEach(row => {
+        const [fireProps, relType, targetLabel, targetProps, fId, nId] = row.row;
+
+        if (!nodesMap.has(fId)) {
+          nodesMap.set(fId, { id: fId, name: fireProps.name, type: "Fire", props: fireProps });
+        }
+
+        if (targetProps && !nodesMap.has(nId)) {
+          nodesMap.set(nId, { id: nId, name: targetProps.name, type: targetLabel, props: targetProps });
+        }
+
+        if (targetProps && relType) {
+          const linkKey = fId + "-" + relType + "-" + nId;
+          if (!links.some(l => (l.source === fId || l.source.id === fId) && (l.target === nId || l.target.id === nId) && l.relType === relType)) {
+            links.push({ source: fId, target: nId, relType });
+          }
+        }
+      });
+
+      return { nodes: Array.from(nodesMap.values()), links };
+    }
+
+    async function runQuickQuery(key) {
+      const qq = QQ_CYPHER[key];
+      if (!qq) return;
+
+      const statusEl = document.getElementById("qq-status");
+      statusEl.textContent = "Running query...";
+      setStatus("Running quick query...");
+
+      try {
+        const resp = await fetch("/api/graphQuery", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: qq.query })
+        });
+
+        const data = await resp.json();
+        if (data.error) throw new Error(data.message || data.error);
+
+        const graphData = parseQueryResult(data);
+        filteredGraphData = graphData;
+        renderCurrentLayout();
+        updateSummary();
+
+        const fireCount = graphData.nodes.filter(n => n.type === "Fire").length;
+        statusEl.textContent = `${fireCount} fire${fireCount !== 1 ? "s" : ""}, ${graphData.nodes.length} nodes`;
+        setStatus(`Quick query: ${qq.label} — ${graphData.nodes.length} nodes`);
+      } catch (err) {
+        statusEl.textContent = "Error: " + err.message;
+        setStatus("Query error: " + err.message);
+      }
+    }
+
+    document.querySelectorAll(".qq-item").forEach(item => {
+      item.addEventListener("click", () => {
+        const wasActive = item.classList.contains("active");
+
+        // Deselect all — only one quick query at a time
+        document.querySelectorAll(".qq-item").forEach(q => q.classList.remove("active"));
+
+        if (wasActive) {
+          // Toggled off — revert to full cached data with filters
+          document.getElementById("qq-status").textContent = "";
+          if (cachedGraphData) applyFilters();
+        } else {
+          item.classList.add("active");
+          runQuickQuery(item.dataset.qq);
+        }
+      });
+    });
 
     loadGraphData();
   </script>
