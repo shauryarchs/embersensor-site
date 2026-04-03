@@ -2257,6 +2257,60 @@
       });
     });
 
+    // --- Print: auto-fit graph to show all content ---
+    let savedViewBox = null;
+    let savedTransform = null;
+
+    window.addEventListener("beforeprint", () => {
+      const svgEl = document.querySelector("#fire-graph svg");
+      const gEl = svgEl && svgEl.querySelector("g");
+      if (!svgEl || !gEl) return;
+
+      // Save current state
+      savedViewBox = svgEl.getAttribute("viewBox");
+      savedTransform = gEl.getAttribute("transform");
+
+      // Remove the transform so getBBox gives us the raw content bounds
+      // For tree layouts the transform includes scale+translate
+      // We need to compute the bounding box in the transformed space
+      const bbox = gEl.getBBox();
+      if (bbox.width === 0 || bbox.height === 0) return;
+
+      const pad = 40;
+      const vbX = bbox.x - pad;
+      const vbY = bbox.y - pad;
+      const vbW = bbox.width + pad * 2;
+      const vbH = bbox.height + pad * 2;
+
+      // Set viewBox to fit all content and remove the g transform
+      svgEl.setAttribute("viewBox", `${vbX} ${vbY} ${vbW} ${vbH}`);
+      svgEl.setAttribute("preserveAspectRatio", "xMidYMid meet");
+      gEl.removeAttribute("transform");
+    });
+
+    window.addEventListener("afterprint", () => {
+      const svgEl = document.querySelector("#fire-graph svg");
+      const gEl = svgEl && svgEl.querySelector("g");
+      if (!svgEl || !gEl) return;
+
+      // Restore original state
+      if (savedViewBox) {
+        svgEl.setAttribute("viewBox", savedViewBox);
+      } else {
+        svgEl.removeAttribute("viewBox");
+      }
+      svgEl.removeAttribute("preserveAspectRatio");
+
+      if (savedTransform) {
+        gEl.setAttribute("transform", savedTransform);
+      } else {
+        gEl.removeAttribute("transform");
+      }
+
+      savedViewBox = null;
+      savedTransform = null;
+    });
+
     loadGraphData();
   </script>
 </body>
