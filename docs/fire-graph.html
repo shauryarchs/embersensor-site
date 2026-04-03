@@ -931,10 +931,10 @@
         </div>
 
         <div class="graph-legend">
-          <div class="legend-item"><div class="legend-dot fire"></div> Fire</div>
-          <div class="legend-item"><div class="legend-dot factor"></div> Contributing Factor</div>
-          <div class="legend-item"><div class="legend-dot spread"></div> Spread Mechanism</div>
-          <div class="legend-item"><div class="legend-dot vuln"></div> Property Vulnerability</div>
+          <div class="legend-item"><div class="legend-dot fire"></div> 🔥 Fire</div>
+          <div class="legend-item"><div class="legend-dot factor"></div> ⚠️ Contributing Factor</div>
+          <div class="legend-item"><div class="legend-dot spread"></div> 💨 Spread Mechanism</div>
+          <div class="legend-item"><div class="legend-dot vuln"></div> 🏠 Property Vulnerability</div>
         </div>
 
         <div class="graph-summary" id="graph-summary"></div>
@@ -962,9 +962,62 @@
 
     const RADIUS = {
       Fire: 18,
-      ContributingFactor: 12,
-      SpreadMechanism: 12,
-      PropertyVulnerability: 12
+      ContributingFactor: 14,
+      SpreadMechanism: 14,
+      PropertyVulnerability: 14
+    };
+
+    // Emoji symbols by node name, then by type as fallback
+    const SYMBOLS_BY_NAME = {
+      "California Wildfires": "🌲",
+      // Contributing factors
+      "Drought": "☀️",
+      "Santa Ana Winds": "🌬️",
+      "High Wind": "💨",
+      "Low Humidity": "🌡️",
+      "Topography": "⛰️",
+      "Arson": "🧨",
+      "Power Line": "⚡",
+      "Power line failure": "⚡",
+      "Campfire": "🏕️",
+      "Lightning": "⚡",
+      "Climate Change": "🌍",
+      "Dense Vegetation": "🌿",
+      "Dry Vegetation": "🍂",
+      // Spread mechanisms
+      "Flying Ember": "✨",
+      "Spot Fire": "🔥",
+      "Pyrocumulonimbus": "🌩️",
+      "Radiant Heat": "🔆",
+      "Direct Flame Contact": "🔥",
+      // Property vulnerabilities
+      "Debris-filled gutters": "🏚️",
+      "Unprotected vents": "🏠",
+      "Wood fencing": "🪵",
+    };
+
+    const SYMBOLS_BY_TYPE = {
+      Fire: "🔥",
+      ContributingFactor: "⚠️",
+      SpreadMechanism: "💨",
+      PropertyVulnerability: "🏠",
+      Root: "🌲",
+      Group: ""
+    };
+
+    function getNodeSymbol(d) {
+      // d may be a hierarchy node (d.data) or a flat node
+      const node = d.data || d;
+      if (node.type === "Group") return "";
+      return SYMBOLS_BY_NAME[node.name] || SYMBOLS_BY_TYPE[node.type] || "";
+    }
+
+    const SYMBOL_SIZE = {
+      Fire: "14px",
+      ContributingFactor: "11px",
+      SpreadMechanism: "11px",
+      PropertyVulnerability: "11px",
+      Root: "12px"
     };
 
     const LINK_LABELS = {
@@ -1154,6 +1207,12 @@
 
       attachTooltipEvents(node);
 
+      const emoji = g.append("g").selectAll("text").data(nodes).join("text")
+        .text(d => getNodeSymbol(d))
+        .attr("font-size", d => SYMBOL_SIZE[d.type] || "11px")
+        .attr("text-anchor", "middle").attr("dominant-baseline", "central")
+        .attr("pointer-events", "none");
+
       const label = g.append("g").selectAll("text").data(nodes).join("text")
         .text(d => truncate(d.name, 22)).attr("fill", "white")
         .attr("font-size", d => d.type === "Fire" ? "11px" : "9px")
@@ -1167,6 +1226,7 @@
           .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
         linkLabel.attr("x", d => (d.source.x + d.target.x) / 2).attr("y", d => (d.source.y + d.target.y) / 2);
         node.attr("cx", d => d.x).attr("cy", d => d.y);
+        emoji.attr("x", d => d.x).attr("y", d => d.y);
         label.attr("x", d => d.x).attr("y", d => d.y);
       });
     }
@@ -1221,6 +1281,14 @@
           g.selectAll("path").attr("stroke", d => d.source.data.type === "Root" ? "transparent" : "rgba(255,255,255,0.15)");
         }
 
+        // Emoji on nodes
+        g.append("g").selectAll("text").data(root.descendants().filter(d => d.data.type !== "Group" && !(hideRoot && d.data.type === "Root"))).join("text")
+          .attr("x", d => d.x).attr("y", d => d.y)
+          .text(d => getNodeSymbol(d))
+          .attr("font-size", d => SYMBOL_SIZE[d.data.type] || "11px")
+          .attr("text-anchor", "middle").attr("dominant-baseline", "central")
+          .attr("pointer-events", "none");
+
         // Labels — below each node
         g.append("g").selectAll("text").data(root.descendants().filter(d => !(hideRoot && d.data.type === "Root"))).join("text")
           .attr("x", d => d.x)
@@ -1268,6 +1336,14 @@
         if (hideRoot) {
           g.selectAll("path").attr("stroke", d => d.source.data.type === "Root" ? "transparent" : "rgba(255,255,255,0.15)");
         }
+
+        // Emoji on nodes
+        g.append("g").selectAll("text").data(root.descendants().filter(d => d.data.type !== "Group" && !(hideRoot && d.data.type === "Root"))).join("text")
+          .attr("x", d => d.y).attr("y", d => d.x)
+          .text(d => getNodeSymbol(d))
+          .attr("font-size", d => SYMBOL_SIZE[d.data.type] || "11px")
+          .attr("text-anchor", "middle").attr("dominant-baseline", "central")
+          .attr("pointer-events", "none");
 
         // Labels — to the right of each node (or left for root)
         g.append("g").selectAll("text").data(root.descendants().filter(d => !(hideRoot && d.data.type === "Root"))).join("text")
@@ -1320,6 +1396,14 @@
         .attr("stroke-width", 2);
 
       attachTooltipEvents(node.filter(d => d.data.type !== "Root" && d.data.type !== "Group"));
+
+      // Emoji on nodes
+      g.append("g").selectAll("text").data(root.descendants().filter(d => d.data.type !== "Group" && !(hideRootRadial && d.data.type === "Root"))).join("text")
+        .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y}, 0)`)
+        .text(d => getNodeSymbol(d))
+        .attr("font-size", d => SYMBOL_SIZE[d.data.type] || "11px")
+        .attr("text-anchor", "middle").attr("dominant-baseline", "central")
+        .attr("pointer-events", "none");
 
       // Labels
       g.append("g").selectAll("text").data(root.descendants().filter(d => !(hideRootRadial && d.data.type === "Root"))).join("text")
@@ -1404,6 +1488,12 @@
 
       attachTooltipEvents(node);
 
+      const clusterEmoji = g.append("g").selectAll("text").data(nodes).join("text")
+        .text(d => getNodeSymbol(d))
+        .attr("font-size", d => SYMBOL_SIZE[d.type] || "11px")
+        .attr("text-anchor", "middle").attr("dominant-baseline", "central")
+        .attr("pointer-events", "none");
+
       const label = g.append("g").selectAll("text").data(nodes).join("text")
         .text(d => truncate(d.name, 22)).attr("fill", "white")
         .attr("font-size", d => d.type === "Fire" ? "11px" : "9px")
@@ -1415,6 +1505,7 @@
         link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
           .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
         node.attr("cx", d => d.x).attr("cy", d => d.y);
+        clusterEmoji.attr("x", d => d.x).attr("y", d => d.y);
         label.attr("x", d => d.x).attr("y", d => d.y);
       });
     }
