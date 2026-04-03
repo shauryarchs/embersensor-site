@@ -824,10 +824,11 @@
 
       // Year dropdown
       const years = [...new Set(fires.map(f => f.props.year).filter(Boolean))].sort((a, b) => b - a);
+      const latestYear = years[0];
       const yearSelect = document.getElementById("filter-year");
       yearSelect.innerHTML = '<option value="all">All Years</option>';
       years.forEach(y => {
-        yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
+        yearSelect.innerHTML += `<option value="${y}"${y === latestYear ? ' selected' : ''}>${y}</option>`;
       });
 
       // Cause dropdown

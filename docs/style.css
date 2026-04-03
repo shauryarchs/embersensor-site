@@ -338,6 +338,14 @@ section {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.graph-btn {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(5, 150, 105, 0.95));
+}
+
+.graph-btn:hover {
+  box-shadow: 0 0 24px rgba(16, 185, 129, 0.45);
+}
+
 .icon {
   font-size: 18px;
   line-height: 1;
