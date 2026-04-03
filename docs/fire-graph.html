@@ -1641,11 +1641,20 @@
           document.getElementById("nl-cypher").style.display = "none";
         }
 
-        // When switching back to Filters tab, clear quick query state and revert graph
+        // When switching to Filters tab, clear quick query state and revert graph
         if (tab.dataset.tab === "filters") {
           document.querySelectorAll(".qq-item.active").forEach(q => q.classList.remove("active"));
           document.getElementById("qq-status").textContent = "";
           if (cachedGraphData) applyFilters();
+        }
+
+        // When switching to Quick Analysis tab, auto-select the first option
+        if (tab.dataset.tab === "queries") {
+          const first = document.querySelector(".qq-item");
+          if (first && !document.querySelector(".qq-item.active")) {
+            first.classList.add("active");
+            runQuickQuery(first.dataset.qq);
+          }
         }
       });
     });
