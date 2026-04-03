@@ -209,7 +209,7 @@ export default {
 
         const effectiveFireCount = computeEffectiveFireCount(nearby, calfireNearby.length);
         const sensorScore = computeSensorScore(mergedData);
-        const fireScore = computeFireScore(nearby, closestFireDistanceMiles, windThreat, calfireNearby.length, effectiveFireCount);
+        const fireScore = computeFireScore(nearby, closestFireDistanceMiles, calfireNearby.length, effectiveFireCount);
         const weatherScore = computeWeatherScore(mergedData, effectiveFireCount);
         const windScore = computeWindScore(windThreat, fireScore);
 

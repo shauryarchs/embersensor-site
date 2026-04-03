@@ -739,21 +739,16 @@
       if (nearbyCount > 0 && closestDist != null && closestDist < 5) proxPts = 1;
       fireFactors += factorHTML("Closest fire proximity" + (closestDist != null ? " (" + closestDist + " mi)" : ""), proxPts);
 
-      const fireBaseScore = cfp + firmsPts + proxPts;
-      const fireWindPts = (fireBaseScore > 0 && windThreat) ? 1 : 0;
-      const windIgnored = !hasEffectiveFires || fireBaseScore === 0;
-      fireFactors += factorHTML("Wind carrying fire toward home" + (windIgnored ? " (ignored — no fire score)" : ""), fireWindPts);
       document.getElementById("factors-fire").innerHTML = fireFactors;
 
       document.getElementById("detail-fire").innerHTML =
-        "The fire score (0–4) combines confirmed fire reports and satellite detections. " +
+        "The fire score (0–4) measures nearby fire presence and proximity. " +
         "CAL FIRE confirmed incidents carry the most weight: 1 incident adds +2, and 2 or more add +3. " +
         "FIRMS satellite detections are weighted by confidence (high = 1.0, nominal = 0.5) and then halved — " +
         "so only 6+ weighted detections contribute +1 point, reducing noise from false positives. " +
         "If any FIRMS detection is within 5 miles, a proximity bonus of +1 is added. " +
-        "Wind blowing fire toward your home adds +1, but only when the fire factors above have already " +
-        "contributed points — wind alone cannot create a fire score. " +
-        "If there are no fires (CAL FIRE + weighted FIRMS = 0), the entire fire score is 0. Capped at 4.";
+        "Wind is not factored here — it has its own dedicated Wind Score. " +
+        "If there are no effective fires (CAL FIRE + weighted FIRMS = 0), the fire score is 0. Capped at 4.";
 
       // --- Weather Score ---
       const ws = b.weatherScore ?? 0;

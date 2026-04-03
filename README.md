@@ -122,14 +122,13 @@ Wind is only relevant when there are confirmed fires. This rule applies across m
      │                  │
      │                  └── Wind Score → 0
      │
-     ├── Fire wind threat → +1
      └── Wind Score → +2
 ```
 
 **Summary:**
 - If `effectiveFireCount = 0` → fire score is 0, weather ignores wind speed, wind score is 0
-- If `effectiveFireCount > 0` but fire factors score 0 → fire wind threat is skipped, wind score is 0
-- If `fireScore > 0` → fire wind threat adds +1, wind score adds +2
+- If `effectiveFireCount > 0` but fire factors score 0 → wind score is 0
+- If `fireScore > 0` AND wind blows from fire toward home → wind score adds +2
 
 ---
 
@@ -253,15 +252,6 @@ effectiveFireCount = calfireCount + sum(FIRMS detections weighted by confidence)
   └────────┬───────────────┘
            │
            v
-  ┌────────────────────────┐
-  │ Wind Threat            │
-  │                        │
-  │ Only if score > 0      │
-  │ AND wind blows fire    │
-  │ toward home → +1       │
-  └────────┬───────────────┘
-           │
-           v
      min(score, 4)
 ```
 
@@ -288,14 +278,7 @@ effectiveFireCount = calfireCount + sum(FIRMS detections weighted by confidence)
 | Closest FIRMS detection < 5 miles AND weighted > 0 | +1 |
 | Otherwise | 0 |
 
-**Wind Threat:**
-
-| Condition | Points |
-|---|---|
-| Fire factors scored > 0 AND wind blows toward home | +1 |
-| Fire factors scored 0 OR no wind threat | 0 |
-
-Wind threat is only applied as a multiplier when fire factors have already contributed points. Wind alone cannot create a fire score.
+Wind is **not** factored into the fire score — it has its own dedicated Wind Score (see section 4).
 
 **Final:** `min(accumulated_points, 4)`
 
@@ -469,15 +452,14 @@ The wind score depends on the **fire score**, not just the presence of fires. If
 | CAL FIRE | 1 | +2 |
 | FIRMS (weighted) | 3.5 | 0 |
 | Closest fire | 4 mi | +1 |
-| Wind threat | Yes | +1 (fire factors > 0) |
-| **Fire Score** | | **4** (capped) |
+| **Fire Score** | | **3** |
 | Humidity | 15% | +2 |
 | Wind | 6 m/s | +1 |
 | Temp | 98 °F | +1 |
 | **Weather Score** | | **3** (capped) |
 | Wind threat | Yes | +2 (fire score > 0) |
 | **Wind Score** | | **2** |
-| **Risk Index** | | **clamp(13) = 10 (HIGH)** |
+| **Risk Index** | | **clamp(12) = 10 (HIGH)** |
 
 #### Scenario C: Rainy Day Despite Nearby Fire
 | Component | Value | Score |
@@ -503,7 +485,7 @@ The scoring algorithm is implemented in [`worker/src/risk.js`](worker/src/risk.j
 |---|---|
 | `computeSensorScore(data)` | IoT sensor scoring with critical condition early returns |
 | `computeEffectiveFireCount(nearbyFires, calfireCount)` | CAL FIRE + FIRMS weighted count |
-| `computeFireScore(nearbyFires, closestDistance, windThreat, calfireCount, effectiveFireCount)` | Fire activity scoring with wind gating |
+| `computeFireScore(nearbyFires, closestDistance, calfireCount, effectiveFireCount)` | Fire presence and proximity scoring |
 | `computeWeatherScore(data, effectiveFireCount)` | Weather scoring with conditional wind speed |
 | `computeWindScore(windThreat, fireScore)` | Binary wind score gated on fire score |
 

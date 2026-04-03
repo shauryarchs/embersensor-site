@@ -25,7 +25,7 @@ export function computeSensorScore(data) {
     return Math.min(score, 4);
 }
 
-export function computeFireScore(nearbyFires, closestDistance, windThreat, calfireCount = 0, effectiveFireCount = 0) {
+export function computeFireScore(nearbyFires, closestDistance, calfireCount = 0, effectiveFireCount = 0) {
     if (effectiveFireCount === 0) return 0;
 
     let score = 0;
@@ -45,9 +45,6 @@ export function computeFireScore(nearbyFires, closestDistance, windThreat, calfi
 
     // Closest FIRMS detection proximity bonus
     if (firmsWeighted > 0 && closestDistance < 5) score += 1;
-
-    // Wind carrying fire toward home — only counts when fire factors scored > 0
-    if (score > 0 && windThreat) score += 1;
 
     return Math.min(score, 4);
 }
