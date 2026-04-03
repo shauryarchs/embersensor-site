@@ -2,6 +2,8 @@
 
 The Wildfire Analysis page (`fire-graph.html`) provides an interactive graph visualization of California wildfire causation data stored in a Neo4j graph database.
 
+![Wildfire Analysis page showing a tree layout of the Palisades and Eaton fires with filters, contributing factors, and spread mechanisms](images/website/wildfire-analysis.png)
+
 ## Graph Schema
 
 | Node Type | Examples | Description |
