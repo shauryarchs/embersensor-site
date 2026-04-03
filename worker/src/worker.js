@@ -19,6 +19,7 @@ import {
 import { round2 } from "./utils.js";
 import { fetchYoutubeLiveStatus } from "./youtube.js";
 import { fetchCalfireData, findNearbyCalfireIncidents } from "./calfire.js";
+import { handleGraphQuery } from "./neo4j.js";
 
 export default {
   async fetch(request, env) {
@@ -168,6 +169,10 @@ export default {
           headers: { "Content-Type": "application/json" }
         });
       }
+    }
+
+    if (url.pathname === "/api/graphQuery") {
+      return handleGraphQuery(request, env);
     }
 
     if (url.pathname === "/api/status") {
