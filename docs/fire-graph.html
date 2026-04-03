@@ -711,7 +711,8 @@
         --muted: #555 !important;
       }
 
-      body { background: #fff !important; color: #111 !important; margin: 0; padding: 0; }
+      body { background: #fff !important; color: #111 !important; margin: 0 !important; padding: 0 !important; }
+      .graph-page { margin: 0 !important; }
 
       #site-header, #site-header *, #site-footer, #site-footer *,
       .graph-header, .filter-panel,
@@ -734,7 +735,7 @@
       }
 
       .graph-page { padding: 0 !important; }
-      .container, .graph-wrap { width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+      .container, .graph-wrap { width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
 
       #fire-graph {
         height: auto !important;
@@ -798,7 +799,7 @@
       </div>
 
       <div class="graph-wrap">
-        <h1 id="print-report-title" class="print-title">Wildfire Analysis Report</h1>
+        <div id="print-report-title" class="print-title">Wildfire Analysis Report</div>
         <div class="filter-panel" id="filter-panel">
           <div class="filter-panel-header" id="filter-toggle">
             <span class="filter-panel-title">Filters</span>
