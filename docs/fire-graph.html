@@ -365,8 +365,8 @@
 
       <div class="graph-wrap">
         <div class="layout-row">
-          <button class="layout-btn active" data-layout="force">Force</button>
-          <button class="layout-btn" data-layout="tree">Tree</button>
+          <button class="layout-btn" data-layout="force">Force</button>
+          <button class="layout-btn active" data-layout="tree">Tree</button>
           <button class="layout-btn" data-layout="radial">Radial</button>
           <button class="layout-btn" data-layout="cluster">Cluster</button>
         </div>
@@ -403,7 +403,12 @@
             </div>
             <div class="filter-row" style="margin-top: 14px;">
               <div class="filter-group" style="flex: 2;">
-                <div class="filter-group-label">Fires</div>
+                <div class="filter-group-label" style="display:flex;align-items:center;gap:10px;">
+                  Fires
+                  <span id="filter-select-all" style="font-size:11px;font-weight:600;text-transform:none;letter-spacing:0;color:#fb923c;cursor:pointer;">Select All</span>
+                  <span style="color:rgba(183,192,209,0.3);">|</span>
+                  <span id="filter-clear-all" style="font-size:11px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--muted);cursor:pointer;">Clear All</span>
+                </div>
                 <div class="filter-checkboxes" id="filter-fires"></div>
               </div>
               <div class="filter-actions">
@@ -460,7 +465,7 @@
     const container = document.getElementById("fire-graph");
     const tooltip = document.getElementById("tooltip");
     let svg, g, simulation;
-    let currentLayout = "force";
+    let currentLayout = "tree";
     let cachedGraphData = null;   // raw from API
     let filteredGraphData = null; // after filters applied
 
@@ -882,6 +887,22 @@
     document.getElementById("filter-year").addEventListener("change", applyFilters);
     document.getElementById("filter-cause").addEventListener("change", applyFilters);
     document.getElementById("filter-acres").addEventListener("change", applyFilters);
+
+    document.getElementById("filter-select-all").addEventListener("click", () => {
+      document.querySelectorAll("#filter-fires .filter-chip").forEach(chip => {
+        chip.classList.add("active");
+        chip.querySelector("input").checked = true;
+      });
+      applyFilters();
+    });
+
+    document.getElementById("filter-clear-all").addEventListener("click", () => {
+      document.querySelectorAll("#filter-fires .filter-chip").forEach(chip => {
+        chip.classList.remove("active");
+        chip.querySelector("input").checked = false;
+      });
+      applyFilters();
+    });
 
     document.getElementById("filter-reset").addEventListener("click", () => {
       document.getElementById("filter-year").value = "all";
