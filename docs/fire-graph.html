@@ -768,7 +768,11 @@
 
             <div class="filter-tab-content active" id="tab-queries">
               <div class="qq-grid">
-                <div class="qq-item active" data-qq="ember-spread">
+                <div class="qq-item active" data-qq="last-year">
+                  <span class="qq-check">&#10003;</span>
+                  <span class="qq-label">Fires in the <strong>last year</strong></span>
+                </div>
+                <div class="qq-item" data-qq="ember-spread">
                   <span class="qq-check">&#10003;</span>
                   <span class="qq-label">Fires where spread was caused by <strong>flying embers</strong></span>
                 </div>
@@ -787,10 +791,6 @@
                 <div class="qq-item" data-qq="large-fires">
                   <span class="qq-check">&#10003;</span>
                   <span class="qq-label">Fires that burned <strong>100,000+ acres</strong></span>
-                </div>
-                <div class="qq-item" data-qq="multi-mechanism">
-                  <span class="qq-check">&#10003;</span>
-                  <span class="qq-label">Fires with <strong>multiple spread mechanisms</strong></span>
                 </div>
                 <div class="qq-item" data-qq="shared-factors">
                   <span class="qq-check">&#10003;</span>
@@ -1695,11 +1695,9 @@
                 RETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target,
                        elementId(f) AS fId, elementId(n) AS nId`
       },
-      "multi-mechanism": {
-        label: "Fires with multiple spread mechanisms",
-        query: `MATCH (f:Fire)-[:HAS_DOCUMENTED_SPREAD_MECHANISM]->(s:SpreadMechanism)
-                WITH f, count(s) AS mechCount WHERE mechCount >= 2
-                MATCH (f)-[r]->(n)
+      "last-year": {
+        label: "Fires in the last year",
+        query: `MATCH (f:Fire)-[r]->(n) WHERE f.year >= ${new Date().getFullYear() - 1}
                 RETURN f AS Fire, type(r) AS rel, labels(n)[0] AS targetLabel, n AS target,
                        elementId(f) AS fId, elementId(n) AS nId`
       },
