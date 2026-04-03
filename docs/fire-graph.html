@@ -697,9 +697,17 @@
     }
 
     @media print {
-      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      /* Override dark theme to print-friendly light colors */
+      :root {
+        --bg: #ffffff !important;
+        --bg-soft: #f5f5f5 !important;
+        --card: #f9f9f9 !important;
+        --card-border: #ddd !important;
+        --text: #111 !important;
+        --muted: #555 !important;
+      }
 
-      body { margin: 0; padding: 0; }
+      body { background: #fff !important; color: #111 !important; margin: 0; padding: 0; }
 
       #site-header, #site-footer, .graph-header, .filter-panel,
       .graph-status, .refresh-row, .layout-row,
@@ -709,26 +717,49 @@
       .container, .graph-wrap { width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
 
       #fire-graph {
-        height: 500px !important;
+        height: auto !important;
+        min-height: 480px;
+        border: 2px solid #ccc !important;
         border-radius: 8px !important;
         box-shadow: none !important;
+        background: #fff !important;
+        overflow: visible !important;
         page-break-inside: avoid;
       }
 
       #fire-graph svg {
         width: 100% !important;
-        height: 100% !important;
+        height: auto !important;
+        min-height: 480px;
       }
+
+      /* Make SVG content readable on white */
+      #fire-graph svg text { fill: #222 !important; }
+      #fire-graph svg line { stroke: rgba(0,0,0,0.15) !important; }
+      #fire-graph svg path { stroke: rgba(0,0,0,0.15) !important; }
 
       .graph-legend {
         page-break-inside: avoid;
-        margin-top: 12px !important;
+        margin-top: 10px !important;
+        color: #333 !important;
       }
 
+      .legend-item { color: #333 !important; }
+
       .graph-summary {
+        background: #f9f9f9 !important;
+        border: 2px solid #ccc !important;
+        border-radius: 8px !important;
+        box-shadow: none !important;
+        color: #222 !important;
         page-break-inside: avoid;
         margin-top: 12px !important;
+        backdrop-filter: none !important;
       }
+
+      .graph-summary strong { color: #000 !important; }
+      .graph-summary .summary-title { color: #555 !important; }
+      .graph-summary .fire-detail { border-left-color: #ea580c !important; color: #333 !important; }
     }
   </style>
 </head>
