@@ -1066,10 +1066,10 @@
     };
 
     const RADIUS = {
-      Fire: 18,
-      ContributingFactor: 14,
-      SpreadMechanism: 14,
-      PropertyVulnerability: 14
+      Fire: 36,
+      ContributingFactor: 28,
+      SpreadMechanism: 28,
+      PropertyVulnerability: 28
     };
 
     // Emoji symbols by node name, then by type as fallback
@@ -1118,11 +1118,11 @@
     }
 
     const SYMBOL_SIZE = {
-      Fire: "14px",
-      ContributingFactor: "11px",
-      SpreadMechanism: "11px",
-      PropertyVulnerability: "11px",
-      Root: "12px"
+      Fire: "28px",
+      ContributingFactor: "22px",
+      SpreadMechanism: "22px",
+      PropertyVulnerability: "22px",
+      Root: "24px"
     };
 
     const LINK_LABELS = {
@@ -1293,17 +1293,17 @@
         .force("collide", d3.forceCollide(50));
 
       const link = g.append("g").selectAll("line").data(links).join("line")
-        .attr("stroke", "rgba(255,255,255,0.15)").attr("stroke-width", 1.5);
+        .attr("stroke", "rgba(255,255,255,0.15)").attr("stroke-width", 3);
 
       const linkLabel = g.append("g").selectAll("text").data(links).join("text")
         .text(d => LINK_LABELS[d.relType] || d.relType)
-        .attr("fill", "rgba(183,192,209,0.4)").attr("font-size", "9px").attr("text-anchor", "middle");
+        .attr("fill", "rgba(183,192,209,0.4)").attr("font-size", "18px").attr("text-anchor", "middle");
 
       const node = g.append("g").selectAll("circle").data(nodes).join("circle")
-        .attr("r", d => RADIUS[d.type] || 10)
+        .attr("r", d => RADIUS[d.type] || 20)
         .attr("fill", d => COLORS[d.type] || "#888")
         .attr("stroke", d => d3.color(COLORS[d.type] || "#888").brighter(0.6))
-        .attr("stroke-width", 2).attr("cursor", "grab")
+        .attr("stroke-width", 4).attr("cursor", "grab")
         .call(d3.drag()
           .on("start", (e, d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
           .on("drag", (e, d) => { d.fx = e.x; d.fy = e.y; })
@@ -1314,16 +1314,16 @@
 
       const emoji = g.append("g").selectAll("text").data(nodes).join("text")
         .text(d => getNodeSymbol(d))
-        .attr("font-size", d => SYMBOL_SIZE[d.type] || "11px")
+        .attr("font-size", d => SYMBOL_SIZE[d.type] || "22px")
         .attr("text-anchor", "middle").attr("dominant-baseline", "central")
         .attr("pointer-events", "none");
 
       const label = g.append("g").selectAll("text").data(nodes).join("text")
         .text(d => truncate(d.name, 22)).attr("fill", "white")
-        .attr("font-size", d => d.type === "Fire" ? "11px" : "9px")
+        .attr("font-size", d => d.type === "Fire" ? "22px" : "18px")
         .attr("font-weight", d => d.type === "Fire" ? "700" : "400")
         .attr("text-anchor", "middle")
-        .attr("dy", d => (RADIUS[d.type] || 10) + 14)
+        .attr("dy", d => (RADIUS[d.type] || 20) + 20)
         .attr("pointer-events", "none");
 
       simulation.on("tick", () => {
@@ -1370,15 +1370,15 @@
         // Links — vertical curved paths
         g.append("g").selectAll("path").data(root.links()).join("path")
           .attr("d", d => `M${d.source.x},${d.source.y} C${d.source.x},${(d.source.y + d.target.y) / 2} ${d.target.x},${(d.source.y + d.target.y) / 2} ${d.target.x},${d.target.y}`)
-          .attr("fill", "none").attr("stroke", "rgba(255,255,255,0.15)").attr("stroke-width", 1.5);
+          .attr("fill", "none").attr("stroke", "rgba(255,255,255,0.15)").attr("stroke-width", 3);
 
         // Nodes
         const node = g.append("g").selectAll("circle").data(root.descendants()).join("circle")
           .attr("cx", d => d.x).attr("cy", d => d.y)
-          .attr("r", d => (hideRoot && d.data.type === "Root") ? 0 : d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10))
+          .attr("r", d => (hideRoot && d.data.type === "Root") ? 0 : d.data.type === "Root" ? 28 : d.data.type === "Group" ? 10 : (RADIUS[d.data.type] || 20))
           .attr("fill", d => d.data.type === "Root" ? "#fff" : d.data.type === "Group" ? "rgba(183,192,209,0.3)" : (COLORS[d.data.type] || "#888"))
           .attr("stroke", d => (hideRoot && d.data.type === "Root") ? "transparent" : d.data.type === "Root" ? "#aaa" : d.data.type === "Group" ? "transparent" : d3.color(COLORS[d.data.type] || "#888").brighter(0.6))
-          .attr("stroke-width", 2);
+          .attr("stroke-width", 4);
 
         attachTooltipEvents(node.filter(d => d.data.type !== "Root" && d.data.type !== "Group"));
 
@@ -1390,7 +1390,7 @@
         g.append("g").selectAll("text").data(root.descendants().filter(d => d.data.type !== "Group" && !(hideRoot && d.data.type === "Root"))).join("text")
           .attr("x", d => d.x).attr("y", d => d.y)
           .text(d => getNodeSymbol(d))
-          .attr("font-size", d => SYMBOL_SIZE[d.data.type] || "11px")
+          .attr("font-size", d => SYMBOL_SIZE[d.data.type] || "22px")
           .attr("text-anchor", "middle").attr("dominant-baseline", "central")
           .attr("pointer-events", "none");
 
@@ -1398,13 +1398,13 @@
         g.append("g").selectAll("text").data(root.descendants().filter(d => !(hideRoot && d.data.type === "Root"))).join("text")
           .attr("x", d => d.x)
           .attr("y", d => {
-            const r = d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10);
-            return d.children ? d.y - r - 6 : d.y + r + 14;
+            const r = d.data.type === "Root" ? 28 : d.data.type === "Group" ? 10 : (RADIUS[d.data.type] || 20);
+            return d.children ? d.y - r - 6 : d.y + r + 20;
           })
           .attr("text-anchor", "middle")
           .text(d => truncate(d.data.name, 22))
           .attr("fill", d => d.data.type === "Group" ? "rgba(183,192,209,0.5)" : "white")
-          .attr("font-size", d => d.data.type === "Fire" ? "11px" : d.data.type === "Group" ? "9px" : "10px")
+          .attr("font-size", d => d.data.type === "Fire" ? "22px" : d.data.type === "Group" ? "18px" : "20px")
           .attr("font-weight", d => d.data.type === "Fire" ? "700" : "400")
           .attr("pointer-events", "none");
 
@@ -1426,15 +1426,15 @@
         // Links — horizontal curved paths
         g.append("g").selectAll("path").data(root.links()).join("path")
           .attr("d", d => `M${d.source.y},${d.source.x} C${(d.source.y + d.target.y) / 2},${d.source.x} ${(d.source.y + d.target.y) / 2},${d.target.x} ${d.target.y},${d.target.x}`)
-          .attr("fill", "none").attr("stroke", "rgba(255,255,255,0.15)").attr("stroke-width", 1.5);
+          .attr("fill", "none").attr("stroke", "rgba(255,255,255,0.15)").attr("stroke-width", 3);
 
         // Nodes
         const node = g.append("g").selectAll("circle").data(root.descendants()).join("circle")
           .attr("cx", d => d.y).attr("cy", d => d.x)
-          .attr("r", d => (hideRoot && d.data.type === "Root") ? 0 : d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10))
+          .attr("r", d => (hideRoot && d.data.type === "Root") ? 0 : d.data.type === "Root" ? 28 : d.data.type === "Group" ? 10 : (RADIUS[d.data.type] || 20))
           .attr("fill", d => d.data.type === "Root" ? "#fff" : d.data.type === "Group" ? "rgba(183,192,209,0.3)" : (COLORS[d.data.type] || "#888"))
           .attr("stroke", d => (hideRoot && d.data.type === "Root") ? "transparent" : d.data.type === "Root" ? "#aaa" : d.data.type === "Group" ? "transparent" : d3.color(COLORS[d.data.type] || "#888").brighter(0.6))
-          .attr("stroke-width", 2);
+          .attr("stroke-width", 4);
 
         attachTooltipEvents(node.filter(d => d.data.type !== "Root" && d.data.type !== "Group"));
 
@@ -1446,14 +1446,14 @@
         g.append("g").selectAll("text").data(root.descendants().filter(d => d.data.type !== "Group" && !(hideRoot && d.data.type === "Root"))).join("text")
           .attr("x", d => d.y).attr("y", d => d.x)
           .text(d => getNodeSymbol(d))
-          .attr("font-size", d => SYMBOL_SIZE[d.data.type] || "11px")
+          .attr("font-size", d => SYMBOL_SIZE[d.data.type] || "22px")
           .attr("text-anchor", "middle").attr("dominant-baseline", "central")
           .attr("pointer-events", "none");
 
         // Labels — to the right of each node (or left for root)
         g.append("g").selectAll("text").data(root.descendants().filter(d => !(hideRoot && d.data.type === "Root"))).join("text")
           .attr("x", d => {
-            const r = d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10);
+            const r = d.data.type === "Root" ? 28 : d.data.type === "Group" ? 10 : (RADIUS[d.data.type] || 20);
             return d.children ? d.y - r - 6 : d.y + r + 6;
           })
           .attr("y", d => d.x)
@@ -1461,7 +1461,7 @@
           .attr("text-anchor", d => d.children ? "end" : "start")
           .text(d => truncate(d.data.name, 30))
           .attr("fill", d => d.data.type === "Group" ? "rgba(183,192,209,0.5)" : "white")
-          .attr("font-size", d => d.data.type === "Fire" ? "11px" : d.data.type === "Group" ? "9px" : "10px")
+          .attr("font-size", d => d.data.type === "Fire" ? "22px" : d.data.type === "Group" ? "18px" : "20px")
           .attr("font-weight", d => d.data.type === "Fire" ? "700" : "400")
           .attr("pointer-events", "none");
       }
@@ -1490,15 +1490,15 @@
         .attr("d", d3.linkRadial().angle(d => d.x).radius(d => d.y))
         .attr("fill", "none")
         .attr("stroke", d => (hideRootRadial && d.source.data.type === "Root") ? "transparent" : "rgba(255,255,255,0.15)")
-        .attr("stroke-width", 1.5);
+        .attr("stroke-width", 3);
 
       // Nodes
       const node = g.append("g").selectAll("circle").data(root.descendants()).join("circle")
         .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y}, 0)`)
-        .attr("r", d => (hideRootRadial && d.data.type === "Root") ? 0 : d.data.type === "Root" ? 14 : d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10))
+        .attr("r", d => (hideRootRadial && d.data.type === "Root") ? 0 : d.data.type === "Root" ? 28 : d.data.type === "Group" ? 10 : (RADIUS[d.data.type] || 20))
         .attr("fill", d => d.data.type === "Root" ? "#fff" : d.data.type === "Group" ? "rgba(183,192,209,0.3)" : (COLORS[d.data.type] || "#888"))
         .attr("stroke", d => (hideRootRadial && d.data.type === "Root") ? "transparent" : d.data.type === "Root" ? "#aaa" : d.data.type === "Group" ? "transparent" : d3.color(COLORS[d.data.type] || "#888").brighter(0.6))
-        .attr("stroke-width", 2);
+        .attr("stroke-width", 4);
 
       attachTooltipEvents(node.filter(d => d.data.type !== "Root" && d.data.type !== "Group"));
 
@@ -1506,7 +1506,7 @@
       g.append("g").selectAll("text").data(root.descendants().filter(d => d.data.type !== "Group" && !(hideRootRadial && d.data.type === "Root"))).join("text")
         .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y}, 0)`)
         .text(d => getNodeSymbol(d))
-        .attr("font-size", d => SYMBOL_SIZE[d.data.type] || "11px")
+        .attr("font-size", d => SYMBOL_SIZE[d.data.type] || "22px")
         .attr("text-anchor", "middle").attr("dominant-baseline", "central")
         .attr("pointer-events", "none");
 
@@ -1521,13 +1521,13 @@
         .attr("x", d => {
           if (d.depth === 0) return 0;
           const flip = d.x > Math.PI;
-          const r = d.data.type === "Group" ? 5 : (RADIUS[d.data.type] || 10);
+          const r = d.data.type === "Group" ? 10 : (RADIUS[d.data.type] || 20);
           return flip ? -(r + 6) : (r + 6);
         })
         .attr("text-anchor", d => d.depth === 0 ? "middle" : (d.x > Math.PI ? "end" : "start"))
         .text(d => truncate(d.data.name, 26))
         .attr("fill", d => d.data.type === "Group" ? "rgba(183,192,209,0.5)" : "white")
-        .attr("font-size", d => d.data.type === "Fire" ? "11px" : d.data.type === "Group" ? "9px" : "10px")
+        .attr("font-size", d => d.data.type === "Fire" ? "22px" : d.data.type === "Group" ? "18px" : "20px")
         .attr("font-weight", d => d.data.type === "Fire" ? "700" : "400")
         .attr("pointer-events", "none");
     }
@@ -1565,7 +1565,7 @@
         const c = clusterCenters[t];
         g.append("text").attr("x", c.x).attr("y", c.y - Math.min(width, height) * 0.16)
           .attr("text-anchor", "middle").attr("fill", COLORS[t])
-          .attr("font-size", "11px").attr("font-weight", "700")
+          .attr("font-size", "22px").attr("font-weight", "700")
           .attr("letter-spacing", "0.06em").attr("opacity", 0.6)
           .text(t.replace(/([A-Z])/g, " $1").trim().toUpperCase());
       });
@@ -1578,13 +1578,13 @@
         .force("collide", d3.forceCollide(45));
 
       const link = g.append("g").selectAll("line").data(links).join("line")
-        .attr("stroke", "rgba(255,255,255,0.1)").attr("stroke-width", 1).attr("stroke-dasharray", "4 3");
+        .attr("stroke", "rgba(255,255,255,0.1)").attr("stroke-width", 2).attr("stroke-dasharray", "4 3");
 
       const node = g.append("g").selectAll("circle").data(nodes).join("circle")
-        .attr("r", d => RADIUS[d.type] || 10)
+        .attr("r", d => RADIUS[d.type] || 20)
         .attr("fill", d => COLORS[d.type] || "#888")
         .attr("stroke", d => d3.color(COLORS[d.type] || "#888").brighter(0.6))
-        .attr("stroke-width", 2).attr("cursor", "grab")
+        .attr("stroke-width", 4).attr("cursor", "grab")
         .call(d3.drag()
           .on("start", (e, d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
           .on("drag", (e, d) => { d.fx = e.x; d.fy = e.y; })
@@ -1595,15 +1595,15 @@
 
       const clusterEmoji = g.append("g").selectAll("text").data(nodes).join("text")
         .text(d => getNodeSymbol(d))
-        .attr("font-size", d => SYMBOL_SIZE[d.type] || "11px")
+        .attr("font-size", d => SYMBOL_SIZE[d.type] || "22px")
         .attr("text-anchor", "middle").attr("dominant-baseline", "central")
         .attr("pointer-events", "none");
 
       const label = g.append("g").selectAll("text").data(nodes).join("text")
         .text(d => truncate(d.name, 22)).attr("fill", "white")
-        .attr("font-size", d => d.type === "Fire" ? "11px" : "9px")
+        .attr("font-size", d => d.type === "Fire" ? "22px" : "18px")
         .attr("font-weight", d => d.type === "Fire" ? "700" : "400")
-        .attr("text-anchor", "middle").attr("dy", d => (RADIUS[d.type] || 10) + 14)
+        .attr("text-anchor", "middle").attr("dy", d => (RADIUS[d.type] || 20) + 20)
         .attr("pointer-events", "none");
 
       simulation.on("tick", () => {
