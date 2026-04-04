@@ -608,6 +608,14 @@
       overflow-x: auto;
     }
 
+    .nl-cypher-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
+
     .nl-cypher-label {
       font-size: 10px;
       font-weight: 700;
@@ -615,16 +623,66 @@
       letter-spacing: 0.06em;
       color: rgba(183, 192, 209, 0.4);
       display: block;
-      margin-bottom: 6px;
+      margin-bottom: 0;
     }
 
-    .nl-cypher-preview code {
+    .nl-cypher-toggle {
+      font-size: 10px;
+      color: rgba(183, 192, 209, 0.4);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px 6px;
+      transition: color 0.15s;
+    }
+    .nl-cypher-toggle:hover { color: rgba(183, 192, 209, 0.7); }
+
+    .nl-cypher-body {
+      margin-top: 6px;
+    }
+    .nl-cypher-body.collapsed { display: none; }
+
+    .nl-cypher-preview textarea {
       font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
       font-size: 11px;
       color: rgba(183, 192, 209, 0.75);
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      width: 100%;
+      min-height: 48px;
+      padding: 8px;
+      resize: vertical;
+      box-sizing: border-box;
       white-space: pre-wrap;
       word-break: break-all;
     }
+    .nl-cypher-preview textarea:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .nl-cypher-actions {
+      margin-top: 6px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .nl-run-cypher-btn {
+      font-size: 11px;
+      padding: 4px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(183, 192, 209, 0.7);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .nl-run-cypher-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: rgba(183, 192, 209, 0.95);
+    }
+    .nl-run-cypher-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .nl-status {
       text-align: center;
@@ -941,8 +999,16 @@
                   <button class="nl-btn" id="nl-submit">Ask</button>
                 </div>
                 <div class="nl-cypher-preview" id="nl-cypher" style="display:none;">
-                  <span class="nl-cypher-label">Generated Cypher:</span>
-                  <code id="nl-cypher-text"></code>
+                  <div class="nl-cypher-header" id="nl-cypher-header">
+                    <span class="nl-cypher-label">Generated Cypher</span>
+                    <button class="nl-cypher-toggle" id="nl-cypher-toggle">▼ Hide</button>
+                  </div>
+                  <div class="nl-cypher-body" id="nl-cypher-body">
+                    <textarea id="nl-cypher-text" rows="3"></textarea>
+                    <div class="nl-cypher-actions">
+                      <button class="nl-run-cypher-btn" id="nl-run-cypher">Run Edited Query</button>
+                    </div>
+                  </div>
                 </div>
                 <div class="nl-status" id="nl-status"></div>
                 <div class="nl-examples">
@@ -2229,16 +2295,20 @@
           statusEl.className = "nl-status error";
           statusEl.textContent = data.message || "Could not process that question.";
           if (data.cypher) {
-            cypherText.textContent = data.cypher;
+            cypherText.value = data.cypher;
             cypherEl.style.display = "block";
+          document.getElementById("nl-cypher-body").classList.remove("collapsed");
+          document.getElementById("nl-cypher-toggle").textContent = "▼ Hide";
           }
           btn.disabled = false;
           return;
         }
 
         // Show the generated Cypher
-        cypherText.textContent = data.cypher;
+        cypherText.value = data.cypher;
         cypherEl.style.display = "block";
+          document.getElementById("nl-cypher-body").classList.remove("collapsed");
+          document.getElementById("nl-cypher-toggle").textContent = "▼ Hide";
 
         // Parse and render the results
         const graphData = parseQueryResult(data);
@@ -2277,6 +2347,52 @@
         document.getElementById("nl-question").value = q;
         runNlQuery(q);
       });
+    });
+
+    // Cypher preview: collapse / expand toggle
+    document.getElementById("nl-cypher-header").addEventListener("click", () => {
+      const body = document.getElementById("nl-cypher-body");
+      const toggle = document.getElementById("nl-cypher-toggle");
+      const collapsed = body.classList.toggle("collapsed");
+      toggle.textContent = collapsed ? "▶ Show" : "▼ Hide";
+    });
+
+    // Run edited Cypher query
+    document.getElementById("nl-run-cypher").addEventListener("click", async () => {
+      const cypher = document.getElementById("nl-cypher-text").value.trim();
+      if (!cypher) return;
+
+      const statusEl = document.getElementById("nl-status");
+      const btn = document.getElementById("nl-run-cypher");
+      statusEl.className = "nl-status";
+      statusEl.textContent = "Running edited query...";
+      btn.disabled = true;
+
+      try {
+        const resp = await fetch("/api/graphQuery", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: cypher })
+        });
+
+        const data = await resp.json();
+        if (data.error) throw new Error(data.message || data.error);
+
+        const graphData = parseQueryResult(data);
+        filteredGraphData = graphData;
+        renderCurrentLayout();
+        updateSummary();
+
+        const fireCount = graphData.nodes.filter(n => n.type === "Fire").length;
+        statusEl.textContent = fireCount === 0
+          ? "No fires matched. Try adjusting the query."
+          : `${fireCount} fire${fireCount !== 1 ? "s" : ""}, ${graphData.nodes.length} nodes`;
+      } catch (err) {
+        statusEl.className = "nl-status error";
+        statusEl.textContent = "Error: " + err.message;
+      }
+
+      btn.disabled = false;
     });
 
     // --- Print: auto-fit graph to show all content ---
