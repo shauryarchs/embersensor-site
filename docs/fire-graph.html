@@ -1466,7 +1466,7 @@
       d3.select("#fire-graph svg").remove();
       svg = d3.select("#fire-graph").append("svg").attr("width", width).attr("height", height);
       g = svg.append("g");
-      svg.call(d3.zoom().scaleExtent([0.2, 5]).on("zoom", (e) => g.attr("transform", e.transform)));
+      svg.call(d3.zoom().scaleExtent([0.05, 5]).on("zoom", (e) => g.attr("transform", e.transform)));
 
       const root = d3.hierarchy(hierarchy);
       const leafCount = root.leaves().length;
@@ -1474,9 +1474,9 @@
 
       let treeLayout;
       if (isVertical) {
-        const treeW = Math.max(width - 80, leafCount * 90);
-        const treeH = Math.max(height - 120, root.height * 200);
-        treeLayout = d3.tree().size([treeW, treeH]).separation((a, b) => a.parent === b.parent ? 1.2 : 2);
+        const treeW = Math.max(width - 80, leafCount * 140);
+        const treeH = Math.max(height - 120, root.height * 280);
+        treeLayout = d3.tree().size([treeW, treeH]).separation((a, b) => a.parent === b.parent ? 2 : 3);
         treeLayout(root);
 
         const padding = 60;
@@ -1531,9 +1531,9 @@
 
       } else {
         // Horizontal left-to-right
-        const treeHeight = Math.max(height - 80, leafCount * 56);
-        const treeWidth = Math.max(width - 280, root.height * 300);
-        treeLayout = d3.tree().size([treeHeight, treeWidth]).separation((a, b) => a.parent === b.parent ? 1.2 : 2);
+        const treeHeight = Math.max(height - 80, leafCount * 100);
+        const treeWidth = Math.max(width - 280, root.height * 400);
+        treeLayout = d3.tree().size([treeHeight, treeWidth]).separation((a, b) => a.parent === b.parent ? 2 : 3);
         treeLayout(root);
 
         const padding = 60;
