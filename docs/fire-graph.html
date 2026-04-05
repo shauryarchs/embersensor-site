@@ -77,17 +77,47 @@
     .graph-legend {
       display: flex;
       flex-wrap: wrap;
-      gap: 20px;
+      gap: 24px;
       justify-content: center;
       margin-top: 16px;
+    }
+
+    .legend-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .legend-group-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-group-title .legend-dot {
+      width: 10px;
+      height: 10px;
     }
 
     .legend-item {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 13px;
+      gap: 6px;
+      font-size: 12px;
       color: var(--muted);
+      padding-left: 16px;
+    }
+
+    .legend-icon {
+      font-size: 14px;
+      width: 20px;
+      text-align: center;
+      flex-shrink: 0;
     }
 
     .legend-dot {
@@ -868,6 +898,7 @@
       }
 
       .legend-item { color: #333 !important; }
+      .legend-group-title { color: #333 !important; }
 
       .graph-summary {
         background: #f9f9f9 !important;
@@ -1094,10 +1125,40 @@
         </div>
 
         <div class="graph-legend">
-          <div class="legend-item"><div class="legend-dot fire"></div> 🔥 Fire</div>
-          <div class="legend-item"><div class="legend-dot factor"></div> ⚠️ Contributing Factor</div>
-          <div class="legend-item"><div class="legend-dot spread"></div> 💨 Spread Mechanism</div>
-          <div class="legend-item"><div class="legend-dot vuln"></div> 🏠 Property Vulnerability</div>
+          <div class="legend-group">
+            <div class="legend-group-title" style="color: #fb923c;"><div class="legend-dot fire"></div>Fire</div>
+            <div class="legend-item"><span class="legend-icon">🔥</span> Fire (default)</div>
+          </div>
+          <div class="legend-group">
+            <div class="legend-group-title" style="color: #86efac;"><div class="legend-dot factor"></div>Contributing Factor</div>
+            <div class="legend-item"><span class="legend-icon">☀��</span> Drought</div>
+            <div class="legend-item"><span class="legend-icon">🌬️</span> Santa Ana Winds</div>
+            <div class="legend-item"><span class="legend-icon">💨</span> High Wind</div>
+            <div class="legend-item"><span class="legend-icon">🌡️</span> Low Humidity</div>
+            <div class="legend-item"><span class="legend-icon">⛰️</span> Topography</div>
+            <div class="legend-item"><span class="legend-icon">🧨</span> Arson</div>
+            <div class="legend-item"><span class="legend-icon">⚡</span> Power Line / Lightning</div>
+            <div class="legend-item"><span class="legend-icon">🏕️</span> Campfire</div>
+            <div class="legend-item"><span class="legend-icon">🌍</span> Climate Change</div>
+            <div class="legend-item"><span class="legend-icon">🌿</span> Dense Vegetation</div>
+            <div class="legend-item"><span class="legend-icon">🍂</span> Dry Vegetation</div>
+            <div class="legend-item"><span class="legend-icon">⚠️</span> Other (default)</div>
+          </div>
+          <div class="legend-group">
+            <div class="legend-group-title" style="color: #60a5fa;"><div class="legend-dot spread"></div>Spread Mechanism</div>
+            <div class="legend-item"><span class="legend-icon">✨</span> Flying Ember</div>
+            <div class="legend-item"><span class="legend-icon">🔥</span> Spot Fire / Direct Flame</div>
+            <div class="legend-item"><span class="legend-icon">🌩️</span> Pyrocumulonimbus</div>
+            <div class="legend-item"><span class="legend-icon">🔆</span> Radiant Heat</div>
+            <div class="legend-item"><span class="legend-icon">💨</span> Other (default)</div>
+          </div>
+          <div class="legend-group">
+            <div class="legend-group-title" style="color: #6ee7b7;"><div class="legend-dot vuln"></div>Property Vulnerability</div>
+            <div class="legend-item"><span class="legend-icon">🏚️</span> Debris-filled Gutters</div>
+            <div class="legend-item"><span class="legend-icon">🏠</span> Unprotected Vents</div>
+            <div class="legend-item"><span class="legend-icon">🪵</span> Wood Fencing</div>
+            <div class="legend-item"><span class="legend-icon">🏠</span> Other (default)</div>
+          </div>
         </div>
 
         <div class="graph-summary" id="graph-summary"></div>
@@ -1377,6 +1438,7 @@
         .attr("pointer-events", "none");
 
       const label = g.append("g").selectAll("text").data(nodes).join("text")
+        .attr("class", "node-label")
         .text(d => truncate(d.name, 22)).attr("fill", "white")
         .attr("font-size", d => d.type === "Fire" ? "22px" : "18px")
         .attr("font-weight", d => d.type === "Fire" ? "700" : "400")
@@ -1454,6 +1516,7 @@
 
         // Labels — below each node
         g.append("g").selectAll("text").data(root.descendants().filter(d => !(hideRoot && d.data.type === "Root"))).join("text")
+          .attr("class", "node-label")
           .attr("x", d => d.x)
           .attr("y", d => {
             const r = d.data.type === "Root" ? 28 : d.data.type === "Group" ? 10 : (RADIUS[d.data.type] || 20);
@@ -1510,6 +1573,7 @@
 
         // Labels — to the right of each node (or left for root)
         g.append("g").selectAll("text").data(root.descendants().filter(d => !(hideRoot && d.data.type === "Root"))).join("text")
+          .attr("class", "node-label")
           .attr("x", d => {
             const r = d.data.type === "Root" ? 28 : d.data.type === "Group" ? 10 : (RADIUS[d.data.type] || 20);
             return d.children ? d.y - r - 6 : d.y + r + 6;
@@ -1570,6 +1634,7 @@
 
       // Labels
       g.append("g").selectAll("text").data(root.descendants().filter(d => !(hideRootRadial && d.data.type === "Root"))).join("text")
+        .attr("class", "node-label")
         .attr("transform", d => {
           const angle = d.x * 180 / Math.PI - 90;
           const flip = d.x > Math.PI;
@@ -1658,6 +1723,7 @@
         .attr("pointer-events", "none");
 
       const label = g.append("g").selectAll("text").data(nodes).join("text")
+        .attr("class", "node-label")
         .text(d => truncate(d.name, 22)).attr("fill", "white")
         .attr("font-size", d => d.type === "Fire" ? "22px" : "18px")
         .attr("font-weight", d => d.type === "Fire" ? "700" : "400")
@@ -1982,21 +2048,10 @@
     function applyLabelVisibility() {
       const svgEl = document.querySelector("#fire-graph svg");
       if (!svgEl) return;
-      // Labels are the last <g> with text elements that have fill="white" or group-colored text
-      // We target text elements that are node labels (not emoji, not link labels)
-      svgEl.querySelectorAll("text").forEach(t => {
+      svgEl.querySelectorAll(".node-label").forEach(t => {
         const nodeType = t.__data__?.type || t.__data__?.data?.type;
-        if (!nodeType) return;
-        // Skip emoji text (single char or emoji) — labels are multi-char names
-        const text = t.textContent || "";
-        if (text.length <= 2) return;
-        // Skip link labels and cluster header labels
-        if (t.getAttribute("text-anchor") === "middle" && t.getAttribute("letter-spacing")) return;
-        if (nodeType in labelVisibility && !labelVisibility[nodeType]) {
-          t.setAttribute("opacity", "0");
-        } else {
-          t.removeAttribute("opacity");
-        }
+        if (!nodeType || !(nodeType in labelVisibility)) return;
+        t.setAttribute("opacity", labelVisibility[nodeType] ? "1" : "0");
       });
     }
 
