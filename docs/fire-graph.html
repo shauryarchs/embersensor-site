@@ -2335,7 +2335,7 @@
     // --- Ask a Question (NL to Cypher) ---
     let nlAccessCode = null; // stored after successful unlock
     let nlLockTimer = null;
-    const NL_LOCK_TIMEOUT = 30000; // 30 seconds
+    const NL_LOCK_TIMEOUT = 300000; // 5 minutes
 
     function lockNlQuery() {
       nlAccessCode = null;
