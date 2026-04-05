@@ -171,6 +171,50 @@
       color: #fb923c;
     }
 
+    .label-toggle-row {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      position: absolute;
+      top: 54px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+    }
+
+    .label-toggle {
+      padding: 4px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s, opacity 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .label-toggle:hover { background: rgba(255, 255, 255, 0.08); }
+
+    .label-toggle.active {
+      background: rgba(255, 255, 255, 0.10);
+      border-color: rgba(255, 255, 255, 0.20);
+      color: #fff;
+    }
+
+    .label-toggle .lt-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .label-toggle.inactive { opacity: 0.45; }
+
     /* --- Filter panel --- */
     .filter-panel {
       background: var(--card);
@@ -774,7 +818,7 @@
 
       #site-header, #site-header *, #site-footer, #site-footer *,
       .graph-header, .filter-panel,
-      .graph-status, .refresh-row, .layout-row,
+      .graph-status, .refresh-row, .layout-row, .label-toggle-row,
       .graph-tooltip, .print-btn,
       nav, header, .nav, .site-header { display: none !important; }
 
@@ -1032,6 +1076,20 @@
             <button class="layout-btn" data-layout="radial">Radial</button>
             <button class="layout-btn" data-layout="cluster">Cluster</button>
           </div>
+          <div class="label-toggle-row">
+            <button class="label-toggle active" data-label-type="Fire">
+              <span class="lt-dot" style="background: rgba(234, 88, 12, 0.7);"></span>Fire
+            </button>
+            <button class="label-toggle active" data-label-type="ContributingFactor">
+              <span class="lt-dot" style="background: rgba(74, 222, 128, 0.7);"></span>Factor
+            </button>
+            <button class="label-toggle active" data-label-type="SpreadMechanism">
+              <span class="lt-dot" style="background: rgba(37, 99, 235, 0.7);"></span>Spread
+            </button>
+            <button class="label-toggle active" data-label-type="PropertyVulnerability">
+              <span class="lt-dot" style="background: rgba(16, 185, 129, 0.7);"></span>Vulnerability
+            </button>
+          </div>
           <div class="graph-tooltip" id="tooltip"></div>
         </div>
 
@@ -1287,10 +1345,10 @@
       svg.call(d3.zoom().scaleExtent([0.3, 4]).on("zoom", (e) => g.attr("transform", e.transform)));
 
       simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(160))
-        .force("charge", d3.forceManyBody().strength(-500))
+        .force("link", d3.forceLink(links).id(d => d.id).distance(250))
+        .force("charge", d3.forceManyBody().strength(-800))
         .force("center", d3.forceCenter(width / 2, height / 2))
-        .force("collide", d3.forceCollide(50));
+        .force("collide", d3.forceCollide(d => (RADIUS[d.type] || 20) + 30));
 
       const link = g.append("g").selectAll("line").data(links).join("line")
         .attr("stroke", "rgba(255,255,255,0.15)").attr("stroke-width", 3);
@@ -1354,9 +1412,9 @@
 
       let treeLayout;
       if (isVertical) {
-        const treeW = Math.max(width - 80, leafCount * 50);
-        const treeH = Math.max(height - 120, root.height * 140);
-        treeLayout = d3.tree().size([treeW, treeH]).separation((a, b) => a.parent === b.parent ? 1 : 1.4);
+        const treeW = Math.max(width - 80, leafCount * 90);
+        const treeH = Math.max(height - 120, root.height * 200);
+        treeLayout = d3.tree().size([treeW, treeH]).separation((a, b) => a.parent === b.parent ? 1.2 : 2);
         treeLayout(root);
 
         const padding = 60;
@@ -1410,9 +1468,9 @@
 
       } else {
         // Horizontal left-to-right
-        const treeHeight = Math.max(height - 80, leafCount * 28);
-        const treeWidth = Math.max(width - 280, root.height * 200);
-        treeLayout = d3.tree().size([treeHeight, treeWidth]).separation((a, b) => a.parent === b.parent ? 1 : 1.4);
+        const treeHeight = Math.max(height - 80, leafCount * 56);
+        const treeWidth = Math.max(width - 280, root.height * 300);
+        treeLayout = d3.tree().size([treeHeight, treeWidth]).separation((a, b) => a.parent === b.parent ? 1.2 : 2);
         treeLayout(root);
 
         const padding = 60;
@@ -1473,7 +1531,7 @@
       const width = container.clientWidth;
       const height = container.clientHeight;
       const leafCount = d3.hierarchy(hierarchy).leaves().length;
-      const radius = Math.max(Math.min(width, height) / 2 - 80, leafCount * 10);
+      const radius = Math.max(Math.min(width, height) / 2 - 80, leafCount * 20);
 
       d3.select("#fire-graph svg").remove();
       svg = d3.select("#fire-graph").append("svg").attr("width", width).attr("height", height);
@@ -1571,11 +1629,11 @@
       });
 
       simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(120).strength(0.3))
-        .force("charge", d3.forceManyBody().strength(-250))
+        .force("link", d3.forceLink(links).id(d => d.id).distance(200).strength(0.3))
+        .force("charge", d3.forceManyBody().strength(-500))
         .force("cluster", d3.forceX(d => clusterCenters[d.type]?.x || width / 2).strength(0.4))
         .force("clusterY", d3.forceY(d => clusterCenters[d.type]?.y || height / 2).strength(0.4))
-        .force("collide", d3.forceCollide(45));
+        .force("collide", d3.forceCollide(d => (RADIUS[d.type] || 20) + 30));
 
       const link = g.append("g").selectAll("line").data(links).join("line")
         .attr("stroke", "rgba(255,255,255,0.1)").attr("stroke-width", 2).attr("stroke-dasharray", "4 3");
@@ -1906,6 +1964,7 @@
         case "radial":  renderRadial(data); break;
         case "cluster": renderCluster(data); break;
       }
+      applyLabelVisibility();
     }
 
     document.querySelectorAll(".layout-btn").forEach(btn => {
@@ -1914,6 +1973,40 @@
         btn.classList.add("active");
         currentLayout = btn.dataset.layout;
         renderCurrentLayout();
+      });
+    });
+
+    // --- Label visibility toggles ---
+    const labelVisibility = { Fire: true, ContributingFactor: true, SpreadMechanism: true, PropertyVulnerability: true };
+
+    function applyLabelVisibility() {
+      const svgEl = document.querySelector("#fire-graph svg");
+      if (!svgEl) return;
+      // Labels are the last <g> with text elements that have fill="white" or group-colored text
+      // We target text elements that are node labels (not emoji, not link labels)
+      svgEl.querySelectorAll("text").forEach(t => {
+        const nodeType = t.__data__?.type || t.__data__?.data?.type;
+        if (!nodeType) return;
+        // Skip emoji text (single char or emoji) — labels are multi-char names
+        const text = t.textContent || "";
+        if (text.length <= 2) return;
+        // Skip link labels and cluster header labels
+        if (t.getAttribute("text-anchor") === "middle" && t.getAttribute("letter-spacing")) return;
+        if (nodeType in labelVisibility && !labelVisibility[nodeType]) {
+          t.setAttribute("opacity", "0");
+        } else {
+          t.removeAttribute("opacity");
+        }
+      });
+    }
+
+    document.querySelectorAll(".label-toggle").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const type = btn.dataset.labelType;
+        labelVisibility[type] = !labelVisibility[type];
+        btn.classList.toggle("active", labelVisibility[type]);
+        btn.classList.toggle("inactive", !labelVisibility[type]);
+        applyLabelVisibility();
       });
     });
 
