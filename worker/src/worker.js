@@ -276,6 +276,4 @@ export default {
       fetchCalfireData(env, true)
     ]));
   }
-
-  }
 };
