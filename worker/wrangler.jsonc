@@ -27,5 +27,10 @@
 	],
 	"ai": {
 		"binding": "AI"
+	},
+	"triggers": {
+		// Keep FIRMS / weather / CAL FIRE caches warm so user requests never
+		// have to do the heavy fetch+parse inside the request path.
+		"crons": ["*/5 * * * *"]
 	}
 }

@@ -1,7 +1,6 @@
 import { DEFAULT_RADIUS_MILES, HOME_LAT, HOME_LON } from "./config.js";
 import { fetchFirmsData, refreshFirmsCache } from "./firms.js";
 import { fetchWeatherData, refreshWeatherCache } from "./weather.js";
-import { parseCSV } from "./csv.js";
 import {
   distanceMiles,
   findNearbyFires,
@@ -97,8 +96,7 @@ export default {
 
         const forceRefreshFirms = url.searchParams.get("refreshFirms") === "1";
         const firmsResult = await fetchFirmsData(env, forceRefreshFirms);
-        const csv = firmsResult.text;
-        const fires = parseCSV(csv);
+        const fires = firmsResult.fires;
 
         const firesInBounds = filterFiresByBounds(fires, minLat, maxLat, minLon, maxLon);
 
@@ -187,8 +185,7 @@ export default {
 
         const forceRefreshFirms = url.searchParams.get("refreshFirms") === "1";
         const firmsResult = await fetchFirmsData(env, forceRefreshFirms);
-        const csv = firmsResult.text;
-        const fires = parseCSV(csv);
+        const fires = firmsResult.fires;
 
         const forceRefreshWeather = url.searchParams.get("refreshWeather") === "1";
         const weatherResult = await fetchWeatherData(env, forceRefreshWeather);
@@ -266,6 +263,19 @@ export default {
     }
 
     return new Response("Not Found", { status: 404 });
+  },
+
+  // Scheduled refresh: keep the FIRMS / weather / CAL FIRE caches warm so that
+  // /api/status and /api/fires almost always hit the cache and never have to
+  // do the heavy fetch+parse inside a user request (which is what was
+  // tripping Cloudflare error 1102, "Worker exceeded resource limits").
+  async scheduled(_event, env, ctx) {
+    ctx.waitUntil(Promise.allSettled([
+      fetchFirmsData(env, true),
+      fetchWeatherData(env, true),
+      fetchCalfireData(env, true)
+    ]));
+  }
 
   }
 };
