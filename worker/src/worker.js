@@ -22,7 +22,7 @@ import { handleGraphQuery } from "./neo4j.js";
 import { handleNl2Cypher } from "./nl2cypher.js";
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const radius = parseFloat(url.searchParams.get("radius")) || DEFAULT_RADIUS_MILES;
 
@@ -95,7 +95,7 @@ export default {
         }
 
         const forceRefreshFirms = url.searchParams.get("refreshFirms") === "1";
-        const firmsResult = await fetchFirmsData(env, forceRefreshFirms);
+        const firmsResult = await fetchFirmsData(env, forceRefreshFirms, ctx);
         const fires = firmsResult.fires;
 
         const firesInBounds = filterFiresByBounds(fires, minLat, maxLat, minLon, maxLon);
@@ -184,7 +184,7 @@ export default {
         const sensorData = raw ? JSON.parse(raw) : {};
 
         const forceRefreshFirms = url.searchParams.get("refreshFirms") === "1";
-        const firmsResult = await fetchFirmsData(env, forceRefreshFirms);
+        const firmsResult = await fetchFirmsData(env, forceRefreshFirms, ctx);
         const fires = firmsResult.fires;
 
         const forceRefreshWeather = url.searchParams.get("refreshWeather") === "1";

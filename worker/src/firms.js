@@ -95,20 +95,36 @@ async function fetchAndParseFromFirms(env) {
   return parseFirmsCsv(text);
 }
 
+async function writeCache(env, fires) {
+  if (env.FIRMS_CACHE && typeof env.FIRMS_CACHE.put === "function") {
+    await env.FIRMS_CACHE.put(FIRMS_CACHE_KEY, JSON.stringify(fires), {
+      expirationTtl: FIRMS_CACHE_TTL_SECONDS
+    });
+  }
+}
+
 /**
  * Returns { fires, source } where `fires` is a pre-parsed array of objects.
  *
- * Hot-path behavior:
- *   - On cache hit: JSON.parse the cached array and return immediately. No CSV
- *     parsing, no network call. This is what /api/status and /api/fires hit
- *     virtually all the time once the scheduled() cron is wired up.
- *   - On cache miss: fall back to a live fetch+parse. Still bounded because
- *     the FIRMS query is now a regional bbox, not the whole globe.
+ * Request-path contract: this function MUST NOT do a live FIRMS fetch+parse
+ * unless explicitly told to (forceRefresh=true). The user-facing /api/status
+ * and /api/fires handlers were tripping Cloudflare error 1102 (Worker
+ * exceeded resource limits) because a cache miss made them block on the
+ * heavy fetch+parse inline. Now:
  *
- * Pass `forceRefresh: true` to bypass the cache (used by ?refreshFirms=1 and
- * by the cron).
+ *   - Cache hit: JSON.parse cached array → return immediately.
+ *   - Cache miss (request path): return { fires: [], source: "cache-miss" }
+ *     immediately and schedule a background refresh via ctx.waitUntil so the
+ *     NEXT request is warm. The user gets a slightly degraded response once
+ *     (no fires) instead of a 1102 error page.
+ *   - forceRefresh=true (cron, /api/refresh-firms): do the full fetch+parse
+ *     synchronously and update KV. These code paths have generous CPU
+ *     budgets so they won't trip 1102.
+ *
+ * `ctx` is optional but should be passed from the request handler so the
+ * background refresh can outlive the response.
  */
-export async function fetchFirmsData(env, forceRefresh = false) {
+export async function fetchFirmsData(env, forceRefresh = false, ctx = null) {
   const hasCache = env.FIRMS_CACHE && typeof env.FIRMS_CACHE.get === "function";
 
   if (!forceRefresh && hasCache) {
@@ -117,19 +133,26 @@ export async function fetchFirmsData(env, forceRefresh = false) {
       try {
         return { fires: JSON.parse(cached), source: "kv-cache" };
       } catch {
-        // fall through to live fetch if cache is corrupt
+        // fall through — corrupt cache value, treat as miss
       }
     }
   }
 
-  const fires = await fetchAndParseFromFirms(env);
-
-  if (hasCache) {
-    await env.FIRMS_CACHE.put(FIRMS_CACHE_KEY, JSON.stringify(fires), {
-      expirationTtl: FIRMS_CACHE_TTL_SECONDS
-    });
+  if (!forceRefresh) {
+    // Request-path miss: never block. Kick off a background refresh.
+    if (ctx && typeof ctx.waitUntil === "function") {
+      ctx.waitUntil(
+        fetchAndParseFromFirms(env)
+          .then(fires => writeCache(env, fires))
+          .catch(() => {})
+      );
+    }
+    return { fires: [], source: "cache-miss" };
   }
 
+  // Explicit refresh path (cron, /api/refresh-firms): do the work.
+  const fires = await fetchAndParseFromFirms(env);
+  await writeCache(env, fires);
   return { fires, source: "live-fetch" };
 }
 
