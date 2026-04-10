@@ -1,5 +1,5 @@
 export function computeSensorScore(data) {
-    if (data.flame === 0) return 8;
+    if (data.flame === 0) return 10;
 
     let score = 0;
 
