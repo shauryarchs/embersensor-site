@@ -220,8 +220,13 @@ export default {
         const weatherScore = computeWeatherScore(mergedData, effectiveFireCount);
         const windScore = computeWindScore(windThreat, fireScore);
 
-        let riskIndex = sensorScore + fireScore + weatherScore + windScore;
-        riskIndex = Math.max(1, Math.min(10, riskIndex));
+        let riskIndex;
+        if (mergedData.flame === 0) {
+          riskIndex = 10;
+        } else {
+          riskIndex = sensorScore + fireScore + weatherScore + windScore;
+          riskIndex = Math.max(1, Math.min(10, riskIndex));
+        }
 
         return new Response(JSON.stringify({
           ...mergedData,
