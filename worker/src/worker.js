@@ -19,6 +19,7 @@ import {
 import { round2 } from "./utils.js";
 import { fetchYoutubeLiveStatus } from "./youtube.js";
 import { fetchCalfireData, findNearbyCalfireIncidents } from "./calfire.js";
+import { writeLatestSensorReading, readLatestSensorReading } from "./sensorStore.js";
 import { handleGraphQuery } from "./neo4j.js";
 import { handleNl2Cypher } from "./nl2cypher.js";
 
@@ -69,8 +70,26 @@ export default {
     }
 
     if (url.pathname === "/api/update" && request.method === "POST") {
-      const data = await request.json();
-      await env.FIRE_DATA.put("latest", JSON.stringify(data));
+      let data;
+      try {
+        data = await request.json();
+      } catch {
+        return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      try {
+        await writeLatestSensorReading(env, data);
+      } catch (err) {
+        return new Response(JSON.stringify({
+          error: "sensor store write failed",
+          message: String(err)
+        }), {
+          status: 502,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
       return new Response("OK");
     }
 
@@ -181,8 +200,7 @@ export default {
 
     if (url.pathname === "/api/status") {
       try {
-        const raw = await env.FIRE_DATA.get("latest");
-        const sensorData = raw ? JSON.parse(raw) : {};
+        const sensorData = await readLatestSensorReading(env);
 
         const forceRefreshFirms = url.searchParams.get("refreshFirms") === "1";
         const firmsResult = await fetchFirmsData(env, forceRefreshFirms, ctx);

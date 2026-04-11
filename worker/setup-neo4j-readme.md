@@ -108,3 +108,14 @@ Client → embersensor.com/api/graphQuery → Cloudflare Worker → (CF Access +
 - **Cloudflare Tunnel** bridges the public internet to the local Neo4j instance
 - **Cloudflare Access** ensures only the Worker (via service token) can reach Neo4j
 - **Worker secrets** store credentials securely, never exposed in code
+
+## 6. SensorReading Schema
+
+`POST /api/update` creates a new `(:SensorReading)` node per push and `GET /api/status` reads the most recent one. Create an index on `timestamp` once so the "latest" lookup stays fast as history grows:
+
+```cypher
+CREATE INDEX sensor_reading_timestamp IF NOT EXISTS
+FOR (r:SensorReading) ON (r.timestamp);
+```
+
+Run it in Neo4j Browser (`http://localhost:7474`) or via the HTTP API.
