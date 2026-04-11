@@ -850,13 +850,11 @@
     }
 
     let refreshTimer = null;
-    const NORMAL_REFRESH_MS = 15000;
-    const HIGH_RISK_REFRESH_MS = 2000;
+    const REFRESH_MS = 15000;
 
-    function scheduleNextRefresh(risk) {
+    function scheduleNextRefresh() {
       if (refreshTimer) clearTimeout(refreshTimer);
-      const delay = (typeof risk === "number" && risk >= 8) ? HIGH_RISK_REFRESH_MS : NORMAL_REFRESH_MS;
-      refreshTimer = setTimeout(() => loadStatus(true), delay);
+      refreshTimer = setTimeout(() => loadStatus(true), REFRESH_MS);
     }
 
     function loadStatus(silent) {
@@ -947,7 +945,7 @@
           document.getElementById("status-loading").style.display = "none";
           document.getElementById("status-content").style.display = "block";
 
-          scheduleNextRefresh(risk);
+          scheduleNextRefresh();
         })
         .catch(() => {
           document.getElementById("status-loading").style.display = "none";
@@ -955,7 +953,7 @@
               document.getElementById("status-content").style.display === "none") {
             document.getElementById("status-error").style.display = "block";
           }
-          scheduleNextRefresh(null);
+          scheduleNextRefresh();
         });
     }
 
