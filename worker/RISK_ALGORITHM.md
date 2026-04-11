@@ -107,7 +107,7 @@ These conditions bypass normal scoring and return a critical value of 8, which e
 |---|---|
 | Flame detected (`flame === 0`) | 8 |
 | Sensor temperature > 120 °F | 8 |
-| Smoke level > 680 ppm | 8 |
+| Smoke level ≥ 630 ppm | 8 |
 
 ### Normal Scoring
 
@@ -120,7 +120,7 @@ When no critical condition is met, points are accumulated:
                      yes / \ no
                      /       \
                return 8   ┌────────────────┐
-                          │ Smoke > 680 ?  │
+                          │ Smoke ≥ 630 ?  │
                           └──────┬─────────┘
                            yes / \ no
                            /       \
@@ -133,12 +133,13 @@ When no critical condition is met, points are accumulated:
 
 | Smoke (ppm) | Points |
 |---|---|
-| > 630 | +3 |
-| 580–630 | +2 |
-| 520–579 | +1 |
-| < 520 | 0 |
+| ≥ 630 | 8 (critical) |
+| 580–629 | +3 |
+| 540–579 | +2 |
+| 500–539 | +1 |
+| < 500 | 0 |
 
-Thresholds are calibrated to this sensor's observed operating range (~480 ppm ambient floor, ~650 ppm high end of normal variation).
+Thresholds are calibrated to this sensor's observed operating range (~480 ppm ambient floor, ~650 ppm high end of normal variation). The critical cutoff sits inside the observed range, so readings near the top end will trigger a critical sensor score — intentionally sensitive.
 
 **Sensor Temperature:**
 
@@ -409,7 +410,7 @@ The wind score depends on the **fire score**, not just the presence of fires. If
 ### Scenario B: Nearby Fire, Hot and Dry
 | Component | Value | Score |
 |---|---|---|
-| Smoke | 550 ppm | +1 |
+| Smoke | 550 ppm | +2 |
 | Flame | No | 0 |
 | Sensor Temp | 95 °F | +2 |
 | Temp Delta | +20 °F | +1 |
