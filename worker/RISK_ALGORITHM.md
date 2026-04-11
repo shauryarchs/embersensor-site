@@ -107,7 +107,7 @@ These conditions bypass normal scoring and return a critical value of 8, which e
 |---|---|
 | Flame detected (`flame === 0`) | 8 |
 | Sensor temperature > 120 °F | 8 |
-| Smoke level > 800 ppm | 8 |
+| Smoke level > 680 ppm | 8 |
 
 ### Normal Scoring
 
@@ -120,7 +120,7 @@ When no critical condition is met, points are accumulated:
                      yes / \ no
                      /       \
                return 8   ┌────────────────┐
-                          │ Smoke > 800 ?  │
+                          │ Smoke > 680 ?  │
                           └──────┬─────────┘
                            yes / \ no
                            /       \
@@ -133,10 +133,12 @@ When no critical condition is met, points are accumulated:
 
 | Smoke (ppm) | Points |
 |---|---|
-| > 700 | +3 |
-| 600–700 | +2 |
-| 500–599 | +1 |
-| < 500 | 0 |
+| > 630 | +3 |
+| 580–630 | +2 |
+| 520–579 | +1 |
+| < 520 | 0 |
+
+Thresholds are calibrated to this sensor's observed operating range (~480 ppm ambient floor, ~650 ppm high end of normal variation).
 
 **Sensor Temperature:**
 
