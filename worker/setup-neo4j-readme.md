@@ -111,11 +111,11 @@ Client → embersensor.com/api/graphQuery → Cloudflare Worker → (CF Access +
 
 ## 6. SensorReading Schema
 
-`POST /api/update` creates a new `(:SensorReading)` node per push and `GET /api/status` reads the most recent one. Create an index on `timestamp` once so the "latest" lookup stays fast as history grows:
+`POST /api/update` upserts a single `(:SensorReading {id: "latest"})` node (properties replaced on every push), and `GET /api/status` reads that same node. Create a uniqueness constraint on `id` once so the `MERGE` is indexed and duplicates are impossible:
 
 ```cypher
-CREATE INDEX sensor_reading_timestamp IF NOT EXISTS
-FOR (r:SensorReading) ON (r.timestamp);
+CREATE CONSTRAINT sensor_reading_id IF NOT EXISTS
+FOR (r:SensorReading) REQUIRE r.id IS UNIQUE;
 ```
 
 Run it in Neo4j Browser (`http://localhost:7474`) or via the HTTP API.
