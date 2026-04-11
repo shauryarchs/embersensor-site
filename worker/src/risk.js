@@ -6,9 +6,8 @@ export function computeSensorScore(data) {
     if (typeof data.smoke === "number") {
         if (data.smoke >= 630) return 8;
 
-        if (data.smoke >= 580) score += 3;
-        else if (data.smoke >= 540) score += 2;
-        else if (data.smoke >= 500) score += 1;
+        if (data.smoke >= 600) score += 3;
+        else if (data.smoke >= 550) score += 1;
     }
 
     const sensorTemp = Number(data.sensorTemperature || 0);
