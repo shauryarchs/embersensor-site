@@ -13,7 +13,8 @@ import {
   computeFireScore,
   computeWeatherScore,
   computeWindScore,
-  computeEffectiveFireCount
+  computeEffectiveFireCount,
+  isFlameDetected
 } from "./risk.js";
 import { round2 } from "./utils.js";
 import { fetchYoutubeLiveStatus } from "./youtube.js";
@@ -221,7 +222,7 @@ export default {
         const windScore = computeWindScore(windThreat, fireScore);
 
         let riskIndex;
-        if (mergedData.flame === 0) {
+        if (isFlameDetected(mergedData.flame)) {
           riskIndex = 10;
         } else {
           riskIndex = sensorScore + fireScore + weatherScore + windScore;

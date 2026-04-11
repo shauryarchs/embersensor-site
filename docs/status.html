@@ -653,13 +653,14 @@
       document.getElementById("badge-sensor").className = "score-badge " + scoreBadgeClass(ss);
 
       const flame = d.flame;
+      const flameOn = flame === 0 || flame === "0";
       const smoke = d.smoke;
       const sensorTemp = d.sensorTemperature;
       const weatherTemp = d.weatherTemperature;
       const delta = (sensorTemp != null && weatherTemp != null) ? sensorTemp - weatherTemp : null;
 
       let sensorSummary = "";
-      if (flame === 0 || (sensorTemp != null && sensorTemp > 120) || (smoke != null && smoke > 600)) {
+      if (flameOn || (sensorTemp != null && sensorTemp > 120) || (smoke != null && smoke > 600)) {
         sensorSummary = "Critical condition detected — sensor triggered maximum alert.";
       } else if (ss === 0) {
         sensorSummary = "All sensor readings are within normal range. No fire indicators detected.";
@@ -669,7 +670,7 @@
       document.getElementById("summary-sensor").textContent = sensorSummary;
 
       let sensorFactors = "";
-      if (flame === 0) {
+      if (flameOn) {
         sensorFactors += factorHTML("Flame detected", 8);
       }
       if (smoke != null) {
@@ -901,8 +902,9 @@
 
           // Sensors
           setVal("val-smoke", d.smoke != null ? d.smoke + " ppm" : "—");
-          const flameText = d.flame != null ? (d.flame === 0 ? "Flame" : "No Flame") : "—";
-          const flameClass = d.flame != null ? (d.flame === 0 ? "yes" : "no") : "";
+          const flameOn = d.flame === 0 || d.flame === "0";
+          const flameText = d.flame != null ? (flameOn ? "Flame" : "No Flame") : "—";
+          const flameClass = d.flame != null ? (flameOn ? "yes" : "no") : "";
           setVal("val-flame", flameText, flameClass);
 
           // Weather

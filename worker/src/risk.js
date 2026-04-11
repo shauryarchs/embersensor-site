@@ -1,5 +1,9 @@
+export function isFlameDetected(flame) {
+    return flame === 0 || flame === "0";
+}
+
 export function computeSensorScore(data) {
-    if (data.flame === 0) return 10;
+    if (isFlameDetected(data.flame)) return 10;
 
     let score = 0;
 
