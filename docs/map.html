@@ -527,7 +527,7 @@
         // scaled by brightness (bright_ti4 typically 320–500 K).
         const bt = f.brightness != null ? f.brightness : 340;
         const normBrightness = Math.min(1, Math.max(0, (bt - 320) / 150));
-        const heatRadiusMeters = 400 + normBrightness * 800;
+        const heatRadiusMeters = 2800 + normBrightness * 5600;
 
         L.circle([f.latitude, f.longitude], {
           radius: heatRadiusMeters,
