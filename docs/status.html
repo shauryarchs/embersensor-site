@@ -849,10 +849,22 @@
       if (cls) el.className = "data-value " + cls;
     }
 
-    function loadStatus() {
-      document.getElementById("status-loading").style.display = "block";
-      document.getElementById("status-error").style.display = "none";
-      document.getElementById("status-content").style.display = "none";
+    let refreshTimer = null;
+    const NORMAL_REFRESH_MS = 15000;
+    const HIGH_RISK_REFRESH_MS = 2000;
+
+    function scheduleNextRefresh(risk) {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      const delay = (typeof risk === "number" && risk >= 8) ? HIGH_RISK_REFRESH_MS : NORMAL_REFRESH_MS;
+      refreshTimer = setTimeout(() => loadStatus(true), delay);
+    }
+
+    function loadStatus(silent) {
+      if (!silent) {
+        document.getElementById("status-loading").style.display = "block";
+        document.getElementById("status-error").style.display = "none";
+        document.getElementById("status-content").style.display = "none";
+      }
 
       fetch("https://embersensor.com/api/status")
         .then(r => {
@@ -934,14 +946,24 @@
 
           document.getElementById("status-loading").style.display = "none";
           document.getElementById("status-content").style.display = "block";
+
+          scheduleNextRefresh(risk);
         })
         .catch(() => {
           document.getElementById("status-loading").style.display = "none";
-          document.getElementById("status-error").style.display = "block";
+          if (!document.getElementById("status-content").style.display ||
+              document.getElementById("status-content").style.display === "none") {
+            document.getElementById("status-error").style.display = "block";
+          }
+          scheduleNextRefresh(null);
         });
     }
 
     loadStatus();
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") loadStatus(true);
+      else if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+    });
   </script>
 </body>
 
