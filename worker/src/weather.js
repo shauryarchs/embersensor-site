@@ -50,11 +50,15 @@ export async function fetchWeatherData(env, forceRefresh = false) {
         weatherFetchedAt: new Date().toISOString()
     };
 
-    // 3. Save to KV with expiration
+    // 3. Save to KV with expiration. Swallow write failures (e.g. daily
+    //    put() quota exceeded) so a stale cache or dead-quota day can't
+    //    turn a successful live fetch into a 500 on the read path.
     if (hasCache) {
-        await env.WEATHER_CACHE.put(WEATHER_CACHE_KEY, JSON.stringify(normalized), {
-            expirationTtl: WEATHER_CACHE_TTL_SECONDS
-        });
+        try {
+            await env.WEATHER_CACHE.put(WEATHER_CACHE_KEY, JSON.stringify(normalized), {
+                expirationTtl: WEATHER_CACHE_TTL_SECONDS
+            });
+        } catch (_) {}
     }
 
     return {

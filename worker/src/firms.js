@@ -97,9 +97,11 @@ async function fetchAndParseFromFirms(env) {
 
 async function writeCache(env, fires) {
   if (env.FIRMS_CACHE && typeof env.FIRMS_CACHE.put === "function") {
-    await env.FIRMS_CACHE.put(FIRMS_CACHE_KEY, JSON.stringify(fires), {
-      expirationTtl: FIRMS_CACHE_TTL_SECONDS
-    });
+    try {
+      await env.FIRMS_CACHE.put(FIRMS_CACHE_KEY, JSON.stringify(fires), {
+        expirationTtl: FIRMS_CACHE_TTL_SECONDS
+      });
+    } catch (_) {}
   }
 }
 

@@ -52,9 +52,11 @@ export async function fetchCalfireData(env, forceRefresh = false) {
     }));
 
   if (hasCache) {
-    await env.FIRMS_CACHE.put(CALFIRE_CACHE_KEY, JSON.stringify(incidents), {
-      expirationTtl: CALFIRE_CACHE_TTL_SECONDS
-    });
+    try {
+      await env.FIRMS_CACHE.put(CALFIRE_CACHE_KEY, JSON.stringify(incidents), {
+        expirationTtl: CALFIRE_CACHE_TTL_SECONDS
+      });
+    } catch (_) {}
   }
 
   return { incidents, source: "live-fetch" };
