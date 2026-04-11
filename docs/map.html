@@ -420,6 +420,7 @@
         <div class="map-legend">
           <div class="legend-item"><div class="legend-dot home"></div> Home (sensor location)</div>
           <div class="legend-item" title="NASA Fire Information for Resource Management System — satellite-detected heat sources"><div class="legend-dot firms"></div> FIRMS satellite detection</div>
+          <div class="legend-item" title="Per-detection thermal footprint — circle radius scales with brightness"><div class="legend-dot" style="background:rgba(251,146,60,0.25);border:1px solid #ef4444;width:14px;height:14px;"></div> FIRMS heat radius</div>
           <div class="legend-item" title="Heatmap of FIRMS detections weighted by thermal brightness"><div class="legend-dot" style="background:linear-gradient(135deg,#fb923c,#ef4444);border:none;width:24px;height:10px;border-radius:3px;"></div> FIRMS heat density</div>
           <div class="legend-item" title="National Interagency Fire Center — confirmed wildfire incidents reported by federal and state agencies"><div class="legend-dot calfire"></div> NIFC reported incident</div>
         </div>
@@ -522,11 +523,28 @@
       heatmapLayer.setLatLngs(heatPoints);
 
       fires.forEach(f => {
+        // Per-detection heat radius — base VIIRS pixel footprint (~400 m)
+        // scaled by brightness (bright_ti4 typically 320–500 K).
+        const bt = f.brightness != null ? f.brightness : 340;
+        const normBrightness = Math.min(1, Math.max(0, (bt - 320) / 150));
+        const heatRadiusMeters = 400 + normBrightness * 800;
+
+        L.circle([f.latitude, f.longitude], {
+          radius: heatRadiusMeters,
+          fillColor: "#fb923c",
+          color: "#ef4444",
+          weight: 1,
+          fillOpacity: 0.18,
+          opacity: 0.55,
+          interactive: false
+        }).addTo(firmsLayer);
+
         const marker = L.circleMarker([f.latitude, f.longitude], {
           radius: 6, fillColor: "#fb923c", color: "#fed7aa", weight: 1.5, fillOpacity: 0.85
         });
         marker.bindPopup(
           `<strong>FIRMS Detection</strong><br>${f.distanceMiles} mi from sensor` +
+          (f.brightness   ? `<br>Brightness: ${f.brightness} K`: "") +
           (f.confidence   ? `<br>Confidence: ${f.confidence}` : "") +
           (f.satellite    ? `<br>Satellite: ${f.satellite}`   : "") +
           (f.acquiredDate ? `<br>Date: ${f.acquiredDate}`     : "")
