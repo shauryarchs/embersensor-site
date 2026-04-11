@@ -552,6 +552,10 @@ section {
   border-radius: 14px;
 }
 
+.protected-video {
+  max-width: 1350px;
+}
+
 /* Pictures / gallery page */
 .pictures-hero {
   padding-bottom: 20px;
