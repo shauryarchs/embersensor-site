@@ -5,6 +5,11 @@ import {
   CALFIRE_CACHE_TTL_SECONDS
 } from "./config.js";
 import { distanceMiles } from "./geo.js";
+import { kvGet, kvPut } from "./neo4jKv.js";
+
+const CALFIRE_LABEL = "CalfireCache";
+const CALFIRE_ID = CALFIRE_CACHE_KEY;
+const CALFIRE_MAX_AGE_MS = CALFIRE_CACHE_TTL_SECONDS * 1000;
 
 // NIFC Active Fires feature service — public ArcGIS REST API, no auth required.
 // Returns fire perimeter polygons; we request centroids via returnCentroid=true.
@@ -18,12 +23,14 @@ const NIFC_URL =
   "&f=json";
 
 export async function fetchCalfireData(env, forceRefresh = false) {
-  const hasCache = env.FIRMS_CACHE && typeof env.FIRMS_CACHE.get === "function";
-
-  if (!forceRefresh && hasCache) {
-    const cached = await env.FIRMS_CACHE.get(CALFIRE_CACHE_KEY);
-    if (cached) {
-      return { incidents: JSON.parse(cached), source: "kv-cache" };
+  if (!forceRefresh) {
+    try {
+      const hit = await kvGet(env, CALFIRE_LABEL, CALFIRE_ID, CALFIRE_MAX_AGE_MS);
+      if (hit && Array.isArray(hit.data)) {
+        return { incidents: hit.data, source: "neo4j-cache" };
+      }
+    } catch {
+      // Neo4j read failed — fall through to live fetch.
     }
   }
 
@@ -51,13 +58,9 @@ export async function fetchCalfireData(env, forceRefresh = false) {
         : null
     }));
 
-  if (hasCache) {
-    try {
-      await env.FIRMS_CACHE.put(CALFIRE_CACHE_KEY, JSON.stringify(incidents), {
-        expirationTtl: CALFIRE_CACHE_TTL_SECONDS
-      });
-    } catch (_) {}
-  }
+  try {
+    await kvPut(env, CALFIRE_LABEL, CALFIRE_ID, incidents);
+  } catch (_) {}
 
   return { incidents, source: "live-fetch" };
 }

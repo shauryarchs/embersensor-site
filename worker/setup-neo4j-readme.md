@@ -109,13 +109,33 @@ Client → embersensor.com/api/graphQuery → Cloudflare Worker → (CF Access +
 - **Cloudflare Access** ensures only the Worker (via service token) can reach Neo4j
 - **Worker secrets** store credentials securely, never exposed in code
 
-## 6. SensorReading Schema
+## 6. Neo4j-backed Data & Cache Schema
 
-`POST /api/update` upserts a single `(:SensorReading {id: "latest"})` node (properties replaced on every push), and `GET /api/status` reads that same node. Create a uniqueness constraint on `id` once so the `MERGE` is indexed and duplicates are impossible:
+The Worker stores both the live sensor reading and the FIRMS / weather / CAL FIRE caches as singleton nodes in Neo4j so it doesn't depend on Cloudflare KV's daily write cap.
+
+| Node label     | id         | Written by                              | Read by       |
+|----------------|------------|-----------------------------------------|---------------|
+| SensorReading  | `latest`   | `POST /api/update`                      | `/api/status` |
+| FirmsCache     | (cache key)| cron + `/api/refresh-firms`             | `/api/status`, `/api/fires` |
+| WeatherCache   | (cache key)| cron + `/api/refresh-weather` + on-miss | `/api/status` |
+| CalfireCache   | (cache key)| cron + on-miss                          | `/api/status`, `/api/calfire-fires` |
+
+Each cache node stores its payload as a stringified JSON `value` property plus a unix-millis `updatedAt` timestamp; the Worker enforces TTLs at read time instead of relying on Neo4j TTL expiration.
+
+Create a uniqueness constraint on `id` for each label once so the `MERGE` upserts are indexed and duplicates are impossible:
 
 ```cypher
 CREATE CONSTRAINT sensor_reading_id IF NOT EXISTS
 FOR (r:SensorReading) REQUIRE r.id IS UNIQUE;
+
+CREATE CONSTRAINT firms_cache_id IF NOT EXISTS
+FOR (c:FirmsCache) REQUIRE c.id IS UNIQUE;
+
+CREATE CONSTRAINT weather_cache_id IF NOT EXISTS
+FOR (c:WeatherCache) REQUIRE c.id IS UNIQUE;
+
+CREATE CONSTRAINT calfire_cache_id IF NOT EXISTS
+FOR (c:CalfireCache) REQUIRE c.id IS UNIQUE;
 ```
 
-Run it in Neo4j Browser (`http://localhost:7474`) or via the HTTP API.
+Run them in Neo4j Browser (`http://localhost:7474`) or via the HTTP API.

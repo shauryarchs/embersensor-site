@@ -4,23 +4,28 @@ import {
     WEATHER_CACHE_KEY,
     WEATHER_CACHE_TTL_SECONDS
 } from "./config.js";
+import { kvGet, kvPut } from "./neo4jKv.js";
+
+const WEATHER_LABEL = "WeatherCache";
+const WEATHER_ID = WEATHER_CACHE_KEY;
+const WEATHER_MAX_AGE_MS = WEATHER_CACHE_TTL_SECONDS * 1000;
 
 export async function fetchWeatherData(env, forceRefresh = false) {
-    const hasCache = env.WEATHER_CACHE && typeof env.WEATHER_CACHE.get === "function";
     const apiKey = env.OPENWEATHER_API_KEY;
 
     if (!apiKey) {
         throw new Error("OPENWEATHER_API_KEY binding is missing");
     }
 
-    // 1. Try KV cache first unless force refresh is requested
-    if (!forceRefresh && hasCache) {
-        const cached = await env.WEATHER_CACHE.get(WEATHER_CACHE_KEY);
-        if (cached) {
-            return {
-                data: JSON.parse(cached),
-                source: "kv-cache"
-            };
+    // 1. Try Neo4j cache first unless force refresh is requested
+    if (!forceRefresh) {
+        try {
+            const hit = await kvGet(env, WEATHER_LABEL, WEATHER_ID, WEATHER_MAX_AGE_MS);
+            if (hit && hit.data && typeof hit.data === "object") {
+                return { data: hit.data, source: "neo4j-cache" };
+            }
+        } catch {
+            // Neo4j read failed — fall through to live fetch.
         }
     }
 
@@ -50,16 +55,11 @@ export async function fetchWeatherData(env, forceRefresh = false) {
         weatherFetchedAt: new Date().toISOString()
     };
 
-    // 3. Save to KV with expiration. Swallow write failures (e.g. daily
-    //    put() quota exceeded) so a stale cache or dead-quota day can't
-    //    turn a successful live fetch into a 500 on the read path.
-    if (hasCache) {
-        try {
-            await env.WEATHER_CACHE.put(WEATHER_CACHE_KEY, JSON.stringify(normalized), {
-                expirationTtl: WEATHER_CACHE_TTL_SECONDS
-            });
-        } catch (_) {}
-    }
+    // 3. Save to Neo4j. Swallow write failures so a cache-write blip
+    //    can't turn a successful live fetch into a 500.
+    try {
+        await kvPut(env, WEATHER_LABEL, WEATHER_ID, normalized);
+    } catch (_) {}
 
     return {
         data: normalized,

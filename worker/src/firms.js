@@ -5,6 +5,11 @@ import {
   HOME_LAT,
   HOME_LON
 } from "./config.js";
+import { kvGet, kvPut } from "./neo4jKv.js";
+
+const FIRMS_LABEL = "FirmsCache";
+const FIRMS_ID = FIRMS_CACHE_KEY;
+const FIRMS_MAX_AGE_MS = FIRMS_CACHE_TTL_SECONDS * 1000;
 
 // Only the FIRMS columns we actually use downstream.
 // Output object field names are kept identical to the previous parseCSV output
@@ -96,13 +101,9 @@ async function fetchAndParseFromFirms(env) {
 }
 
 async function writeCache(env, fires) {
-  if (env.FIRMS_CACHE && typeof env.FIRMS_CACHE.put === "function") {
-    try {
-      await env.FIRMS_CACHE.put(FIRMS_CACHE_KEY, JSON.stringify(fires), {
-        expirationTtl: FIRMS_CACHE_TTL_SECONDS
-      });
-    } catch (_) {}
-  }
+  try {
+    await kvPut(env, FIRMS_LABEL, FIRMS_ID, fires);
+  } catch (_) {}
 }
 
 /**
@@ -114,29 +115,27 @@ async function writeCache(env, fires) {
  * exceeded resource limits) because a cache miss made them block on the
  * heavy fetch+parse inline. Now:
  *
- *   - Cache hit: JSON.parse cached array → return immediately.
+ *   - Cache hit (Neo4j): return immediately.
  *   - Cache miss (request path): return { fires: [], source: "cache-miss" }
  *     immediately and schedule a background refresh via ctx.waitUntil so the
  *     NEXT request is warm. The user gets a slightly degraded response once
  *     (no fires) instead of a 1102 error page.
  *   - forceRefresh=true (cron, /api/refresh-firms): do the full fetch+parse
- *     synchronously and update KV. These code paths have generous CPU
- *     budgets so they won't trip 1102.
+ *     synchronously and update the Neo4j cache. These code paths have
+ *     generous CPU budgets so they won't trip 1102.
  *
  * `ctx` is optional but should be passed from the request handler so the
  * background refresh can outlive the response.
  */
 export async function fetchFirmsData(env, forceRefresh = false, ctx = null) {
-  const hasCache = env.FIRMS_CACHE && typeof env.FIRMS_CACHE.get === "function";
-
-  if (!forceRefresh && hasCache) {
-    const cached = await env.FIRMS_CACHE.get(FIRMS_CACHE_KEY);
-    if (cached) {
-      try {
-        return { fires: JSON.parse(cached), source: "kv-cache" };
-      } catch {
-        // fall through — corrupt cache value, treat as miss
+  if (!forceRefresh) {
+    try {
+      const hit = await kvGet(env, FIRMS_LABEL, FIRMS_ID, FIRMS_MAX_AGE_MS);
+      if (hit && Array.isArray(hit.data)) {
+        return { fires: hit.data, source: "neo4j-cache" };
       }
+    } catch {
+      // Neo4j read failed — fall through to background refresh / empty.
     }
   }
 
@@ -159,11 +158,6 @@ export async function fetchFirmsData(env, forceRefresh = false, ctx = null) {
 }
 
 export async function refreshFirmsCache(env) {
-  const hasCache = env.FIRMS_CACHE && typeof env.FIRMS_CACHE.put === "function";
-  if (!hasCache) {
-    return new Response("FIRMS_CACHE binding is missing", { status: 500 });
-  }
-
   let fires;
   try {
     fires = await fetchAndParseFromFirms(env);
@@ -173,9 +167,7 @@ export async function refreshFirmsCache(env) {
 
   let cacheWriteError = null;
   try {
-    await env.FIRMS_CACHE.put(FIRMS_CACHE_KEY, JSON.stringify(fires), {
-      expirationTtl: FIRMS_CACHE_TTL_SECONDS
-    });
+    await kvPut(env, FIRMS_LABEL, FIRMS_ID, fires);
   } catch (err) {
     cacheWriteError = String(err);
   }
