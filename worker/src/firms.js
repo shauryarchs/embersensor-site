@@ -164,13 +164,24 @@ export async function refreshFirmsCache(env) {
     return new Response("FIRMS_CACHE binding is missing", { status: 500 });
   }
 
+  let fires;
   try {
-    const fires = await fetchAndParseFromFirms(env);
+    fires = await fetchAndParseFromFirms(env);
+  } catch (err) {
+    return new Response(`Failed to fetch FIRMS data: ${String(err)}`, { status: 500 });
+  }
+
+  let cacheWriteError = null;
+  try {
     await env.FIRMS_CACHE.put(FIRMS_CACHE_KEY, JSON.stringify(fires), {
       expirationTtl: FIRMS_CACHE_TTL_SECONDS
     });
-    return new Response(`FIRMS cache refreshed (${fires.length} fires)`);
   } catch (err) {
-    return new Response(`Failed to refresh FIRMS cache: ${String(err)}`, { status: 500 });
+    cacheWriteError = String(err);
   }
+
+  const msg = cacheWriteError
+    ? `FIRMS fetched (${fires.length} fires) but cache write failed: ${cacheWriteError}`
+    : `FIRMS cache refreshed (${fires.length} fires)`;
+  return new Response(msg);
 }
