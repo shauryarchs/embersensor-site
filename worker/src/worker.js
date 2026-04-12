@@ -221,8 +221,9 @@ export default {
           // CAL FIRE fetch failed — degrade gracefully, rest of status still works
         }
 
+        const { fireStatus: _dropped, ...cleanSensor } = sensorData;
         const mergedData = {
-          ...sensorData,
+          ...cleanSensor,
           ...weatherData
         };
 
