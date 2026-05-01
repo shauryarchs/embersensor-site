@@ -561,6 +561,10 @@ section {
   padding-bottom: 20px;
 }
 
+.pictures-hero .lead {
+  max-width: none;
+}
+
 .gallery-section {
   padding: 24px 0 12px;
 }
