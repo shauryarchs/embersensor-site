@@ -45,6 +45,7 @@ Rules for `docs/`:
 - Keep pages lightweight and static-hosting friendly
 - Reuse shared patterns instead of duplicating markup or script logic
 - Do not break navigation between pages
+- The site is fronted by Cloudflare CDN, which caches `script.js` and `style.css` for ~4 hours. Every reference to those files in HTML uses a `?v=YYYYMMDD` query string for cache-busting. **Whenever you edit `docs/script.js` or `docs/style.css`, also bump the `?v=` value in every `docs/*.html` file** so the new version reaches visitors immediately. Easiest: `sed -i '' 's|?v=OLD|?v=NEW|g' docs/*.html`. Use today's date as the new value.
 
 When making changes:
 1. First inspect the relevant files
