@@ -40,7 +40,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const footer = `
     <footer>
-      EmberSensor • Connected wildfire monitoring and response system
+      <div>EmberSensor • Connected wildfire monitoring and response system</div>
+      <div>&copy; 2026 EmberSensor. All rights reserved.</div>
     </footer>
   `;
 
