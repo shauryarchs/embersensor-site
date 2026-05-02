@@ -144,6 +144,10 @@ h3 {
   font-size: 17px;
 }
 
+.section-sub-wide {
+  max-width: none;
+}
+
 /* Re-center section-sub when parent has text-align center (map, graph pages) */
 .map-header .section-sub,
 .graph-header .section-sub {
@@ -184,6 +188,15 @@ section {
 .quick-stats {
   grid-template-columns: repeat(4, 1fr);
   margin-top: 28px;
+}
+
+.hero-grid .quick-stats,
+.hero-grid .action-buttons {
+  grid-column: 1 / -1;
+}
+
+.hero-grid .action-buttons {
+  justify-content: center;
 }
 
 .cards {
