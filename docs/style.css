@@ -144,7 +144,8 @@ h3 {
   font-size: 17px;
 }
 
-.section-sub-wide {
+.section-sub-wide,
+.lead-wide {
   max-width: none;
 }
 
