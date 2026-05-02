@@ -238,6 +238,13 @@ section {
   box-shadow: var(--shadow);
 }
 
+.hero-image-caption {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+}
+
 .hero img,
 .page-hero-img {
   display: block;
