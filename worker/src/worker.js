@@ -21,6 +21,11 @@ import { fetchYoutubeLiveStatus } from "./youtube.js";
 import { fetchCalfireData, findNearbyCalfireIncidents } from "./calfire.js";
 import { writeLatestSensorReading, readLatestSensorReading } from "./sensorStore.js";
 import { writeLatestMotorState, readLatestMotorState } from "./motorStore.js";
+import {
+  validateAndBuildProps,
+  writeLatestMotorCommand,
+  readLatestMotorCommand,
+} from "./motorCommandStore.js";
 import { handleGraphQuery } from "./neo4j.js";
 import { handleNl2Cypher } from "./nl2cypher.js";
 
@@ -100,6 +105,99 @@ export default {
         });
       }
       return new Response("OK");
+    }
+
+    // 4-digit code gate for the website's control panel. Mirrors the
+    // /api/camera-access pattern — same shared CAMERA_ACCESS_CODE secret,
+    // same "validate once, unlock the UI" model. Returns 200 on match,
+    // 401 otherwise. Note: subsequent /api/motor/command requests are
+    // NOT bearer-checked (matching the camera flow, where the protected
+    // resource is exposed once the code validates).
+    if (url.pathname === "/api/control-access" && request.method === "POST") {
+      const expected = env.CAMERA_ACCESS_CODE;
+      if (!expected) {
+        return new Response(JSON.stringify({ error: "Access code not configured" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return new Response(JSON.stringify({ error: "Invalid request body" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      if (body.code !== expected) {
+        return new Response(JSON.stringify({ error: "Invalid code" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    if (url.pathname === "/api/motor/command" && request.method === "POST") {
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      const built = validateAndBuildProps(body);
+      if (!built.ok) {
+        return new Response(JSON.stringify({ error: built.error }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      try {
+        const seq = await writeLatestMotorCommand(env, built.props);
+        return new Response(JSON.stringify({ seq, ...built.props }), {
+          headers: { "Content-Type": "application/json" }
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({
+          error: "motor command write failed",
+          message: String(err)
+        }), {
+          status: 502,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+    }
+
+    if (url.pathname === "/api/motor/command" && request.method === "GET") {
+      const sinceSeq = parseInt(url.searchParams.get("since") || "0", 10) || 0;
+      try {
+        const cmd = await readLatestMotorCommand(env, sinceSeq);
+        return new Response(JSON.stringify(cmd || {}), {
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0"
+          }
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({
+          error: "api/motor/command read failed",
+          message: String(err)
+        }), {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"
+          }
+        });
+      }
     }
 
     if (url.pathname === "/api/motor/state" && request.method === "POST") {

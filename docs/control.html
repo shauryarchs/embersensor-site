@@ -6,7 +6,7 @@
   <title>Sprinkler Control | EmberSensor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description"
-    content="Live state of the EmberSensor sprinkler controller — slider, pan, and tilt motors." />
+    content="Live state and remote control of the EmberSensor sprinkler controller — slider, pan, and tilt motors." />
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
@@ -52,6 +52,65 @@
 
     .data-value.yes { color: #f87171; font-weight: 600; }
     .data-value.no  { color: #34d399; font-weight: 600; }
+
+    /* Command panel — only shown after unlock. */
+    .control-section {
+      margin-top: 28px;
+    }
+    .control-section-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted, #9aa3af);
+      margin-bottom: 10px;
+    }
+    .cmd-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+    }
+    .cmd-btn {
+      padding: 12px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      background: var(--card);
+      color: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .cmd-btn:hover { border-color: #f87171; }
+    .cmd-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .cmd-btn.active {
+      background: rgba(248, 113, 113, 0.18);
+      border-color: #f87171;
+    }
+    .speed-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      background: var(--card);
+    }
+    .speed-row input[type="range"] { flex: 1; }
+    .speed-value {
+      min-width: 28px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+    .cmd-status {
+      min-height: 18px;
+      text-align: center;
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--muted, #9aa3af);
+    }
+    .cmd-status.success { color: #34d399; }
+    .cmd-status.error   { color: #f87171; }
   </style>
 </head>
 
@@ -62,14 +121,15 @@
     <div class="container">
       <div class="control-header">
         <div class="eyebrow">Sprinkler Controller</div>
-        <h1>Live Device State</h1>
+        <h1>Sprinkler Control</h1>
         <p class="section-sub">
-          Mirror of what the encoder + OLED on the device are showing right now.
-          Read-only for now; command control is the next step.
+          Send the same commands the encoder + OLED do, from here. Read-only state
+          mirror is public; the control buttons need the 4-digit access code.
         </p>
         <span id="device-pill" class="device-pill offline">Connecting…</span>
       </div>
 
+      <!-- Live state mirror — always visible, public read. -->
       <div class="control-wrap">
         <div id="control-loading" style="text-align: center; color: var(--muted, #9aa3af);">
           Loading device state…
@@ -80,7 +140,6 @@
         </div>
 
         <div id="control-content" style="display: none;">
-
           <div class="data-group">
             <div class="data-row">
               <div class="data-label"><span class="row-icon">🎛</span> Current Mode</div>
@@ -125,6 +184,65 @@
           <p class="control-note" id="updated-at">—</p>
         </div>
       </div>
+
+      <!-- Gate / unlocked controls container — same shape as live.html
+           (live-card with a live-message inside). Rebuilt by lockControls()
+           on session expiry, mirroring live.html's pattern. -->
+      <div id="control-container" class="live-card" style="margin-top: 24px;">
+        <div class="live-message">
+          <div class="live-status-pill">Protected Access</div>
+          <h2>Open Sprinkler Controls</h2>
+          <p>
+            The sprinkler controls are protected. Enter the 4-digit code to continue.
+          </p>
+
+          <div class="camera-code-wrap">
+            <input id="control-code-input" class="camera-code-input" type="password" inputmode="numeric"
+              maxlength="4" placeholder="Enter 4-digit code" aria-label="Enter 4-digit access code" />
+          </div>
+
+          <div class="live-actions">
+            <button id="open-controls-btn" class="live-btn live-btn-primary" type="button">
+              Unlock Controls
+            </button>
+          </div>
+
+          <p id="control-code-message" class="camera-code-message" aria-live="polite"></p>
+        </div>
+      </div>
+
+      <!-- Command buttons — only shown after unlock. -->
+      <div id="control-cmds" class="control-wrap" style="display: none;">
+        <div class="control-section">
+          <div class="control-section-title">Mode</div>
+          <div class="cmd-grid">
+            <button class="cmd-btn" data-cmd-mode="menu">Menu</button>
+            <button class="cmd-btn" data-cmd-mode="motor1">Motor 1</button>
+            <button class="cmd-btn" data-cmd-mode="motor2">Motor 2</button>
+            <button class="cmd-btn" data-cmd-mode="motor3">Motor 3</button>
+            <button class="cmd-btn" data-cmd-mode="allmotors">All Motors</button>
+          </div>
+        </div>
+
+        <div class="control-section">
+          <div class="control-section-title">Actions</div>
+          <div class="cmd-grid">
+            <button class="cmd-btn" data-cmd-action="rehome">Re-home</button>
+            <button class="cmd-btn" data-cmd-action="zeroPan">Zero Pan</button>
+            <button class="cmd-btn" data-cmd-action="zeroTilt">Zero Tilt</button>
+          </div>
+        </div>
+
+        <div class="control-section">
+          <div class="control-section-title">All Motors — Slider Speed</div>
+          <div class="speed-row">
+            <input id="speed-slider" type="range" min="0" max="20" value="0" step="1" />
+            <span class="speed-value" id="speed-value">0</span>
+          </div>
+        </div>
+
+        <p id="cmd-status" class="cmd-status"></p>
+      </div>
     </div>
   </section>
 
@@ -132,12 +250,18 @@
   <script src="script.js"></script>
   <script>
     const POLL_MS = 1500;
-    // Device is considered stale if we haven't seen a fresh updatedAt in
-    // this window — handy for spotting Wi-Fi drops without the page
-    // flipping to "offline" on a single failed fetch.
     const STALE_MS = 5000;
+    const SPEED_DEBOUNCE_MS = 250;
+    const STATUS_CLEAR_MS = 2500;
+    const SLIDER_SYNC_BLOCK_MS = 1500;
+    // 15-minute session, identical to live.html.
+    const SESSION_MS = 15 * 60 * 1000;
 
     let refreshTimer = null;
+    let speedDebounceTimer = null;
+    let lastSliderTouchMs = 0;
+    let statusClearTimer = null;
+    let sessionTimer = null;
 
     const MODE_LABELS = {
       menu: "Menu",
@@ -148,6 +272,141 @@
       panSetup: "Pan Setup",
       tiltSetup: "Tilt Setup"
     };
+
+    // --- Gate / session lifecycle ---
+
+    function bindGateEvents() {
+      const btn = document.getElementById("open-controls-btn");
+      const input = document.getElementById("control-code-input");
+      if (btn) btn.addEventListener("click", unlockControls);
+      if (input) input.addEventListener("keydown", e => {
+        if (e.key === "Enter") unlockControls();
+      });
+    }
+
+    function lockControls() {
+      // Replace the gate card the same way live.html does on expiry.
+      document.getElementById("control-cmds").style.display = "none";
+      document.getElementById("control-container").innerHTML = `
+        <div class="live-message">
+          <div class="live-status-pill">Session Expired</div>
+          <h2>Open Sprinkler Controls</h2>
+          <p>Your session has expired. Enter the 4-digit code to continue.</p>
+          <div class="camera-code-wrap">
+            <input id="control-code-input" class="camera-code-input" type="password" inputmode="numeric"
+              maxlength="4" placeholder="Enter 4-digit code" aria-label="Enter 4-digit access code" />
+          </div>
+          <div class="live-actions">
+            <button id="open-controls-btn" class="live-btn live-btn-primary" type="button">
+              Unlock Controls
+            </button>
+          </div>
+          <p id="control-code-message" class="camera-code-message" aria-live="polite"></p>
+        </div>
+      `;
+      bindGateEvents();
+    }
+
+    async function unlockControls() {
+      const codeInput = document.getElementById("control-code-input");
+      const messageEl = document.getElementById("control-code-message");
+      const enteredCode = (codeInput.value || "").trim();
+
+      let res;
+      try {
+        res = await fetch("/api/control-access", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: enteredCode })
+        });
+      } catch {
+        messageEl.textContent = "Could not connect. Please try again.";
+        messageEl.classList.add("error");
+        return;
+      }
+
+      if (!res.ok) {
+        messageEl.textContent = "Wrong code. Please try again.";
+        messageEl.classList.add("error");
+        return;
+      }
+
+      messageEl.textContent = "";
+      messageEl.classList.remove("error");
+
+      // Same "Access Granted" treatment live.html uses, then reveal the
+      // command grid below.
+      document.getElementById("control-container").innerHTML = `
+        <div class="live-message live-message-compact">
+          <div class="live-status-pill live-status-live">Access Granted</div>
+          <h2>Controls unlocked</h2>
+          <p>You entered the correct code. Buttons below send commands to the device.</p>
+        </div>
+      `;
+      document.getElementById("control-cmds").style.display = "block";
+
+      if (sessionTimer) clearTimeout(sessionTimer);
+      sessionTimer = setTimeout(lockControls, SESSION_MS);
+    }
+
+    // --- Commands (no per-request auth, matching the camera flow) ---
+
+    function setStatus(text, cls) {
+      const el = document.getElementById("cmd-status");
+      if (!el) return;
+      el.textContent = text || "";
+      el.className = "cmd-status" + (cls ? " " + cls : "");
+      if (statusClearTimer) clearTimeout(statusClearTimer);
+      if (text) {
+        statusClearTimer = setTimeout(() => {
+          el.textContent = "";
+          el.className = "cmd-status";
+        }, STATUS_CLEAR_MS);
+      }
+    }
+
+    function sendCommand(body) {
+      setStatus("Sending…");
+      return fetch("/api/motor/command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      })
+        .then(r => {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.json();
+        })
+        .then(d => { setStatus("Sent (seq " + d.seq + ")", "success"); })
+        .catch(err => { setStatus("Send failed: " + err.message, "error"); });
+    }
+
+    function wireCommandButtons() {
+      document.querySelectorAll("[data-cmd-mode]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          sendCommand({ kind: "enterMode", mode: btn.dataset.cmdMode });
+        });
+      });
+      document.querySelectorAll("[data-cmd-action]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          sendCommand({ kind: btn.dataset.cmdAction });
+        });
+      });
+
+      const slider = document.getElementById("speed-slider");
+      const out = document.getElementById("speed-value");
+      if (slider) {
+        slider.addEventListener("input", () => {
+          out.textContent = slider.value;
+          lastSliderTouchMs = Date.now();
+          if (speedDebounceTimer) clearTimeout(speedDebounceTimer);
+          speedDebounceTimer = setTimeout(() => {
+            sendCommand({ kind: "setSliderSpeed", speed: Number(slider.value) });
+          }, SPEED_DEBOUNCE_MS);
+        });
+      }
+    }
+
+    // --- State mirror (public, no auth) ---
 
     function setPill(state, label) {
       const pill = document.getElementById("device-pill");
@@ -169,11 +428,17 @@
       return sign + d + dir;
     }
 
+    function setActiveMode(modeKey) {
+      document.querySelectorAll("[data-cmd-mode]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.cmdMode === modeKey);
+      });
+    }
+
     function render(d) {
       const mode = typeof d.mode === "string" ? d.mode : null;
       setVal("val-mode", mode ? (MODE_LABELS[mode] || mode) : "—");
+      setActiveMode(mode);
 
-      // menuIndex is only meaningful in Menu mode.
       setVal("val-menu-index",
         mode === "menu" && typeof d.menuIndex === "number" ? String(d.menuIndex) : "—");
 
@@ -192,6 +457,20 @@
       setVal("val-homed",
         typeof d.homed === "boolean" ? (homed ? "Yes" : "No") : "—",
         typeof d.homed === "boolean" ? (homed ? "no" : "yes") : "");
+
+      // Sync the speed slider thumb to |dial| from the live state,
+      // suppressed for SLIDER_SYNC_BLOCK_MS after a user touch so we
+      // don't yank under their finger.
+      const slider = document.getElementById("speed-slider");
+      const out = document.getElementById("speed-value");
+      if (slider && typeof d.dial === "number" &&
+          Date.now() - lastSliderTouchMs > SLIDER_SYNC_BLOCK_MS) {
+        const v = Math.abs(d.dial);
+        if (String(v) !== slider.value) {
+          slider.value = String(v);
+          out.textContent = String(v);
+        }
+      }
 
       if (typeof d.updatedAt === "number") {
         const dt = new Date(d.updatedAt);
@@ -221,7 +500,7 @@
         document.getElementById("control-content").style.display = "none";
       }
 
-      fetch("https://embersensor.com/api/motor/state", { cache: "no-store" })
+      fetch("/api/motor/state", { cache: "no-store" })
         .then(r => {
           if (!r.ok) throw new Error("HTTP " + r.status);
           return r.json();
@@ -243,7 +522,14 @@
         });
     }
 
-    loadState();
+    // --- Bootstrap ---
+
+    document.addEventListener("DOMContentLoaded", () => {
+      bindGateEvents();
+      wireCommandButtons();
+      loadState();
+    });
+
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") loadState(true);
       else if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
