@@ -69,16 +69,24 @@ export default {
       });
     }
 
-    if (url.pathname === "/api/update" && request.method === "POST") {
-      let data;
+    if (url.pathname === "/api/update" && (request.method === "POST" || request.method === "PATCH")) {
+      let incoming;
       try {
-        data = await request.json();
+        incoming = await request.json();
       } catch {
         return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
           status: 400,
           headers: { "Content-Type": "application/json" }
         });
       }
+
+      let data = incoming;
+      if (request.method === "PATCH") {
+        const raw = await env.FIRE_DATA.get("latest");
+        const existing = raw ? JSON.parse(raw) : {};
+        data = { ...existing, ...incoming };
+      }
+
       try {
         await writeLatestSensorReading(env, data);
       } catch (err) {
