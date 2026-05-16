@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Sprinkler Control | EmberSensor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="Live state of the EmberSensor sprinkler controller — slider, pan, and tilt motors." />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .control-page {
+      padding: 48px 0 72px;
+    }
+
+    .control-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .control-wrap {
+      width: min(560px, 100%);
+      margin: 0 auto;
+    }
+
+    .device-pill {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+    .device-pill.online  { background: rgba(52, 211, 153, 0.18); color: #34d399; }
+    .device-pill.stale   { background: rgba(251, 146, 60, 0.18); color: #fb923c; }
+    .device-pill.offline { background: rgba(248, 113, 113, 0.18); color: #f87171; }
+
+    .control-note {
+      text-align: center;
+      color: var(--muted, #9aa3af);
+      font-size: 13px;
+      margin-top: 16px;
+    }
+
+    .data-value.yes { color: #f87171; font-weight: 600; }
+    .data-value.no  { color: #34d399; font-weight: 600; }
+  </style>
+</head>
+
+<body>
+  <div id="site-header"></div>
+
+  <section class="control-page">
+    <div class="container">
+      <div class="control-header">
+        <div class="eyebrow">Sprinkler Controller</div>
+        <h1>Live Device State</h1>
+        <p class="section-sub">
+          Mirror of what the encoder + OLED on the device are showing right now.
+          Read-only for now; command control is the next step.
+        </p>
+        <span id="device-pill" class="device-pill offline">Connecting…</span>
+      </div>
+
+      <div class="control-wrap">
+        <div id="control-loading" style="text-align: center; color: var(--muted, #9aa3af);">
+          Loading device state…
+        </div>
+
+        <div id="control-error" style="display: none; text-align: center; color: #f87171;">
+          Couldn't reach the device state API. Retrying…
+        </div>
+
+        <div id="control-content" style="display: none;">
+
+          <div class="data-group">
+            <div class="data-row">
+              <div class="data-label"><span class="row-icon">🎛</span> Current Mode</div>
+              <div class="data-value" id="val-mode">—</div>
+            </div>
+            <div class="data-row">
+              <div class="data-label"><span class="row-icon">📍</span> Menu Index</div>
+              <div class="data-value" id="val-menu-index">—</div>
+            </div>
+          </div>
+
+          <div class="data-group">
+            <div class="data-row">
+              <div class="data-label"><span class="row-icon">↔️</span> Slider</div>
+              <div class="data-value" id="val-slider">—</div>
+            </div>
+            <div class="data-row">
+              <div class="data-label"><span class="row-icon">🔄</span> Pan</div>
+              <div class="data-value" id="val-pan">—</div>
+            </div>
+            <div class="data-row">
+              <div class="data-label"><span class="row-icon">🔃</span> Tilt</div>
+              <div class="data-value" id="val-tilt">—</div>
+            </div>
+          </div>
+
+          <div class="data-group">
+            <div class="data-row">
+              <div class="data-label"><span class="row-icon">🎚</span> Encoder Dial</div>
+              <div class="data-value" id="val-dial">—</div>
+            </div>
+            <div class="data-row">
+              <div class="data-label"><span class="row-icon">🔘</span> Limit Switch</div>
+              <div class="data-value" id="val-limit">—</div>
+            </div>
+            <div class="data-row">
+              <div class="data-label"><span class="row-icon">🏠</span> Homed</div>
+              <div class="data-value" id="val-homed">—</div>
+            </div>
+          </div>
+
+          <p class="control-note" id="updated-at">—</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="script.js"></script>
+  <script>
+    const POLL_MS = 1500;
+    // Device is considered stale if we haven't seen a fresh updatedAt in
+    // this window — handy for spotting Wi-Fi drops without the page
+    // flipping to "offline" on a single failed fetch.
+    const STALE_MS = 5000;
+
+    let refreshTimer = null;
+
+    const MODE_LABELS = {
+      menu: "Menu",
+      motor1: "Motor 1 — Slider",
+      motor2: "Motor 2 — Pan",
+      motor3: "Motor 3 — Tilt",
+      allmotors: "All Motors",
+      panSetup: "Pan Setup",
+      tiltSetup: "Tilt Setup"
+    };
+
+    function setPill(state, label) {
+      const pill = document.getElementById("device-pill");
+      pill.className = "device-pill " + state;
+      pill.textContent = label;
+    }
+
+    function setVal(id, text, cls) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = text;
+      el.className = "data-value" + (cls ? " " + cls : "");
+    }
+
+    function formatDial(d) {
+      if (typeof d !== "number") return "—";
+      const sign = d > 0 ? "+" : "";
+      const dir = d > 0 ? " CW" : d < 0 ? " CCW" : " STOP";
+      return sign + d + dir;
+    }
+
+    function render(d) {
+      const mode = typeof d.mode === "string" ? d.mode : null;
+      setVal("val-mode", mode ? (MODE_LABELS[mode] || mode) : "—");
+
+      // menuIndex is only meaningful in Menu mode.
+      setVal("val-menu-index",
+        mode === "menu" && typeof d.menuIndex === "number" ? String(d.menuIndex) : "—");
+
+      setVal("val-slider", typeof d.sliderMm === "number" ? d.sliderMm + " mm" : "—");
+      setVal("val-pan",    typeof d.panDeg   === "number" ? d.panDeg   + " deg" : "—");
+      setVal("val-tilt",   typeof d.tiltDeg  === "number" ? d.tiltDeg  + " deg" : "—");
+
+      setVal("val-dial", formatDial(d.dial));
+
+      const limitEngaged = d.limitEngaged === true;
+      setVal("val-limit",
+        typeof d.limitEngaged === "boolean" ? (limitEngaged ? "LOW (hit)" : "HIGH") : "—",
+        typeof d.limitEngaged === "boolean" ? (limitEngaged ? "yes" : "no") : "");
+
+      const homed = d.homed === true;
+      setVal("val-homed",
+        typeof d.homed === "boolean" ? (homed ? "Yes" : "No") : "—",
+        typeof d.homed === "boolean" ? (homed ? "no" : "yes") : "");
+
+      if (typeof d.updatedAt === "number") {
+        const dt = new Date(d.updatedAt);
+        const ageMs = Date.now() - d.updatedAt;
+        document.getElementById("updated-at").textContent =
+          "Last update " + dt.toLocaleTimeString([], {
+            hour: "2-digit", minute: "2-digit", second: "2-digit"
+          });
+
+        if (ageMs <= STALE_MS) setPill("online", "Device Online");
+        else                   setPill("stale", "Stale — no fresh update");
+      } else {
+        document.getElementById("updated-at").textContent = "—";
+        setPill("offline", "No device data yet");
+      }
+    }
+
+    function scheduleNextRefresh() {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => loadState(true), POLL_MS);
+    }
+
+    function loadState(silent) {
+      if (!silent) {
+        document.getElementById("control-loading").style.display = "block";
+        document.getElementById("control-error").style.display = "none";
+        document.getElementById("control-content").style.display = "none";
+      }
+
+      fetch("https://embersensor.com/api/motor/state", { cache: "no-store" })
+        .then(r => {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.json();
+        })
+        .then(d => {
+          render(d || {});
+          document.getElementById("control-loading").style.display = "none";
+          document.getElementById("control-error").style.display = "none";
+          document.getElementById("control-content").style.display = "block";
+          scheduleNextRefresh();
+        })
+        .catch(() => {
+          setPill("offline", "API unreachable");
+          document.getElementById("control-loading").style.display = "none";
+          if (document.getElementById("control-content").style.display !== "block") {
+            document.getElementById("control-error").style.display = "block";
+          }
+          scheduleNextRefresh();
+        });
+    }
+
+    loadState();
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") loadState(true);
+      else if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+    });
+  </script>
+</body>
+
+</html>
