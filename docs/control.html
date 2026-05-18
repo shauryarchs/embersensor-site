@@ -253,13 +253,22 @@
       border-radius: 10px;
       border: 1px solid var(--card-border);
       background: var(--card);
+      transition: opacity 0.15s ease;
     }
     .speed-row input[type="range"] { flex: 1; }
+    .speed-row.disabled { opacity: 0.5; }
+    .speed-row.disabled input[type="range"] { cursor: not-allowed; }
     .speed-value {
-      min-width: 28px;
+      min-width: 36px;
       text-align: right;
       font-variant-numeric: tabular-nums;
       font-weight: 600;
+    }
+    .speed-hint {
+      margin: 8px 2px 0;
+      font-size: 12px;
+      color: var(--muted, #9aa3af);
+      text-align: center;
     }
     .cmd-status {
       min-height: 18px;
@@ -405,11 +414,14 @@
         </div>
 
         <div class="control-section">
-          <div class="control-section-title">All Motors — Slider Speed</div>
+          <div class="control-section-title">Speed</div>
           <div class="speed-row">
-            <input id="speed-slider" type="range" min="0" max="20" value="0" step="1" />
+            <input id="speed-slider" type="range" min="-20" max="20" value="0" step="1" />
             <span class="speed-value" id="speed-value">0</span>
           </div>
+          <p class="speed-hint" id="speed-hint">
+            Sign sets direction. Slide back to 0 to stop.
+          </p>
         </div>
 
         <p id="cmd-status" class="cmd-status"></p>
@@ -692,18 +704,33 @@
         typeof d.homed === "boolean" ? (homed ? "Yes" : "No") : "—",
         typeof d.homed === "boolean" ? (homed ? "no" : "yes") : "");
 
-      // Sync the speed slider thumb to |dial| from the live state,
-      // suppressed for SLIDER_SYNC_BLOCK_MS after a user touch so we
-      // don't yank under their finger.
+      // Sync the speed slider thumb to the signed dial from the live
+      // state, suppressed for SLIDER_SYNC_BLOCK_MS after a user touch
+      // so we don't yank under their finger.
       const slider = document.getElementById("speed-slider");
       const out = document.getElementById("speed-value");
+      const speedRow = slider ? slider.closest(".speed-row") : null;
+      const speedHint = document.getElementById("speed-hint");
       if (slider && typeof d.dial === "number" &&
           Date.now() - lastSliderTouchMs > SLIDER_SYNC_BLOCK_MS) {
-        const v = Math.abs(d.dial);
+        const v = d.dial;
         if (String(v) !== slider.value) {
           slider.value = String(v);
           out.textContent = String(v);
         }
+      }
+      // setSliderSpeed only takes effect on the device in Motor 1/2/3
+      // and All Motors modes (see main.ino:dispatchRemoteCommand). In
+      // Menu / PanSetup / TiltSetup the encoder has different
+      // semantics, so disable the slider there to match.
+      const speedActive = mode === "motor1" || mode === "motor2" ||
+                          mode === "motor3" || mode === "allmotors";
+      if (slider) slider.disabled = !speedActive;
+      if (speedRow) speedRow.classList.toggle("disabled", !speedActive);
+      if (speedHint) {
+        speedHint.textContent = speedActive
+          ? "Sign sets direction. Slide back to 0 to stop."
+          : "Select a motor mode to enable speed control.";
       }
 
       if (typeof d.updatedAt === "number") {
