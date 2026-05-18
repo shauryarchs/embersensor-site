@@ -271,6 +271,54 @@
       text-align: center;
     }
 
+    /* Calibration rows — one per motor. Nudge buttons flank a live
+       angle readout, with the Zero button on the right. flex-wrap so
+       the row gracefully reflows on narrow screens. */
+    .cal-hint {
+      margin: -2px 2px 10px;
+      font-size: 12px;
+      color: var(--muted, #9aa3af);
+    }
+    .cal-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .cal-row:last-child { margin-bottom: 0; }
+    .cal-label {
+      flex: 0 0 44px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted, #9aa3af);
+    }
+    .cmd-btn.cal-step {
+      flex: 0 0 auto;
+      min-width: 52px;
+      padding: 9px 6px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .cal-angle {
+      flex: 1 1 60px;
+      min-width: 56px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 15px;
+      font-variant-numeric: tabular-nums;
+      color: var(--text, #fff);
+    }
+    .cmd-btn.cal-zero {
+      flex: 0 0 auto;
+      min-width: 58px;
+      padding: 9px 10px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
     /* Big red Stop button. Visually distinct from the mode/action grid
        so it reads as a kill switch rather than just another command. */
     .cmd-btn-stop {
@@ -430,11 +478,35 @@
         </div>
 
         <div class="control-section">
+          <div class="control-section-title">Calibration</div>
+          <p class="cal-hint">
+            Nudge to the desired pose, then Zero to set that pose as 0°.
+            Each nudge bypasses the soft limits, like the boot-time setup.
+          </p>
+          <div class="cal-row">
+            <div class="cal-label">Pan</div>
+            <button class="cmd-btn cal-step" data-cmd-nudge="pan" data-cmd-delta="-10">−10°</button>
+            <button class="cmd-btn cal-step" data-cmd-nudge="pan" data-cmd-delta="-1">−1°</button>
+            <div class="cal-angle" id="cal-pan-angle">—</div>
+            <button class="cmd-btn cal-step" data-cmd-nudge="pan" data-cmd-delta="1">+1°</button>
+            <button class="cmd-btn cal-step" data-cmd-nudge="pan" data-cmd-delta="10">+10°</button>
+            <button class="cmd-btn cal-zero" data-cmd-action="zeroPan">Zero</button>
+          </div>
+          <div class="cal-row">
+            <div class="cal-label">Tilt</div>
+            <button class="cmd-btn cal-step" data-cmd-nudge="tilt" data-cmd-delta="-10">−10°</button>
+            <button class="cmd-btn cal-step" data-cmd-nudge="tilt" data-cmd-delta="-1">−1°</button>
+            <div class="cal-angle" id="cal-tilt-angle">—</div>
+            <button class="cmd-btn cal-step" data-cmd-nudge="tilt" data-cmd-delta="1">+1°</button>
+            <button class="cmd-btn cal-step" data-cmd-nudge="tilt" data-cmd-delta="10">+10°</button>
+            <button class="cmd-btn cal-zero" data-cmd-action="zeroTilt">Zero</button>
+          </div>
+        </div>
+
+        <div class="control-section">
           <div class="control-section-title">Actions</div>
           <div class="cmd-grid">
             <button class="cmd-btn" data-cmd-action="rehome">Re-home</button>
-            <button class="cmd-btn" data-cmd-action="zeroPan">Zero Pan</button>
-            <button class="cmd-btn" data-cmd-action="zeroTilt">Zero Tilt</button>
           </div>
         </div>
 
@@ -466,6 +538,7 @@
     const POLL_MS = 1500;
     const STALE_MS = 5000;
     const SPEED_DEBOUNCE_MS = 250;
+    const NUDGE_DEBOUNCE_MS = 200;
     const STATUS_CLEAR_MS = 2500;
     const SLIDER_SYNC_BLOCK_MS = 1500;
     // 15-minute session, identical to live.html.
@@ -487,6 +560,14 @@
     // decide what command to send, since "stop" means different things
     // depending on what's running.
     let lastKnownMode = null;
+    // Per-axis coalesced nudge state. The worker only retains the
+    // latest queued command (singleton :MotorCommand), so two clicks
+    // closer together than the device poll interval would drop the
+    // first one. Each click adds to pendingNudge[axis] and resets a
+    // short timer; when the timer fires, the accumulated delta is sent
+    // as a single nudgePan/nudgeTilt command.
+    const pendingNudge = { pan: 0, tilt: 0 };
+    const nudgeTimers  = { pan: null, tilt: null };
 
     const MODE_LABELS = {
       menu: "Menu",
@@ -614,6 +695,32 @@
       document.querySelectorAll("[data-cmd-action]").forEach(btn => {
         btn.addEventListener("click", () => {
           sendCommand({ kind: btn.dataset.cmdAction });
+        });
+      });
+
+      // Calibration nudge buttons: accumulate signed degree deltas
+      // per axis, then send the total after NUDGE_DEBOUNCE_MS of
+      // click idle. The device converts to microsteps and calls
+      // stepBy(), which moves the motor a precise amount (no soft-
+      // bound clamping, mirroring the boot-time PanSetup / TiltSetup
+      // flow).
+      document.querySelectorAll("[data-cmd-nudge]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const axis = btn.dataset.cmdNudge;  // "pan" or "tilt"
+          const deltaDeg = Number(btn.dataset.cmdDelta);
+          if (!Number.isFinite(deltaDeg) || deltaDeg === 0) return;
+          pendingNudge[axis] += deltaDeg;
+          if (nudgeTimers[axis]) clearTimeout(nudgeTimers[axis]);
+          nudgeTimers[axis] = setTimeout(() => {
+            const total = pendingNudge[axis];
+            pendingNudge[axis] = 0;
+            nudgeTimers[axis] = null;
+            if (total === 0) return;
+            sendCommand({
+              kind: axis === "pan" ? "nudgePan" : "nudgeTilt",
+              deltaDeg: total,
+            });
+          }, NUDGE_DEBOUNCE_MS);
         });
       });
 
@@ -753,6 +860,13 @@
       setVal("val-slider", typeof d.sliderMm === "number" ? d.sliderMm + " mm" : "—");
       setVal("val-pan",    typeof d.panDeg   === "number" ? d.panDeg   + "°" : "—");
       setVal("val-tilt",   typeof d.tiltDeg  === "number" ? d.tiltDeg  + "°" : "—");
+
+      // Mirror the live pan/tilt angles into the calibration rows so
+      // the user sees the motor respond to each nudge in real time.
+      const calPan  = document.getElementById("cal-pan-angle");
+      const calTilt = document.getElementById("cal-tilt-angle");
+      if (calPan)  calPan.textContent  = typeof d.panDeg  === "number" ? d.panDeg  + "°" : "—";
+      if (calTilt) calTilt.textContent = typeof d.tiltDeg === "number" ? d.tiltDeg + "°" : "—";
 
       setLinearBar("bar-slider", d.sliderMm, SLIDER_MIN_MM, SLIDER_MAX_MM);
       setCenteredBar("bar-pan",  d.panDeg,  PAN_MAX_ABS_DEG);

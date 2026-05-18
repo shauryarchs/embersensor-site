@@ -22,6 +22,8 @@ const VALID_KINDS = new Set([
   "zeroPan",
   "zeroTilt",
   "setSliderSpeed",
+  "nudgePan",
+  "nudgeTilt",
 ]);
 
 const VALID_MODES = new Set([
@@ -63,6 +65,16 @@ export function validateAndBuildProps(body) {
     // in All Motors mode (sign ignored there by the device handler).
     const clamped = Math.max(-20, Math.min(20, Math.round(speed)));
     props.speed = clamped;
+  } else if (kind === "nudgePan" || kind === "nudgeTilt") {
+    const deltaDeg = body.deltaDeg;
+    if (typeof deltaDeg !== "number" || !Number.isFinite(deltaDeg)) {
+      return { ok: false, error: "deltaDeg must be a finite number" };
+    }
+    // ±360 is well beyond any single nudge a user would issue from
+    // the calibration UI (±10° is the max button). The clamp just
+    // guards against pathological values being persisted.
+    const clamped = Math.max(-360, Math.min(360, Math.round(deltaDeg)));
+    props.deltaDeg = clamped;
   }
   // rehome / zeroPan / zeroTilt take no args.
 
