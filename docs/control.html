@@ -30,28 +30,187 @@
     }
 
     .device-pill {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       padding: 4px 12px;
       border-radius: 999px;
       font-size: 12px;
       font-weight: 600;
       letter-spacing: 0.05em;
       text-transform: uppercase;
-      margin-top: 6px;
+    }
+    .device-pill::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 0 0 currentColor;
     }
     .device-pill.online  { background: rgba(52, 211, 153, 0.18); color: #34d399; }
+    .device-pill.online::before { animation: dotpulse 1.8s ease-out infinite; }
     .device-pill.stale   { background: rgba(251, 146, 60, 0.18); color: #fb923c; }
     .device-pill.offline { background: rgba(248, 113, 113, 0.18); color: #f87171; }
-
-    .control-note {
-      text-align: center;
-      color: var(--muted, #9aa3af);
-      font-size: 13px;
-      margin-top: 16px;
+    @keyframes dotpulse {
+      0%   { box-shadow: 0 0 0 0   rgba(52, 211, 153, 0.55); }
+      70%  { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+      100% { box-shadow: 0 0 0 0   rgba(52, 211, 153, 0); }
     }
 
-    .data-value.yes { color: #f87171; font-weight: 600; }
-    .data-value.no  { color: #34d399; font-weight: 600; }
+    /* These classes are declared locally inside status.html, so we need
+       to redeclare them here for the control page to pick up the same
+       card look. Kept in sync with status.html on purpose. */
+    .data-group {
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .data-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      gap: 12px;
+    }
+    .data-row:last-child { border-bottom: none; }
+    .data-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      color: var(--muted, #9aa3af);
+    }
+    .data-label .row-icon {
+      font-size: 17px;
+      width: 22px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .data-value {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text, #fff);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .data-value.yes { color: #f87171; }
+    .data-value.no  { color: #34d399; }
+
+    /* Top strip: online pill + last-update timestamp, always visible
+       above the cards so device status is never gated behind a loading
+       state. */
+    .status-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 4px;
+      margin-bottom: 14px;
+    }
+    .status-strip .updated-inline {
+      font-size: 12px;
+      color: var(--muted, #9aa3af);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Mode hero — the single most important "what is the device doing
+       right now" panel. Larger type, prominent position. */
+    .mode-hero { padding: 20px 22px; }
+    .mode-hero-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted, #9aa3af);
+      margin-bottom: 6px;
+    }
+    .mode-hero-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text, #fff);
+      line-height: 1.2;
+    }
+    .mode-hero-sub {
+      font-size: 13px;
+      color: var(--muted, #9aa3af);
+      margin-top: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Group heading row — the small "POSITIONS" / "HARDWARE" label
+       that sits at the top of each card. */
+    .group-heading {
+      padding: 10px 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted, #9aa3af);
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* Position rows: label | bar | value. Slider bar is linear (fills
+       from the left). Pan/tilt bars are centered (zero in the middle,
+       fill extends left or right based on sign). */
+    .pos-row {
+      display: grid;
+      grid-template-columns: 96px 1fr 78px;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .pos-row:last-child { border-bottom: none; }
+    .pos-row .data-label { font-size: 14px; }
+    .pos-row .pos-value {
+      font-size: 15px;
+      font-weight: 700;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: var(--text, #fff);
+    }
+    .pos-track {
+      position: relative;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .pos-track .center-tick {
+      position: absolute;
+      left: 50%;
+      top: -3px;
+      bottom: -3px;
+      width: 1px;
+      background: rgba(255, 255, 255, 0.22);
+    }
+    .pos-fill {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      background: var(--orange, #f97316);
+      border-radius: 999px;
+      transition: left 0.35s ease, width 0.35s ease, opacity 0.2s ease;
+    }
+    .pos-track.unknown .pos-fill { opacity: 0; }
+
+    @media (max-width: 480px) {
+      .pos-row {
+        grid-template-columns: 80px 1fr 64px;
+        gap: 10px;
+        padding: 12px 16px;
+      }
+      .mode-hero-value { font-size: 20px; }
+    }
 
     /* Command panel — only shown after unlock. */
     .control-section {
@@ -126,47 +285,61 @@
           Send the same commands the encoder + OLED do, from here. Read-only state
           mirror is public; the control buttons need the 4-digit access code.
         </p>
-        <span id="device-pill" class="device-pill offline">Connecting…</span>
       </div>
 
       <!-- Live state mirror — always visible, public read. -->
       <div class="control-wrap">
-        <div id="control-loading" style="text-align: center; color: var(--muted, #9aa3af);">
+        <!-- Always-visible strip so device status is shown even while the
+             cards below are still loading. -->
+        <div class="status-strip">
+          <span id="device-pill" class="device-pill offline">Connecting…</span>
+          <span class="updated-inline" id="updated-at">—</span>
+        </div>
+
+        <div id="control-loading" style="text-align: center; color: var(--muted, #9aa3af); padding: 24px 0;">
           Loading device state…
         </div>
 
-        <div id="control-error" style="display: none; text-align: center; color: #f87171;">
+        <div id="control-error" style="display: none; text-align: center; color: #f87171; padding: 24px 0;">
           Couldn't reach the device state API. Retrying…
         </div>
 
         <div id="control-content" style="display: none;">
           <div class="data-group">
-            <div class="data-row">
-              <div class="data-label"><span class="row-icon">🎛</span> Current Mode</div>
-              <div class="data-value" id="val-mode">—</div>
-            </div>
-            <div class="data-row">
-              <div class="data-label"><span class="row-icon">📍</span> Menu Index</div>
-              <div class="data-value" id="val-menu-index">—</div>
+            <div class="mode-hero">
+              <div class="mode-hero-label">Current Mode</div>
+              <div class="mode-hero-value" id="val-mode">—</div>
+              <div class="mode-hero-sub" id="val-menu-sub" style="display: none;">
+                Menu index <span id="val-menu-index">—</span>
+              </div>
             </div>
           </div>
 
           <div class="data-group">
-            <div class="data-row">
+            <div class="group-heading">Positions</div>
+            <div class="pos-row">
               <div class="data-label"><span class="row-icon">↔️</span> Slider</div>
-              <div class="data-value" id="val-slider">—</div>
+              <div class="pos-track unknown" id="bar-slider"><span class="pos-fill"></span></div>
+              <div class="pos-value" id="val-slider">—</div>
             </div>
-            <div class="data-row">
+            <div class="pos-row">
               <div class="data-label"><span class="row-icon">🔄</span> Pan</div>
-              <div class="data-value" id="val-pan">—</div>
+              <div class="pos-track unknown" id="bar-pan">
+                <span class="center-tick"></span><span class="pos-fill"></span>
+              </div>
+              <div class="pos-value" id="val-pan">—</div>
             </div>
-            <div class="data-row">
+            <div class="pos-row">
               <div class="data-label"><span class="row-icon">🔃</span> Tilt</div>
-              <div class="data-value" id="val-tilt">—</div>
+              <div class="pos-track unknown" id="bar-tilt">
+                <span class="center-tick"></span><span class="pos-fill"></span>
+              </div>
+              <div class="pos-value" id="val-tilt">—</div>
             </div>
           </div>
 
           <div class="data-group">
+            <div class="group-heading">Hardware</div>
             <div class="data-row">
               <div class="data-label"><span class="row-icon">🎚</span> Encoder Dial</div>
               <div class="data-value" id="val-dial">—</div>
@@ -180,8 +353,6 @@
               <div class="data-value" id="val-homed">—</div>
             </div>
           </div>
-
-          <p class="control-note" id="updated-at">—</p>
         </div>
       </div>
 
@@ -256,6 +427,13 @@
     const SLIDER_SYNC_BLOCK_MS = 1500;
     // 15-minute session, identical to live.html.
     const SESSION_MS = 15 * 60 * 1000;
+
+    // Motor ranges drive the position bars below. Kept in sync with the
+    // device-side constants in SliderMotor1.h / PanMotor2.h / TiltMotor3.h.
+    const SLIDER_MIN_MM = 5;
+    const SLIDER_MAX_MM = 975;
+    const PAN_MAX_ABS_DEG  = 105;
+    const TILT_MAX_ABS_DEG = 360;
 
     let refreshTimer = null;
     let speedDebounceTimer = null;
@@ -434,17 +612,73 @@
       });
     }
 
+    // Linear bar: fills left-to-right between [min, max]. Used for the
+    // slider, whose range is one-sided (5 mm .. 975 mm).
+    function setLinearBar(trackId, value, min, max) {
+      const track = document.getElementById(trackId);
+      if (!track) return;
+      const fill = track.querySelector(".pos-fill");
+      if (typeof value !== "number" || !Number.isFinite(value)) {
+        track.classList.add("unknown");
+        fill.style.left = "0%";
+        fill.style.width = "0%";
+        return;
+      }
+      track.classList.remove("unknown");
+      const span = max - min;
+      const pct = span > 0 ? Math.max(0, Math.min(100, ((value - min) / span) * 100)) : 0;
+      fill.style.left = "0%";
+      fill.style.width = pct + "%";
+    }
+
+    // Centered bar: zero sits at 50%; positive values fill rightward,
+    // negative leftward. Used for pan (±105°) and tilt (±360°).
+    function setCenteredBar(trackId, value, maxAbs) {
+      const track = document.getElementById(trackId);
+      if (!track) return;
+      const fill = track.querySelector(".pos-fill");
+      if (typeof value !== "number" || !Number.isFinite(value) || maxAbs <= 0) {
+        track.classList.add("unknown");
+        fill.style.left = "50%";
+        fill.style.width = "0%";
+        return;
+      }
+      track.classList.remove("unknown");
+      const clamped = Math.max(-maxAbs, Math.min(maxAbs, value));
+      const halfPct = (Math.abs(clamped) / maxAbs) * 50;
+      if (clamped >= 0) {
+        fill.style.left = "50%";
+        fill.style.width = halfPct + "%";
+      } else {
+        fill.style.left = (50 - halfPct) + "%";
+        fill.style.width = halfPct + "%";
+      }
+    }
+
     function render(d) {
       const mode = typeof d.mode === "string" ? d.mode : null;
       setVal("val-mode", mode ? (MODE_LABELS[mode] || mode) : "—");
       setActiveMode(mode);
 
-      setVal("val-menu-index",
-        mode === "menu" && typeof d.menuIndex === "number" ? String(d.menuIndex) : "—");
+      // Menu index is only meaningful in menu mode — hide the sub-line
+      // otherwise so the hero card doesn't show a dangling number.
+      const menuSub = document.getElementById("val-menu-sub");
+      if (menuSub) {
+        if (mode === "menu" && typeof d.menuIndex === "number") {
+          document.getElementById("val-menu-index").textContent = String(d.menuIndex);
+          menuSub.style.display = "";
+        } else {
+          menuSub.style.display = "none";
+        }
+      }
 
       setVal("val-slider", typeof d.sliderMm === "number" ? d.sliderMm + " mm" : "—");
-      setVal("val-pan",    typeof d.panDeg   === "number" ? d.panDeg   + " deg" : "—");
-      setVal("val-tilt",   typeof d.tiltDeg  === "number" ? d.tiltDeg  + " deg" : "—");
+      setVal("val-pan",    typeof d.panDeg   === "number" ? d.panDeg   + "°" : "—");
+      setVal("val-tilt",   typeof d.tiltDeg  === "number" ? d.tiltDeg  + "°" : "—");
+
+      setLinearBar("bar-slider", d.sliderMm, SLIDER_MIN_MM, SLIDER_MAX_MM);
+      setCenteredBar("bar-pan",  d.panDeg,  PAN_MAX_ABS_DEG);
+      setCenteredBar("bar-tilt", d.tiltDeg, TILT_MAX_ABS_DEG);
 
       setVal("val-dial", formatDial(d.dial));
 
