@@ -270,6 +270,31 @@
       color: var(--muted, #9aa3af);
       text-align: center;
     }
+
+    /* Big red Stop button. Visually distinct from the mode/action grid
+       so it reads as a kill switch rather than just another command. */
+    .cmd-btn-stop {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(248, 113, 113, 0.55);
+      background: rgba(248, 113, 113, 0.16);
+      color: #f87171;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease,
+                  opacity 0.15s ease;
+    }
+    .cmd-btn-stop:hover:not(:disabled) {
+      background: rgba(248, 113, 113, 0.26);
+      border-color: #f87171;
+    }
+    .cmd-btn-stop:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
     .cmd-status {
       min-height: 18px;
       text-align: center;
@@ -424,6 +449,12 @@
           </p>
         </div>
 
+        <div class="control-section">
+          <button id="stop-btn" class="cmd-btn-stop" type="button" disabled>
+            Stop
+          </button>
+        </div>
+
         <p id="cmd-status" class="cmd-status"></p>
       </div>
     </div>
@@ -452,6 +483,10 @@
     let lastSliderTouchMs = 0;
     let statusClearTimer = null;
     let sessionTimer = null;
+    // Most recent mode the device reported. Used by the Stop button to
+    // decide what command to send, since "stop" means different things
+    // depending on what's running.
+    let lastKnownMode = null;
 
     const MODE_LABELS = {
       menu: "Menu",
@@ -594,6 +629,37 @@
           }, SPEED_DEBOUNCE_MS);
         });
       }
+
+      const stopBtn = document.getElementById("stop-btn");
+      if (stopBtn) {
+        stopBtn.addEventListener("click", () => {
+          // Mode-aware stop:
+          //   Motor 1/2/3 → setSliderSpeed:0 stops the motor in place
+          //     without changing mode, so the user can immediately
+          //     resume by moving the slider.
+          //   All Motors  → pan and tilt run at hardcoded speeds in
+          //     handleAllMotors() and don't read the dial, so the only
+          //     way to fully stop is to drop the device into Menu mode
+          //     (enterMenu() calls .stop() on all three motors).
+          //   Menu / PanSetup / TiltSetup → button is disabled; this
+          //     branch shouldn't be reachable.
+          if (lastKnownMode === "motor1" || lastKnownMode === "motor2" ||
+              lastKnownMode === "motor3") {
+            sendCommand({ kind: "setSliderSpeed", speed: 0 });
+          } else if (lastKnownMode === "allmotors") {
+            sendCommand({ kind: "enterMode", mode: "menu" });
+          } else {
+            return;
+          }
+          // Optimistic local update so the user sees the slider thumb
+          // snap to 0 immediately instead of waiting up to POLL_MS for
+          // the next state echo. Mark lastSliderTouchMs so the sync
+          // block in render() doesn't yank the thumb in the meantime.
+          if (slider) slider.value = "0";
+          if (out) out.textContent = "0";
+          lastSliderTouchMs = Date.now();
+        });
+      }
     }
 
     // --- State mirror (public, no auth) ---
@@ -722,7 +788,8 @@
       // setSliderSpeed only takes effect on the device in Motor 1/2/3
       // and All Motors modes (see main.ino:dispatchRemoteCommand). In
       // Menu / PanSetup / TiltSetup the encoder has different
-      // semantics, so disable the slider there to match.
+      // semantics, so disable the slider — and the Stop button —
+      // there to match.
       const speedActive = mode === "motor1" || mode === "motor2" ||
                           mode === "motor3" || mode === "allmotors";
       if (slider) slider.disabled = !speedActive;
@@ -732,6 +799,9 @@
           ? "Sign sets direction. Slide back to 0 to stop."
           : "Select a motor mode to enable speed control.";
       }
+      lastKnownMode = mode;
+      const stopBtn = document.getElementById("stop-btn");
+      if (stopBtn) stopBtn.disabled = !speedActive;
 
       if (typeof d.updatedAt === "number") {
         const dt = new Date(d.updatedAt);
