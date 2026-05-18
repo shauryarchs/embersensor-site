@@ -58,7 +58,10 @@ export function validateAndBuildProps(body) {
     if (typeof speed !== "number" || !Number.isFinite(speed)) {
       return { ok: false, error: "speed must be a finite number" };
     }
-    const clamped = Math.max(0, Math.min(20, Math.round(speed)));
+    // Signed range matches Encoder::kRange on the device. Negative
+    // values reverse direction in Motor 1/2/3 modes; magnitude is used
+    // in All Motors mode (sign ignored there by the device handler).
+    const clamped = Math.max(-20, Math.min(20, Math.round(speed)));
     props.speed = clamped;
   }
   // rehome / zeroPan / zeroTilt take no args.
