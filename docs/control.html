@@ -363,16 +363,24 @@
       grid-template-columns: 1fr 1.2fr;
       gap: 24px;
       margin-top: 24px;
-      /* Vertically center each column's content within the row so the
-         stream sits at the midline of the (taller) controls column,
-         rather than orphaned at the top with empty space below. */
-      align-items: center;
+      /* Both columns start at the top of the row; the stream column is
+         then pushed down by alignStreamWithRehome() (in the inline JS
+         below) so the iframe's vertical midline lines up with the
+         Re-home button on the left. CSS alone can't target a specific
+         row of an internal block-flow column, so the offset has to be
+         measured at runtime. */
+      align-items: start;
     }
     /* Inside the grid, the control column should fill its track instead
        of using the standalone-page narrow centered width. */
     .control-grid .control-wrap {
       width: 100%;
       margin: 0;
+    }
+    .stream-col {
+      /* Defensive: ignore any inherited centering so the JS-set
+         margin-top is what determines vertical position. */
+      align-self: start;
     }
     .stream-frame {
       padding: 10px;
@@ -653,6 +661,48 @@
       });
     }
 
+    // Aligns the stream iframe's vertical center with the Re-home button
+    // on the desktop two-column layout. CSS can't target a specific row
+    // of the internal block-flow controls column, so we measure at
+    // runtime and push the stream column down via margin-top. Re-runs
+    // on resize and on layout shifts inside the controls column (the
+    // calibration row reflows at narrower widths).
+    let streamAlignObserver = null;
+    function alignStreamWithRehome() {
+      const stream = document.getElementById("stream-col");
+      const rehome = document.querySelector('button[data-cmd-action="rehome"]');
+      const cmds = document.getElementById("control-cmds");
+      const frame = stream ? stream.querySelector(".stream-frame") : null;
+      if (!stream || !rehome || !cmds || !frame) return;
+
+      // On narrow viewports the grid collapses to a single column with
+      // the stream stacked on top; the offset doesn't apply.
+      if (window.matchMedia("(max-width: 980px)").matches) {
+        stream.style.marginTop = "";
+        return;
+      }
+
+      const rehomeRect = rehome.getBoundingClientRect();
+      const cmdsRect = cmds.getBoundingClientRect();
+      const frameRect = frame.getBoundingClientRect();
+
+      // Re-home center, measured from the top of the controls column
+      // (= top of the grid row at align-items: start).
+      const rehomeCenterFromTop = (rehomeRect.top + rehomeRect.bottom) / 2 - cmdsRect.top;
+      const offset = Math.max(0, rehomeCenterFromTop - frameRect.height / 2);
+      stream.style.marginTop = offset + "px";
+    }
+
+    function watchStreamAlignment() {
+      if (streamAlignObserver) return;
+      const cmds = document.getElementById("control-cmds");
+      if (!cmds || typeof ResizeObserver === "undefined") return;
+      streamAlignObserver = new ResizeObserver(() => alignStreamWithRehome());
+      streamAlignObserver.observe(cmds);
+    }
+
+    window.addEventListener("resize", alignStreamWithRehome);
+
     function lockControls() {
       // Replace the gate card the same way live.html does on expiry.
       // Also clear and hide the stream iframe so the cached HLS player
@@ -661,7 +711,14 @@
       const streamCol = document.getElementById("stream-col");
       const streamFrame = document.getElementById("sprinkler-stream");
       if (streamFrame) streamFrame.src = "about:blank";
-      if (streamCol) streamCol.style.display = "none";
+      if (streamCol) {
+        streamCol.style.display = "none";
+        streamCol.style.marginTop = "";
+      }
+      if (streamAlignObserver) {
+        streamAlignObserver.disconnect();
+        streamAlignObserver = null;
+      }
       document.getElementById("control-container").innerHTML = `
         <div class="live-message">
           <div class="live-status-pill">Session Expired</div>
@@ -734,6 +791,14 @@
         streamFrame.src = payload.streamUrl;
         streamCol.style.display = "block";
       }
+
+      // Align the iframe's vertical center with the Re-home button.
+      // Wait one frame so the grid has laid out and the iframe has
+      // resolved its 16:9 height before we measure.
+      requestAnimationFrame(() => {
+        alignStreamWithRehome();
+        watchStreamAlignment();
+      });
 
       if (sessionTimer) clearTimeout(sessionTimer);
       sessionTimer = setTimeout(lockControls, SESSION_MS);
