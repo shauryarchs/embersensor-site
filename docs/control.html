@@ -352,6 +352,55 @@
     }
     .cmd-status.success { color: #34d399; }
     .cmd-status.error   { color: #f87171; }
+
+    /* Two-column layout shown after unlock: controls on the left, live
+       sprinkler stream on the right. On narrow screens the columns
+       collapse to a single column with the stream on top (so the
+       operator sees what they're aiming at before scrolling past a
+       wall of buttons). */
+    .control-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 24px;
+      margin-top: 24px;
+      align-items: start;
+    }
+    /* Inside the grid, the control column should fill its track instead
+       of using the standalone-page narrow centered width. */
+    .control-grid .control-wrap {
+      width: 100%;
+      margin: 0;
+    }
+    /* Sticky stream so it stays in view as you scroll the controls
+       beside it. 88px clears the site header. */
+    .stream-col {
+      position: sticky;
+      top: 88px;
+    }
+    .stream-frame {
+      padding: 10px;
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+      box-shadow: var(--shadow);
+    }
+    .stream-frame iframe {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border: 0;
+      border-radius: 14px;
+      background: #000;
+    }
+    @media (max-width: 980px) {
+      .control-grid {
+        grid-template-columns: 1fr;
+      }
+      .stream-col {
+        position: static;
+        order: -1;
+      }
+    }
   </style>
 </head>
 
@@ -464,8 +513,13 @@
         </div>
       </div>
 
-      <!-- Command buttons — only shown after unlock. -->
-      <div id="control-cmds" class="control-wrap" style="display: none;">
+      <!-- Two-column layout shown after unlock: controls on the left,
+           live sprinkler stream on the right. The whole grid stays
+           hidden until unlockControls() reveals it; the stream column
+           inside the grid stays hidden if no SSPT_STREAM_URL is
+           configured on the worker. -->
+      <div id="control-grid" class="control-grid" style="display: none;">
+      <div id="control-cmds" class="control-wrap">
         <div class="control-section">
           <div class="control-section-title">Mode</div>
           <div class="cmd-grid">
@@ -528,6 +582,17 @@
         </div>
 
         <p id="cmd-status" class="cmd-status"></p>
+      </div>
+
+      <!-- Stream column — populated when /api/control-access returns a
+           streamUrl (i.e., SSPT_STREAM_URL is set on the worker). The
+           iframe src is cleared back to about:blank on session expiry
+           by lockControls(), matching live.html's lock pattern. -->
+      <div id="stream-col" class="stream-col" style="display: none;">
+        <div class="stream-frame">
+          <iframe id="sprinkler-stream" src="" title="EmberSensor Sprinkler Camera" allowfullscreen></iframe>
+        </div>
+      </div>
       </div>
     </div>
   </section>
@@ -592,7 +657,13 @@
 
     function lockControls() {
       // Replace the gate card the same way live.html does on expiry.
-      document.getElementById("control-cmds").style.display = "none";
+      // Also clear and hide the stream iframe so the cached HLS player
+      // doesn't keep running in the background after lockout.
+      document.getElementById("control-grid").style.display = "none";
+      const streamCol = document.getElementById("stream-col");
+      const streamFrame = document.getElementById("sprinkler-stream");
+      if (streamFrame) streamFrame.src = "about:blank";
+      if (streamCol) streamCol.style.display = "none";
       document.getElementById("control-container").innerHTML = `
         <div class="live-message">
           <div class="live-status-pill">Session Expired</div>
@@ -637,11 +708,19 @@
         return;
       }
 
+      // Body carries { ok: true } and — when SSPT_STREAM_URL is set on
+      // the worker — an additional streamUrl field pointing at the
+      // live sprinkler camera page. Parse defensively: if JSON parsing
+      // fails for any reason, fall back to controls-only mode.
+      let payload = {};
+      try { payload = await res.json(); } catch {}
+
       messageEl.textContent = "";
       messageEl.classList.remove("error");
 
       // Same "Access Granted" treatment live.html uses, then reveal the
-      // command grid below.
+      // two-column layout below (controls on the left, stream on the
+      // right when configured).
       document.getElementById("control-container").innerHTML = `
         <div class="live-message live-message-compact">
           <div class="live-status-pill live-status-live">Access Granted</div>
@@ -649,7 +728,14 @@
           <p>You entered the correct code. Buttons below send commands to the device.</p>
         </div>
       `;
-      document.getElementById("control-cmds").style.display = "block";
+      document.getElementById("control-grid").style.display = "grid";
+
+      const streamCol = document.getElementById("stream-col");
+      const streamFrame = document.getElementById("sprinkler-stream");
+      if (payload.streamUrl && streamFrame && streamCol) {
+        streamFrame.src = payload.streamUrl;
+        streamCol.style.display = "block";
+      }
 
       if (sessionTimer) clearTimeout(sessionTimer);
       sessionTimer = setTimeout(lockControls, SESSION_MS);
