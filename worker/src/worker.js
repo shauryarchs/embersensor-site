@@ -113,6 +113,12 @@ export default {
     // 401 otherwise. Note: subsequent /api/motor/command requests are
     // NOT bearer-checked (matching the camera flow, where the protected
     // resource is exposed once the code validates).
+    //
+    // On success, the response also carries the sprinkler camera stream
+    // URL (from env.SSPT_STREAM_URL) when configured, so the control
+    // page can reveal the live stream alongside the buttons in a single
+    // round-trip. The field is omitted if the secret is not set, keeping
+    // the response backward-compatible with existing callers (iOS).
     if (url.pathname === "/api/control-access" && request.method === "POST") {
       const expected = env.CAMERA_ACCESS_CODE;
       if (!expected) {
@@ -136,7 +142,11 @@ export default {
           headers: { "Content-Type": "application/json" }
         });
       }
-      return new Response(JSON.stringify({ ok: true }), {
+      const payload = { ok: true };
+      if (env.SSPT_STREAM_URL) {
+        payload.streamUrl = env.SSPT_STREAM_URL;
+      }
+      return new Response(JSON.stringify(payload), {
         headers: { "Content-Type": "application/json" }
       });
     }
