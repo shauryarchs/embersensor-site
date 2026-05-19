@@ -363,19 +363,16 @@
       grid-template-columns: 1fr 1.2fr;
       gap: 24px;
       margin-top: 24px;
-      align-items: start;
+      /* Vertically center each column's content within the row so the
+         stream sits at the midline of the (taller) controls column,
+         rather than orphaned at the top with empty space below. */
+      align-items: center;
     }
     /* Inside the grid, the control column should fill its track instead
        of using the standalone-page narrow centered width. */
     .control-grid .control-wrap {
       width: 100%;
       margin: 0;
-    }
-    /* Sticky stream so it stays in view as you scroll the controls
-       beside it. 88px clears the site header. */
-    .stream-col {
-      position: sticky;
-      top: 88px;
     }
     .stream-frame {
       padding: 10px;
@@ -396,8 +393,9 @@
       .control-grid {
         grid-template-columns: 1fr;
       }
+      /* Stream on top in single-column layout so the operator sees what
+         they're aiming at before scrolling past the buttons. */
       .stream-col {
-        position: static;
         order: -1;
       }
     }
