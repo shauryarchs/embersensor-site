@@ -273,6 +273,32 @@
       font-variant-numeric: tabular-nums;
       font-weight: 600;
     }
+    /* Inline per-row stop button. Reuses the red-tinted palette of the
+       big Stop button so users read it as the same kind of action,
+       scaled down to fit alongside the slider value. Only meaningful in
+       All Motors mode where multiple motors run independently; the
+       slider's instance is hidden outside that mode. */
+    .speed-stop {
+      flex: 0 0 auto;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(248, 113, 113, 0.45);
+      background: rgba(248, 113, 113, 0.12);
+      color: #f87171;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .speed-stop:hover:not(:disabled) {
+      background: rgba(248, 113, 113, 0.22);
+      border-color: #f87171;
+    }
+    .speed-stop:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
     .speed-hint {
       margin: 8px 2px 0;
       font-size: 12px;
@@ -585,6 +611,10 @@
             <span class="speed-row-label">Slider</span>
             <input id="speed-slider" type="range" min="-20" max="20" value="0" step="1" />
             <span class="speed-value" id="speed-value">0</span>
+            <!-- Slider's inline stop is only meaningful in All Motors
+                 mode (the big Stop button below covers single-motor
+                 modes). render() toggles its visibility by mode. -->
+            <button class="speed-stop" data-stop-axis="slider" type="button" style="display: none;">Stop</button>
           </div>
           <!-- Pan / Tilt bounce speeds — only shown in All Motors mode.
                Magnitude only; direction is decided by the device's
@@ -595,11 +625,13 @@
             <span class="speed-row-label">Pan</span>
             <input id="speed-pan" type="range" min="0" max="20" value="12" step="1" />
             <span class="speed-value" id="speed-pan-value">12</span>
+            <button class="speed-stop" data-stop-axis="pan" type="button">Stop</button>
           </div>
           <div class="speed-row" id="speed-row-tilt" style="display: none;">
             <span class="speed-row-label">Tilt</span>
             <input id="speed-tilt" type="range" min="0" max="20" value="12" step="1" />
             <span class="speed-value" id="speed-tilt-value">12</span>
+            <button class="speed-stop" data-stop-axis="tilt" type="button">Stop</button>
           </div>
           <p class="speed-hint" id="speed-hint">
             Sign sets direction. Slide back to 0 to stop.
@@ -948,6 +980,33 @@
         });
       }
 
+      // Inline per-row Stop buttons (slider / pan / tilt). Each sends
+      // speed:0 for its motor and optimistically resets the row's slider
+      // thumb so the user sees an immediate response without waiting for
+      // the next state echo. Slider visibility is mode-gated in render();
+      // pan/tilt buttons live inside the pan/tilt rows which are
+      // themselves only shown in All Motors mode.
+      const SPEED_STOP_CONFIG = {
+        slider: { kind: "setSliderSpeed",       inputId: "speed-slider",     outId: "speed-value",      defaultValue: "0",  isSliderThumb: true },
+        pan:    { kind: "setAllMotorsPanSpeed", inputId: "speed-pan",        outId: "speed-pan-value",  defaultValue: "0",  isSliderThumb: false },
+        tilt:   { kind: "setAllMotorsTiltSpeed",inputId: "speed-tilt",       outId: "speed-tilt-value", defaultValue: "0",  isSliderThumb: false },
+      };
+      document.querySelectorAll("[data-stop-axis]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const cfg = SPEED_STOP_CONFIG[btn.dataset.stopAxis];
+          if (!cfg) return;
+          sendCommand({ kind: cfg.kind, speed: 0 });
+          const input = document.getElementById(cfg.inputId);
+          const out = document.getElementById(cfg.outId);
+          if (input) input.value = cfg.defaultValue;
+          if (out) out.textContent = cfg.defaultValue;
+          // The slider's thumb is sync'd from device state — mark a
+          // touch so the render() sync block doesn't yank it back up
+          // before the device echoes 0.
+          if (cfg.isSliderThumb) lastSliderTouchMs = Date.now();
+        });
+      });
+
       const stopBtn = document.getElementById("stop-btn");
       if (stopBtn) {
         stopBtn.addEventListener("click", () => {
@@ -1131,6 +1190,10 @@
       if (tiltRow) tiltRow.style.display = allMotors ? "" : "none";
       if (panInput) panInput.disabled = !allMotors;
       if (tiltInput) tiltInput.disabled = !allMotors;
+      // The slider's inline Stop is only useful in All Motors mode —
+      // single-motor modes already have the big Stop button below.
+      const sliderStopBtn = document.querySelector("[data-stop-axis='slider']");
+      if (sliderStopBtn) sliderStopBtn.style.display = allMotors ? "" : "none";
       if (speedHint) {
         speedHint.textContent = !speedActive
           ? "Select a motor mode to enable speed control."
