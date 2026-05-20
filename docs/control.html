@@ -255,9 +255,18 @@
       background: var(--card);
       transition: opacity 0.15s ease;
     }
+    .speed-row + .speed-row { margin-top: 8px; }
     .speed-row input[type="range"] { flex: 1; }
     .speed-row.disabled { opacity: 0.5; }
     .speed-row.disabled input[type="range"] { cursor: not-allowed; }
+    .speed-row-label {
+      flex: 0 0 48px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted, #9aa3af);
+    }
     .speed-value {
       min-width: 36px;
       text-align: right;
@@ -572,9 +581,25 @@
 
         <div class="control-section">
           <div class="control-section-title">Speed</div>
-          <div class="speed-row">
+          <div class="speed-row" id="speed-row-slider">
+            <span class="speed-row-label">Slider</span>
             <input id="speed-slider" type="range" min="-20" max="20" value="0" step="1" />
             <span class="speed-value" id="speed-value">0</span>
+          </div>
+          <!-- Pan / Tilt bounce speeds — only shown in All Motors mode.
+               Magnitude only; direction is decided by the device's
+               bounce logic, so the range starts at 0. Defaults to 12
+               to match the firmware's initial allMotorsPanSpeed /
+               allMotorsTiltSpeed. -->
+          <div class="speed-row" id="speed-row-pan" style="display: none;">
+            <span class="speed-row-label">Pan</span>
+            <input id="speed-pan" type="range" min="0" max="20" value="12" step="1" />
+            <span class="speed-value" id="speed-pan-value">12</span>
+          </div>
+          <div class="speed-row" id="speed-row-tilt" style="display: none;">
+            <span class="speed-row-label">Tilt</span>
+            <input id="speed-tilt" type="range" min="0" max="20" value="12" step="1" />
+            <span class="speed-value" id="speed-tilt-value">12</span>
           </div>
           <p class="speed-hint" id="speed-hint">
             Sign sets direction. Slide back to 0 to stop.
@@ -624,6 +649,8 @@
 
     let refreshTimer = null;
     let speedDebounceTimer = null;
+    let panSpeedDebounceTimer = null;
+    let tiltSpeedDebounceTimer = null;
     let lastSliderTouchMs = 0;
     let statusClearTimer = null;
     let sessionTimer = null;
@@ -886,6 +913,41 @@
         });
       }
 
+      // Pan / Tilt bounce-speed sliders — only meaningful in All Motors
+      // mode. The device retains the last value across mode changes, so
+      // there's no need to re-send on entry. The website doesn't echo
+      // these back via /api/motor/state, so there's no thumb-sync
+      // concern like the slider has — each input just debounces and
+      // sends the latest value.
+      const panSpeed = document.getElementById("speed-pan");
+      const panSpeedOut = document.getElementById("speed-pan-value");
+      if (panSpeed) {
+        panSpeed.addEventListener("input", () => {
+          panSpeedOut.textContent = panSpeed.value;
+          if (panSpeedDebounceTimer) clearTimeout(panSpeedDebounceTimer);
+          panSpeedDebounceTimer = setTimeout(() => {
+            sendCommand({
+              kind: "setAllMotorsPanSpeed",
+              speed: Number(panSpeed.value),
+            });
+          }, SPEED_DEBOUNCE_MS);
+        });
+      }
+      const tiltSpeed = document.getElementById("speed-tilt");
+      const tiltSpeedOut = document.getElementById("speed-tilt-value");
+      if (tiltSpeed) {
+        tiltSpeed.addEventListener("input", () => {
+          tiltSpeedOut.textContent = tiltSpeed.value;
+          if (tiltSpeedDebounceTimer) clearTimeout(tiltSpeedDebounceTimer);
+          tiltSpeedDebounceTimer = setTimeout(() => {
+            sendCommand({
+              kind: "setAllMotorsTiltSpeed",
+              speed: Number(tiltSpeed.value),
+            });
+          }, SPEED_DEBOUNCE_MS);
+        });
+      }
+
       const stopBtn = document.getElementById("stop-btn");
       if (stopBtn) {
         stopBtn.addEventListener("click", () => {
@@ -1055,12 +1117,26 @@
       // there to match.
       const speedActive = mode === "motor1" || mode === "motor2" ||
                           mode === "motor3" || mode === "allmotors";
+      const allMotors = mode === "allmotors";
       if (slider) slider.disabled = !speedActive;
       if (speedRow) speedRow.classList.toggle("disabled", !speedActive);
+      // Pan / Tilt bounce-speed sliders are only meaningful in All
+      // Motors mode (they configure handleAllMotors()'s per-axis
+      // magnitudes). Hide everywhere else so the panel stays compact.
+      const panRow = document.getElementById("speed-row-pan");
+      const tiltRow = document.getElementById("speed-row-tilt");
+      const panInput = document.getElementById("speed-pan");
+      const tiltInput = document.getElementById("speed-tilt");
+      if (panRow) panRow.style.display = allMotors ? "" : "none";
+      if (tiltRow) tiltRow.style.display = allMotors ? "" : "none";
+      if (panInput) panInput.disabled = !allMotors;
+      if (tiltInput) tiltInput.disabled = !allMotors;
       if (speedHint) {
-        speedHint.textContent = speedActive
-          ? "Sign sets direction. Slide back to 0 to stop."
-          : "Select a motor mode to enable speed control.";
+        speedHint.textContent = !speedActive
+          ? "Select a motor mode to enable speed control."
+          : allMotors
+            ? "Each motor's bounce speed — magnitude only; direction is the bounce."
+            : "Sign sets direction. Slide back to 0 to stop.";
       }
       lastKnownMode = mode;
       const stopBtn = document.getElementById("stop-btn");

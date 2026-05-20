@@ -24,6 +24,8 @@ const VALID_KINDS = new Set([
   "setSliderSpeed",
   "nudgePan",
   "nudgeTilt",
+  "setAllMotorsPanSpeed",
+  "setAllMotorsTiltSpeed",
 ]);
 
 const VALID_MODES = new Set([
@@ -64,6 +66,16 @@ export function validateAndBuildProps(body) {
     // values reverse direction in Motor 1/2/3 modes; magnitude is used
     // in All Motors mode (sign ignored there by the device handler).
     const clamped = Math.max(-20, Math.min(20, Math.round(speed)));
+    props.speed = clamped;
+  } else if (kind === "setAllMotorsPanSpeed" || kind === "setAllMotorsTiltSpeed") {
+    const speed = body.speed;
+    if (typeof speed !== "number" || !Number.isFinite(speed)) {
+      return { ok: false, error: "speed must be a finite number" };
+    }
+    // Pan/Tilt bounce in All Motors mode is magnitude only — direction
+    // is decided by the handler, so a negative value here has no
+    // meaning. Clamp to [0, Encoder::kRange].
+    const clamped = Math.max(0, Math.min(20, Math.round(speed)));
     props.speed = clamped;
   } else if (kind === "nudgePan" || kind === "nudgeTilt") {
     const deltaDeg = body.deltaDeg;
