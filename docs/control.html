@@ -618,13 +618,13 @@
           </div>
           <!-- Pan bounce speed — only shown in Petrol mode. Magnitude
                only; direction is decided by the device's bounce logic,
-               so the range starts at 0. Defaults to 12 to match the
+               so the range starts at 0. Defaults to 6 to match the
                firmware's initial allMotorsPanSpeed. Tilt is not bounced
                in Petrol mode — use the Calibration nudge buttons. -->
           <div class="speed-row" id="speed-row-pan" style="display: none;">
             <span class="speed-row-label">Pan</span>
-            <input id="speed-pan" type="range" min="0" max="20" value="12" step="1" />
-            <span class="speed-value" id="speed-pan-value">12</span>
+            <input id="speed-pan" type="range" min="0" max="20" value="6" step="1" />
+            <span class="speed-value" id="speed-pan-value">6</span>
             <button class="speed-stop" data-stop-axis="pan" type="button">Stop</button>
           </div>
           <p class="speed-hint" id="speed-hint">
