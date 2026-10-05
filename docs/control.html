@@ -276,7 +276,7 @@
     /* Inline per-row stop button. Reuses the red-tinted palette of the
        big Stop button so users read it as the same kind of action,
        scaled down to fit alongside the slider value. Only meaningful in
-       Petrol mode where the slider and pan motors run independently;
+       Patrol mode where the slider and pan motors run independently;
        the slider's instance is hidden outside that mode. */
     .speed-stop {
       flex: 0 0 auto;
@@ -568,7 +568,7 @@
             <button class="cmd-btn" data-cmd-mode="motor1">Motor 1</button>
             <button class="cmd-btn" data-cmd-mode="motor2">Motor 2</button>
             <button class="cmd-btn" data-cmd-mode="motor3">Motor 3</button>
-            <button class="cmd-btn" data-cmd-mode="allmotors">Petrol</button>
+            <button class="cmd-btn" data-cmd-mode="allmotors">Patrol</button>
           </div>
         </div>
 
@@ -611,16 +611,16 @@
             <span class="speed-row-label">Slider</span>
             <input id="speed-slider" type="range" min="-20" max="20" value="0" step="1" />
             <span class="speed-value" id="speed-value">0</span>
-            <!-- Slider's inline stop is only meaningful in Petrol mode
+            <!-- Slider's inline stop is only meaningful in Patrol mode
                  (the big Stop button below covers single-motor modes).
                  render() toggles its visibility by mode. -->
             <button class="speed-stop" data-stop-axis="slider" type="button" style="display: none;">Stop</button>
           </div>
-          <!-- Pan bounce speed — only shown in Petrol mode. Magnitude
+          <!-- Pan bounce speed — only shown in Patrol mode. Magnitude
                only; direction is decided by the device's bounce logic,
                so the range starts at 0. Defaults to 6 to match the
                firmware's initial allMotorsPanSpeed. Tilt is not bounced
-               in Petrol mode — use the Calibration nudge buttons. -->
+               in Patrol mode — use the Calibration nudge buttons. -->
           <div class="speed-row" id="speed-row-pan" style="display: none;">
             <span class="speed-row-label">Pan</span>
             <input id="speed-pan" type="range" min="0" max="20" value="6" step="1" />
@@ -697,7 +697,7 @@
       motor1: "Motor 1 — Slider",
       motor2: "Motor 2 — Pan",
       motor3: "Motor 3 — Tilt",
-      allmotors: "Petrol",
+      allmotors: "Patrol",
       panSetup: "Pan Setup",
       tiltSetup: "Tilt Setup"
     };
@@ -938,7 +938,7 @@
         });
       }
 
-      // Pan bounce-speed slider — only meaningful in Petrol mode. The
+      // Pan bounce-speed slider — only meaningful in Patrol mode. The
       // device retains the last value across mode changes, so there's
       // no need to re-send on entry. The website doesn't echo this back
       // via /api/motor/state, so there's no thumb-sync concern like the
@@ -965,8 +965,8 @@
       // so the user sees an immediate response without waiting for the
       // next state echo. Slider visibility is mode-gated in render();
       // the pan button lives inside the pan row which is itself only
-      // shown in Petrol mode. Tilt has no Stop here — it doesn't bounce
-      // in Petrol mode, so there's nothing to stop.
+      // shown in Patrol mode. Tilt has no Stop here — it doesn't bounce
+      // in Patrol mode, so there's nothing to stop.
       const SPEED_STOP_CONFIG = {
         slider: { kind: "setSliderSpeed",       inputId: "speed-slider", outId: "speed-value",     defaultValue: "0", isSliderThumb: true  },
         pan:    { kind: "setAllMotorsPanSpeed", inputId: "speed-pan",    outId: "speed-pan-value", defaultValue: "0", isSliderThumb: false },
@@ -994,7 +994,7 @@
           //   Motor 1/2/3 → setSliderSpeed:0 stops the motor in place
           //     without changing mode, so the user can immediately
           //     resume by moving the slider.
-          //   Petrol      → the inline Stop buttons handle per-motor
+          //   Patrol      → the inline Stop buttons handle per-motor
           //     pauses; this big Stop is the catch-all "exit the demo"
           //     button — drop to Menu mode, which calls .stop() on
           //     all three motors.
@@ -1150,7 +1150,7 @@
         }
       }
       // setSliderSpeed only takes effect on the device in Motor 1/2/3
-      // and Petrol modes (see main.ino:dispatchRemoteCommand). In
+      // and Patrol modes (see main.ino:dispatchRemoteCommand). In
       // Menu / PanSetup / TiltSetup the encoder has different
       // semantics, so disable the slider — and the Stop button —
       // there to match.
@@ -1159,15 +1159,15 @@
       const allMotors = mode === "allmotors";
       if (slider) slider.disabled = !speedActive;
       if (speedRow) speedRow.classList.toggle("disabled", !speedActive);
-      // Pan bounce-speed slider is only meaningful in Petrol mode
+      // Pan bounce-speed slider is only meaningful in Patrol mode
       // (it configures handleAllMotors()'s pan magnitude). Hide outside
-      // Petrol so the panel stays compact. Tilt isn't bounced and has
+      // Patrol so the panel stays compact. Tilt isn't bounced and has
       // no speed slider — use the Calibration section instead.
       const panRow = document.getElementById("speed-row-pan");
       const panInput = document.getElementById("speed-pan");
       if (panRow) panRow.style.display = allMotors ? "" : "none";
       if (panInput) panInput.disabled = !allMotors;
-      // The slider's inline Stop is only useful in Petrol mode —
+      // The slider's inline Stop is only useful in Patrol mode —
       // single-motor modes already have the big Stop button below.
       const sliderStopBtn = document.querySelector("[data-stop-axis='slider']");
       if (sliderStopBtn) sliderStopBtn.style.display = allMotors ? "" : "none";
