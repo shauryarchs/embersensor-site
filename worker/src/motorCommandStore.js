@@ -63,7 +63,7 @@ export function validateAndBuildProps(body) {
     }
     // Signed range matches Encoder::kRange on the device. Negative
     // values reverse direction in Motor 1/2/3 modes; magnitude is used
-    // in Petrol mode (sign ignored there by the device handler).
+    // in Patrol mode (sign ignored there by the device handler).
     const clamped = Math.max(-20, Math.min(20, Math.round(speed)));
     props.speed = clamped;
   } else if (kind === "setAllMotorsPanSpeed") {
@@ -71,10 +71,10 @@ export function validateAndBuildProps(body) {
     if (typeof speed !== "number" || !Number.isFinite(speed)) {
       return { ok: false, error: "speed must be a finite number" };
     }
-    // Pan bounce in Petrol mode is magnitude only — direction is
+    // Pan bounce in Patrol mode is magnitude only — direction is
     // decided by the handler, so a negative value here has no
     // meaning. Clamp to [0, Encoder::kRange]. Tilt is not driven in
-    // Petrol mode; use nudgeTilt / zeroTilt instead.
+    // Patrol mode; use nudgeTilt / zeroTilt instead.
     const clamped = Math.max(0, Math.min(20, Math.round(speed)));
     props.speed = clamped;
   } else if (kind === "nudgePan" || kind === "nudgeTilt") {
