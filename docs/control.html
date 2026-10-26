@@ -6,441 +6,492 @@
   <title>Sprinkler Control | EmberSensor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description"
-    content="Live state and remote control of the EmberSensor sprinkler controller — slider, pan, and tilt motors." />
+    content="Watch the EmberSensor sprinkler camera and aim the targeted sprinkler remotely." />
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <style>
-    .control-page {
+    .sp-page {
       padding: 48px 0 72px;
     }
 
-    .control-header {
+    .sp-header {
       text-align: center;
       margin-bottom: 28px;
     }
 
-    .control-wrap {
-      width: min(560px, 100%);
+    .sp-header .section-sub {
       margin: 0 auto;
     }
 
-    .device-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-    }
-    .device-pill::before {
-      content: "";
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: currentColor;
-      box-shadow: 0 0 0 0 currentColor;
-    }
-    .device-pill.online  { background: rgba(52, 211, 153, 0.18); color: #34d399; }
-    .device-pill.online::before { animation: dotpulse 1.8s ease-out infinite; }
-    .device-pill.stale   { background: rgba(251, 146, 60, 0.18); color: #fb923c; }
-    .device-pill.offline { background: rgba(248, 113, 113, 0.18); color: #f87171; }
-    @keyframes dotpulse {
-      0%   { box-shadow: 0 0 0 0   rgba(52, 211, 153, 0.55); }
-      70%  { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
-      100% { box-shadow: 0 0 0 0   rgba(52, 211, 153, 0); }
-    }
-
-    /* These classes are declared locally inside status.html, so we need
-       to redeclare them here for the control page to pick up the same
-       card look. Kept in sync with status.html on purpose. */
-    .data-group {
+    /* Shared card surface for every panel on this page. */
+    .sp-card {
       border: 1px solid var(--card-border);
       border-radius: var(--radius);
       background: var(--card);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       box-shadow: var(--shadow);
-      overflow: hidden;
-      margin-bottom: 14px;
     }
-    .data-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 20px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      gap: 12px;
-    }
-    .data-row:last-child { border-bottom: none; }
-    .data-label {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 15px;
-      color: var(--muted, #9aa3af);
-    }
-    .data-label .row-icon {
-      font-size: 17px;
-      width: 22px;
-      text-align: center;
-      flex-shrink: 0;
-    }
-    .data-value {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--text, #fff);
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-    }
-    .data-value.yes { color: #f87171; }
-    .data-value.no  { color: #34d399; }
 
-    /* Top strip: online pill + last-update timestamp, always visible
-       above the cards so device status is never gated behind a loading
-       state. */
-    .status-strip {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 12px 4px;
-      margin-bottom: 14px;
-    }
-    .status-strip .updated-inline {
+    .sp-label {
       font-size: 12px;
-      color: var(--muted, #9aa3af);
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* Mode hero — the single most important "what is the device doing
-       right now" panel. Larger type, prominent position. */
-    .mode-hero { padding: 20px 22px; }
-    .mode-hero-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
+      font-weight: 600;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--muted, #9aa3af);
-      margin-bottom: 6px;
-    }
-    .mode-hero-value {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--text, #fff);
-      line-height: 1.2;
-    }
-    .mode-hero-sub {
-      font-size: 13px;
-      color: var(--muted, #9aa3af);
-      margin-top: 6px;
-      font-variant-numeric: tabular-nums;
+      color: var(--muted);
     }
 
-    /* Group heading row — the small "POSITIONS" / "HARDWARE" label
-       that sits at the top of each card. */
-    .group-heading {
-      padding: 10px 20px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted, #9aa3af);
-      background: rgba(255, 255, 255, 0.03);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
+    /* --- Status bar (public, always visible) --- */
 
-    /* Position rows: label | bar | value. Slider bar is linear (fills
-       from the left). Pan/tilt bars are centered (zero in the middle,
-       fill extends left or right based on sign). */
-    .pos-row {
+    .sp-status {
       display: grid;
-      grid-template-columns: 96px 1fr 78px;
-      align-items: center;
-      gap: 14px;
-      padding: 14px 20px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr;
+      margin-bottom: 20px;
     }
-    .pos-row:last-child { border-bottom: none; }
-    .pos-row .data-label { font-size: 14px; }
-    .pos-row .pos-value {
-      font-size: 15px;
+
+    .sp-status-cell {
+      padding: 16px 20px;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      min-width: 0;
+    }
+
+    .sp-status-cell:last-child {
+      border-right: none;
+    }
+
+    .sp-status-value {
+      margin-top: 4px;
+      font-size: 18px;
       font-weight: 700;
-      text-align: right;
       font-variant-numeric: tabular-nums;
-      color: var(--text, #fff);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
+
+    .sp-status-sub {
+      margin-top: 2px;
+      font-size: 12px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .device-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .device-pill::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .device-pill.online { color: #34d399; }
+    .device-pill.online::before { animation: dotpulse 1.8s ease-out infinite; }
+    .device-pill.stale { color: #fb923c; }
+    .device-pill.offline { color: #f87171; }
+
+    @keyframes dotpulse {
+      0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55); }
+      70% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+    }
+
+    /* Position bars. Slider fills from the left; pan and tilt are
+       centered on 0° and fill left or right by sign. */
     .pos-track {
       position: relative;
-      height: 8px;
+      height: 4px;
+      margin-top: 10px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.1);
     }
+
     .pos-track .center-tick {
       position: absolute;
       left: 50%;
       top: -3px;
       bottom: -3px;
       width: 1px;
-      background: rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.3);
     }
+
     .pos-fill {
       position: absolute;
       top: 0;
       bottom: 0;
       left: 0;
       width: 0;
-      background: var(--orange, #f97316);
+      background: var(--orange);
       border-radius: 999px;
       transition: left 0.35s ease, width 0.35s ease, opacity 0.2s ease;
     }
+
     .pos-track.unknown .pos-fill { opacity: 0; }
 
-    @media (max-width: 480px) {
-      .pos-row {
-        grid-template-columns: 80px 1fr 64px;
-        gap: 10px;
-        padding: 12px 16px;
-      }
-      .mode-hero-value { font-size: 20px; }
+    .sp-notice {
+      display: none;
+      margin: -8px 0 20px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(251, 146, 60, 0.35);
+      background: rgba(251, 146, 60, 0.1);
+      color: #fed7aa;
+      font-size: 14px;
     }
 
-    /* Command panel — only shown after unlock. */
-    .control-section {
-      margin-top: 28px;
-    }
-    .control-section-title {
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted, #9aa3af);
-      margin-bottom: 10px;
-    }
-    .cmd-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 8px;
-    }
-    .cmd-btn {
-      padding: 12px 10px;
-      border-radius: 10px;
-      border: 1px solid var(--card-border);
-      background: var(--card);
-      color: inherit;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s ease, border-color 0.15s ease;
-    }
-    .cmd-btn:hover { border-color: #f87171; }
-    .cmd-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .cmd-btn.active {
-      background: rgba(248, 113, 113, 0.18);
-      border-color: #f87171;
-    }
-    .speed-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px;
-      border-radius: 10px;
-      border: 1px solid var(--card-border);
-      background: var(--card);
-      transition: opacity 0.15s ease;
-    }
-    .speed-row + .speed-row { margin-top: 8px; }
-    .speed-row input[type="range"] { flex: 1; }
-    .speed-row.disabled { opacity: 0.5; }
-    .speed-row.disabled input[type="range"] { cursor: not-allowed; }
-    .speed-row-label {
-      flex: 0 0 48px;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--muted, #9aa3af);
-    }
-    .speed-value {
-      min-width: 36px;
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-      font-weight: 600;
-    }
-    /* Inline per-row stop button. Reuses the red-tinted palette of the
-       big Stop button so users read it as the same kind of action,
-       scaled down to fit alongside the slider value. Only meaningful in
-       Patrol mode where the slider and pan motors run independently;
-       the slider's instance is hidden outside that mode. */
-    .speed-stop {
-      flex: 0 0 auto;
-      padding: 6px 10px;
-      border-radius: 6px;
-      border: 1px solid rgba(248, 113, 113, 0.45);
-      background: rgba(248, 113, 113, 0.12);
-      color: #f87171;
-      font-weight: 700;
-      font-size: 12px;
-      letter-spacing: 0.04em;
-      cursor: pointer;
-      transition: background 0.15s ease, border-color 0.15s ease;
-    }
-    .speed-stop:hover:not(:disabled) {
-      background: rgba(248, 113, 113, 0.22);
-      border-color: #f87171;
-    }
-    .speed-stop:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    .speed-hint {
-      margin: 8px 2px 0;
-      font-size: 12px;
-      color: var(--muted, #9aa3af);
+    /* --- Access gate --- */
+
+    .sp-gate {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 36px 28px;
       text-align: center;
     }
 
-    /* Calibration rows — one per motor. Nudge buttons flank a live
-       angle readout, with the Zero button on the right. flex-wrap so
-       the row gracefully reflows on narrow screens. */
-    .cal-hint {
-      margin: -2px 2px 10px;
-      font-size: 12px;
-      color: var(--muted, #9aa3af);
-    }
-    .cal-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
+    .sp-gate h2 {
+      font-size: 24px;
       margin-bottom: 8px;
     }
-    .cal-row:last-child { margin-bottom: 0; }
-    .cal-label {
-      flex: 0 0 44px;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--muted, #9aa3af);
-    }
-    .cmd-btn.cal-step {
-      flex: 0 0 auto;
-      min-width: 52px;
-      padding: 9px 6px;
-      font-size: 13px;
-      font-weight: 600;
-    }
-    .cal-angle {
-      flex: 1 1 60px;
-      min-width: 56px;
-      text-align: center;
-      font-weight: 700;
-      font-size: 15px;
-      font-variant-numeric: tabular-nums;
-      color: var(--text, #fff);
-    }
-    .cmd-btn.cal-zero {
-      flex: 0 0 auto;
-      min-width: 58px;
-      padding: 9px 10px;
-      font-size: 13px;
-      font-weight: 600;
+
+    .sp-gate p {
+      margin: 0;
+      color: var(--muted);
     }
 
-    /* Big red Stop button. Visually distinct from the mode/action grid
-       so it reads as a kill switch rather than just another command. */
-    .cmd-btn-stop {
-      width: 100%;
-      padding: 14px;
-      border-radius: 10px;
-      border: 1px solid rgba(248, 113, 113, 0.55);
-      background: rgba(248, 113, 113, 0.16);
-      color: #f87171;
-      font-size: 15px;
+    .sp-gate-form {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 22px;
+      flex-wrap: wrap;
+    }
+
+    .sp-code-input {
+      width: 180px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      font: inherit;
+      font-size: 18px;
+      letter-spacing: 0.4em;
+      text-align: center;
+      outline: none;
+    }
+
+    .sp-code-input::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+      letter-spacing: 0.4em;
+    }
+
+    .sp-code-input:focus {
+      border-color: rgba(37, 99, 235, 0.8);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+
+    .sp-btn-primary {
+      padding: 12px 22px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.95), rgba(29, 78, 216, 0.95));
+      color: var(--text);
+      font: inherit;
       font-weight: 700;
-      letter-spacing: 0.04em;
       cursor: pointer;
-      transition: background 0.15s ease, border-color 0.15s ease,
-                  opacity 0.15s ease;
     }
-    .cmd-btn-stop:hover:not(:disabled) {
-      background: rgba(248, 113, 113, 0.26);
-      border-color: #f87171;
-    }
-    .cmd-btn-stop:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
-    .cmd-status {
-      min-height: 18px;
-      text-align: center;
-      margin-top: 12px;
-      font-size: 13px;
-      color: var(--muted, #9aa3af);
-    }
-    .cmd-status.success { color: #34d399; }
-    .cmd-status.error   { color: #f87171; }
 
-    /* Two-column layout shown after unlock: controls on the left, live
-       sprinkler stream on the right. On narrow screens the columns
-       collapse to a single column with the stream on top (so the
-       operator sees what they're aiming at before scrolling past a
-       wall of buttons). */
-    .control-grid {
+    .sp-btn-primary:hover { filter: brightness(1.1); }
+
+    .sp-gate-message {
+      min-height: 22px;
+      margin-top: 14px !important;
+      font-size: 14px;
+    }
+
+    .sp-gate-message.error { color: #fca5a5 !important; }
+
+    /* --- Unlocked layout: camera + controls --- */
+
+    .sp-grid {
       display: grid;
-      grid-template-columns: 1fr 1.2fr;
-      gap: 24px;
-      margin-top: 24px;
-      /* Both columns start at the top of the row; the stream column is
-         then pushed down by alignStreamWithRehome() (in the inline JS
-         below) so the iframe's vertical midline lines up with the
-         Re-home button on the left. CSS alone can't target a specific
-         row of an internal block-flow column, so the offset has to be
-         measured at runtime. */
+      grid-template-columns: 1.5fr 1fr;
+      gap: 20px;
       align-items: start;
     }
-    /* Inside the grid, the control column should fill its track instead
-       of using the standalone-page narrow centered width. */
-    .control-grid .control-wrap {
-      width: 100%;
-      margin: 0;
-    }
-    .stream-col {
-      /* Defensive: ignore any inherited centering so the JS-set
-         margin-top is what determines vertical position. */
-      align-self: start;
-    }
-    .stream-frame {
+
+    .sp-camera {
+      position: sticky;
+      top: 84px;
       padding: 10px;
-      border: 1px solid var(--card-border);
-      border-radius: 20px;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
-      box-shadow: var(--shadow);
     }
-    .stream-frame iframe {
+
+    .sp-camera iframe {
       display: block;
       width: 100%;
       aspect-ratio: 16 / 9;
       border: 0;
-      border-radius: 14px;
+      border-radius: 12px;
       background: #000;
     }
+
+    .sp-camera-empty {
+      display: none;
+      aspect-ratio: 16 / 9;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.35);
+      color: var(--muted);
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .sp-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .sp-section {
+      padding: 18px 20px;
+    }
+
+    .sp-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .sp-help {
+      margin: 10px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .sp-link-btn {
+      padding: 4px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .sp-link-btn:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.3); }
+
+    /* Mode selector: one segmented row. */
+    .sp-modes {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+      padding: 4px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.25);
+    }
+
+    .sp-btn {
+      padding: 10px 8px;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .sp-btn:hover:not(:disabled) {
+      border-color: rgba(255, 255, 255, 0.35);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .sp-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .sp-modes .sp-btn {
+      border-color: transparent;
+      background: transparent;
+    }
+
+    .sp-modes .sp-btn.active {
+      background: rgba(234, 88, 12, 0.22);
+      border-color: rgba(234, 88, 12, 0.6);
+      color: #fff;
+    }
+
+    /* Speed controls. */
+    .speed-row + .speed-row { margin-top: 16px; }
+
+    .speed-row-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .speed-value {
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .speed-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .speed-controls input[type="range"] {
+      flex: 1;
+      accent-color: var(--orange);
+    }
+
+    .speed-ends {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 2px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .speed-stop {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(248, 113, 113, 0.45);
+      background: rgba(248, 113, 113, 0.12);
+      color: #fca5a5;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .speed-stop:hover { background: rgba(248, 113, 113, 0.22); }
+
+    .sp-stop {
+      width: 100%;
+      margin-top: 16px;
+      padding: 13px;
+      border-radius: 12px;
+      border: 1px solid rgba(248, 113, 113, 0.55);
+      background: rgba(220, 38, 38, 0.2);
+      color: #fecaca;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .sp-stop:hover { background: rgba(220, 38, 38, 0.32); }
+
+    /* Fine aim rows: nudge buttons around a live angle readout. */
+    .aim-row {
+      display: grid;
+      grid-template-columns: 44px repeat(2, 1fr) 64px repeat(2, 1fr);
+      align-items: center;
+      gap: 6px;
+    }
+
+    .aim-row + .aim-row { margin-top: 8px; }
+
+    .aim-row .sp-btn {
+      padding: 8px 4px;
+      font-size: 13px;
+    }
+
+    .aim-angle {
+      text-align: center;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Advanced (collapsed by default). */
+    .sp-advanced summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sp-advanced summary::-webkit-details-marker { display: none; }
+
+    .sp-advanced summary::after {
+      content: "+";
+      font-size: 18px;
+      color: var(--muted);
+    }
+
+    .sp-advanced[open] summary::after { content: "−"; }
+
+    .adv-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .adv-row:first-of-type { margin-top: 12px; }
+
+    .adv-row p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .adv-row strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .adv-row .sp-btn { flex-shrink: 0; }
+
+    .cmd-status {
+      min-height: 20px;
+      margin: 0;
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .cmd-status.success { color: #34d399; }
+    .cmd-status.error { color: #fca5a5; }
+
     @media (max-width: 980px) {
-      .control-grid {
-        grid-template-columns: 1fr;
-      }
-      /* Stream on top in single-column layout so the operator sees what
-         they're aiming at before scrolling past the buttons. */
-      .stream-col {
-        order: -1;
-      }
+      .sp-grid { grid-template-columns: 1fr; }
+      .sp-camera { position: static; }
+    }
+
+    @media (max-width: 700px) {
+      .sp-page { padding-top: 28px; }
+      .sp-status { grid-template-columns: 1fr 1fr; }
+      .sp-status-cell { border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+      .sp-status-cell:first-child { grid-column: 1 / -1; }
+      .sp-status-cell:nth-child(even) { border-right: 1px solid rgba(255, 255, 255, 0.08); }
+      .sp-status-cell:nth-child(odd):not(:first-child) { border-right: none; }
+      .sp-status-cell:nth-last-child(-n+2) { border-bottom: none; }
+      .sp-modes .sp-btn { padding: 10px 2px; font-size: 13px; }
     }
   </style>
 </head>
@@ -448,208 +499,159 @@
 <body>
   <div id="site-header"></div>
 
-  <section class="control-page">
+  <section class="sp-page">
     <div class="container">
-      <div class="control-header">
-        <div class="eyebrow">Sprinkler Controller</div>
+      <div class="sp-header">
+        <div class="eyebrow">Targeted Suppression</div>
         <h1>Sprinkler Control</h1>
-        <p class="section-sub">
-          Send the same commands the encoder + OLED do, from here. Read-only state
-          mirror is public; the control buttons need the 4-digit access code.
-        </p>
+        <p class="section-sub">Watch the sprinkler camera and aim the sprinkler remotely.</p>
       </div>
 
-      <!-- Live state mirror — always visible, public read. -->
-      <div class="control-wrap">
-        <!-- Always-visible strip so device status is shown even while the
-             cards below are still loading. -->
-        <div class="status-strip">
-          <span id="device-pill" class="device-pill offline">Connecting…</span>
-          <span class="updated-inline" id="updated-at">—</span>
+      <!-- Live status: public, always visible. -->
+      <div class="sp-card sp-status">
+        <div class="sp-status-cell">
+          <div class="sp-label">Sprinkler</div>
+          <div id="device-pill" class="device-pill offline">Connecting…</div>
+          <div class="sp-status-sub" id="updated-at">&nbsp;</div>
+        </div>
+        <div class="sp-status-cell">
+          <div class="sp-label">Mode</div>
+          <div class="sp-status-value" id="val-mode">—</div>
+        </div>
+        <div class="sp-status-cell">
+          <div class="sp-label">Rail</div>
+          <div class="sp-status-value" id="val-slider">—</div>
+          <div class="pos-track unknown" id="bar-slider"><span class="pos-fill"></span></div>
+        </div>
+        <div class="sp-status-cell">
+          <div class="sp-label">Pan</div>
+          <div class="sp-status-value" id="val-pan">—</div>
+          <div class="pos-track unknown" id="bar-pan"><span class="center-tick"></span><span class="pos-fill"></span></div>
+        </div>
+        <div class="sp-status-cell">
+          <div class="sp-label">Tilt</div>
+          <div class="sp-status-value" id="val-tilt">—</div>
+          <div class="pos-track unknown" id="bar-tilt"><span class="center-tick"></span><span class="pos-fill"></span></div>
+        </div>
+      </div>
+
+      <div class="sp-notice" id="notice-homing">
+        The rail position isn't set yet. Use <strong>Re-home rail</strong> under Advanced to fix it.
+      </div>
+
+      <!-- Access gate. Replaced by the controls after a correct code. -->
+      <div id="gate" class="sp-card sp-gate">
+        <h2 id="gate-title">Controls are locked</h2>
+        <p id="gate-text">Enter your 4-digit access code to view the camera and control the sprinkler.</p>
+        <div class="sp-gate-form">
+          <input id="control-code-input" class="sp-code-input" type="password" inputmode="numeric"
+            maxlength="4" placeholder="••••" aria-label="4-digit access code" autocomplete="off" />
+          <button id="open-controls-btn" class="sp-btn-primary" type="button">Unlock</button>
+        </div>
+        <p id="control-code-message" class="sp-gate-message" aria-live="polite"></p>
+      </div>
+
+      <!-- Camera + controls, shown after unlock. -->
+      <div id="control-grid" class="sp-grid" style="display: none;">
+        <div class="sp-card sp-camera">
+          <iframe id="sprinkler-stream" src="" title="Sprinkler camera" allowfullscreen></iframe>
+          <div id="stream-empty" class="sp-camera-empty">The sprinkler camera isn't available right now.</div>
         </div>
 
-        <div id="control-loading" style="text-align: center; color: var(--muted, #9aa3af); padding: 24px 0;">
-          Loading device state…
-        </div>
+        <div class="sp-panel">
+          <div class="sp-card sp-section">
+            <div class="sp-section-head">
+              <div class="sp-label">Mode</div>
+              <button id="lock-btn" class="sp-link-btn" type="button">Lock</button>
+            </div>
+            <div class="sp-modes">
+              <button class="sp-btn" data-cmd-mode="menu">Standby</button>
+              <button class="sp-btn" data-cmd-mode="motor1">Rail</button>
+              <button class="sp-btn" data-cmd-mode="motor2">Pan</button>
+              <button class="sp-btn" data-cmd-mode="motor3">Tilt</button>
+              <button class="sp-btn" data-cmd-mode="allmotors">Patrol</button>
+            </div>
+            <p class="sp-help" id="mode-help">&nbsp;</p>
+          </div>
 
-        <div id="control-error" style="display: none; text-align: center; color: #f87171; padding: 24px 0;">
-          Couldn't reach the device state API. Retrying…
-        </div>
-
-        <div id="control-content" style="display: none;">
-          <div class="data-group">
-            <div class="mode-hero">
-              <div class="mode-hero-label">Current Mode</div>
-              <div class="mode-hero-value" id="val-mode">—</div>
-              <div class="mode-hero-sub" id="val-menu-sub" style="display: none;">
-                Menu index <span id="val-menu-index">—</span>
+          <!-- Speed: only shown in modes where the device accepts it. -->
+          <div class="sp-card sp-section" id="speed-section" style="display: none;">
+            <div class="speed-row" id="speed-row-slider">
+              <div class="speed-row-top">
+                <div class="sp-label" id="speed-label">Speed</div>
+                <span class="speed-value" id="speed-value">0</span>
+              </div>
+              <div class="speed-controls">
+                <input id="speed-slider" type="range" min="-20" max="20" value="0" step="1"
+                  aria-labelledby="speed-label" />
+                <button class="speed-stop" data-stop-axis="slider" type="button" style="display: none;">Stop</button>
+              </div>
+              <div class="speed-ends" id="speed-ends">
+                <span id="speed-end-min">Reverse</span><span id="speed-end-mid">Stop</span><span id="speed-end-max">Forward</span>
               </div>
             </div>
-          </div>
-
-          <div class="data-group">
-            <div class="group-heading">Positions</div>
-            <div class="pos-row">
-              <div class="data-label"><span class="row-icon">↔️</span> Slider</div>
-              <div class="pos-track unknown" id="bar-slider"><span class="pos-fill"></span></div>
-              <div class="pos-value" id="val-slider">—</div>
-            </div>
-            <div class="pos-row">
-              <div class="data-label"><span class="row-icon">🔄</span> Pan</div>
-              <div class="pos-track unknown" id="bar-pan">
-                <span class="center-tick"></span><span class="pos-fill"></span>
+            <!-- Patrol only: pan sweep speed (magnitude; default 6 matches the firmware). -->
+            <div class="speed-row" id="speed-row-pan" style="display: none;">
+              <div class="speed-row-top">
+                <div class="sp-label" id="speed-pan-label">Pan sweep speed</div>
+                <span class="speed-value" id="speed-pan-value">6</span>
               </div>
-              <div class="pos-value" id="val-pan">—</div>
-            </div>
-            <div class="pos-row">
-              <div class="data-label"><span class="row-icon">🔃</span> Tilt</div>
-              <div class="pos-track unknown" id="bar-tilt">
-                <span class="center-tick"></span><span class="pos-fill"></span>
+              <div class="speed-controls">
+                <input id="speed-pan" type="range" min="0" max="20" value="6" step="1"
+                  aria-labelledby="speed-pan-label" />
+                <button class="speed-stop" data-stop-axis="pan" type="button">Stop</button>
               </div>
-              <div class="pos-value" id="val-tilt">—</div>
             </div>
+            <button id="stop-btn" class="sp-stop" type="button">Stop</button>
           </div>
 
-          <div class="data-group">
-            <div class="group-heading">Hardware</div>
-            <div class="data-row">
-              <div class="data-label"><span class="row-icon">🎚</span> Encoder Dial</div>
-              <div class="data-value" id="val-dial">—</div>
+          <div class="sp-card sp-section">
+            <div class="sp-section-head">
+              <div class="sp-label">Fine aim</div>
             </div>
-            <div class="data-row">
-              <div class="data-label"><span class="row-icon">🔘</span> Limit Switch</div>
-              <div class="data-value" id="val-limit">—</div>
+            <div class="aim-row">
+              <div class="sp-label">Pan</div>
+              <button class="sp-btn" data-cmd-nudge="pan" data-cmd-delta="-10">−10°</button>
+              <button class="sp-btn" data-cmd-nudge="pan" data-cmd-delta="-1">−1°</button>
+              <div class="aim-angle" id="cal-pan-angle">—</div>
+              <button class="sp-btn" data-cmd-nudge="pan" data-cmd-delta="1">+1°</button>
+              <button class="sp-btn" data-cmd-nudge="pan" data-cmd-delta="10">+10°</button>
             </div>
-            <div class="data-row">
-              <div class="data-label"><span class="row-icon">🏠</span> Homed</div>
-              <div class="data-value" id="val-homed">—</div>
+            <div class="aim-row">
+              <div class="sp-label">Tilt</div>
+              <button class="sp-btn" data-cmd-nudge="tilt" data-cmd-delta="-10">−10°</button>
+              <button class="sp-btn" data-cmd-nudge="tilt" data-cmd-delta="-1">−1°</button>
+              <div class="aim-angle" id="cal-tilt-angle">—</div>
+              <button class="sp-btn" data-cmd-nudge="tilt" data-cmd-delta="1">+1°</button>
+              <button class="sp-btn" data-cmd-nudge="tilt" data-cmd-delta="10">+10°</button>
             </div>
+            <p class="sp-help">Fine aim can move past the normal limits, so watch the camera.</p>
           </div>
+
+          <details class="sp-card sp-section sp-advanced">
+            <summary class="sp-label">Advanced</summary>
+            <div class="adv-row">
+              <div><strong>Set pan to 0°</strong>
+                <p>Use the current direction as the pan center.</p>
+              </div>
+              <button class="sp-btn" data-cmd-action="zeroPan">Set</button>
+            </div>
+            <div class="adv-row">
+              <div><strong>Set tilt to 0°</strong>
+                <p>Use the current angle as the tilt center.</p>
+              </div>
+              <button class="sp-btn" data-cmd-action="zeroTilt">Set</button>
+            </div>
+            <div class="adv-row">
+              <div><strong>Re-home rail</strong>
+                <p>Finds the home switch, then returns to the middle of the rail.</p>
+              </div>
+              <button class="sp-btn" data-cmd-action="rehome">Re-home</button>
+            </div>
+          </details>
+
+          <p id="cmd-status" class="cmd-status" aria-live="polite"></p>
         </div>
-      </div>
-
-      <!-- Gate / unlocked controls container — same shape as live.html
-           (live-card with a live-message inside). Rebuilt by lockControls()
-           on session expiry, mirroring live.html's pattern. -->
-      <div id="control-container" class="live-card" style="margin-top: 24px;">
-        <div class="live-message">
-          <div class="live-status-pill">Protected Access</div>
-          <h2>Open Sprinkler Controls</h2>
-          <p>
-            The sprinkler controls are protected. Enter the 4-digit code to continue.
-          </p>
-
-          <div class="camera-code-wrap">
-            <input id="control-code-input" class="camera-code-input" type="password" inputmode="numeric"
-              maxlength="4" placeholder="Enter 4-digit code" aria-label="Enter 4-digit access code" />
-          </div>
-
-          <div class="live-actions">
-            <button id="open-controls-btn" class="live-btn live-btn-primary" type="button">
-              Unlock Controls
-            </button>
-          </div>
-
-          <p id="control-code-message" class="camera-code-message" aria-live="polite"></p>
-        </div>
-      </div>
-
-      <!-- Two-column layout shown after unlock: controls on the left,
-           live sprinkler stream on the right. The whole grid stays
-           hidden until unlockControls() reveals it; the stream column
-           inside the grid stays hidden if no SSPT_STREAM_URL is
-           configured on the worker. -->
-      <div id="control-grid" class="control-grid" style="display: none;">
-      <div id="control-cmds" class="control-wrap">
-        <div class="control-section">
-          <div class="control-section-title">Mode</div>
-          <div class="cmd-grid">
-            <button class="cmd-btn" data-cmd-mode="menu">Menu</button>
-            <button class="cmd-btn" data-cmd-mode="motor1">Motor 1</button>
-            <button class="cmd-btn" data-cmd-mode="motor2">Motor 2</button>
-            <button class="cmd-btn" data-cmd-mode="motor3">Motor 3</button>
-            <button class="cmd-btn" data-cmd-mode="allmotors">Patrol</button>
-          </div>
-        </div>
-
-        <div class="control-section">
-          <div class="control-section-title">Calibration</div>
-          <p class="cal-hint">
-            Nudge to the desired pose, then Zero to set that pose as 0°.
-            Each nudge bypasses the soft limits, like the boot-time setup.
-          </p>
-          <div class="cal-row">
-            <div class="cal-label">Pan</div>
-            <button class="cmd-btn cal-step" data-cmd-nudge="pan" data-cmd-delta="-10">−10°</button>
-            <button class="cmd-btn cal-step" data-cmd-nudge="pan" data-cmd-delta="-1">−1°</button>
-            <div class="cal-angle" id="cal-pan-angle">—</div>
-            <button class="cmd-btn cal-step" data-cmd-nudge="pan" data-cmd-delta="1">+1°</button>
-            <button class="cmd-btn cal-step" data-cmd-nudge="pan" data-cmd-delta="10">+10°</button>
-            <button class="cmd-btn cal-zero" data-cmd-action="zeroPan">Zero</button>
-          </div>
-          <div class="cal-row">
-            <div class="cal-label">Tilt</div>
-            <button class="cmd-btn cal-step" data-cmd-nudge="tilt" data-cmd-delta="-10">−10°</button>
-            <button class="cmd-btn cal-step" data-cmd-nudge="tilt" data-cmd-delta="-1">−1°</button>
-            <div class="cal-angle" id="cal-tilt-angle">—</div>
-            <button class="cmd-btn cal-step" data-cmd-nudge="tilt" data-cmd-delta="1">+1°</button>
-            <button class="cmd-btn cal-step" data-cmd-nudge="tilt" data-cmd-delta="10">+10°</button>
-            <button class="cmd-btn cal-zero" data-cmd-action="zeroTilt">Zero</button>
-          </div>
-        </div>
-
-        <div class="control-section">
-          <div class="control-section-title">Actions</div>
-          <div class="cmd-grid">
-            <button class="cmd-btn" data-cmd-action="rehome">Re-home</button>
-          </div>
-        </div>
-
-        <div class="control-section">
-          <div class="control-section-title">Speed</div>
-          <div class="speed-row" id="speed-row-slider">
-            <span class="speed-row-label">Slider</span>
-            <input id="speed-slider" type="range" min="-20" max="20" value="0" step="1" />
-            <span class="speed-value" id="speed-value">0</span>
-            <!-- Slider's inline stop is only meaningful in Patrol mode
-                 (the big Stop button below covers single-motor modes).
-                 render() toggles its visibility by mode. -->
-            <button class="speed-stop" data-stop-axis="slider" type="button" style="display: none;">Stop</button>
-          </div>
-          <!-- Pan bounce speed — only shown in Patrol mode. Magnitude
-               only; direction is decided by the device's bounce logic,
-               so the range starts at 0. Defaults to 6 to match the
-               firmware's initial allMotorsPanSpeed. Tilt is not bounced
-               in Patrol mode — use the Calibration nudge buttons. -->
-          <div class="speed-row" id="speed-row-pan" style="display: none;">
-            <span class="speed-row-label">Pan</span>
-            <input id="speed-pan" type="range" min="0" max="20" value="6" step="1" />
-            <span class="speed-value" id="speed-pan-value">6</span>
-            <button class="speed-stop" data-stop-axis="pan" type="button">Stop</button>
-          </div>
-          <p class="speed-hint" id="speed-hint">
-            Sign sets direction. Slide back to 0 to stop.
-          </p>
-        </div>
-
-        <div class="control-section">
-          <button id="stop-btn" class="cmd-btn-stop" type="button" disabled>
-            Stop
-          </button>
-        </div>
-
-        <p id="cmd-status" class="cmd-status"></p>
-      </div>
-
-      <!-- Stream column — populated when /api/control-access returns a
-           streamUrl (i.e., SSPT_STREAM_URL is set on the worker). The
-           iframe src is cleared back to about:blank on session expiry
-           by lockControls(), matching live.html's lock pattern. -->
-      <div id="stream-col" class="stream-col" style="display: none;">
-        <div class="stream-frame">
-          <iframe id="sprinkler-stream" src="" title="EmberSensor Sprinkler Camera" allowfullscreen></iframe>
-        </div>
-      </div>
       </div>
     </div>
   </section>
@@ -662,15 +664,16 @@
     const SPEED_DEBOUNCE_MS = 250;
     const NUDGE_DEBOUNCE_MS = 200;
     const STATUS_CLEAR_MS = 2500;
+    const ACK_TIMEOUT_MS = 10000;
     const SLIDER_SYNC_BLOCK_MS = 1500;
     // 15-minute session, identical to live.html.
     const SESSION_MS = 15 * 60 * 1000;
 
-    // Motor ranges drive the position bars below. Kept in sync with the
+    // Motor ranges drive the position bars. Kept in sync with the
     // device-side constants in SliderMotor1.h / PanMotor2.h / TiltMotor3.h.
     const SLIDER_MIN_MM = 5;
     const SLIDER_MAX_MM = 975;
-    const PAN_MAX_ABS_DEG  = 105;
+    const PAN_MAX_ABS_DEG = 105;
     const TILT_MAX_ABS_DEG = 360;
 
     let refreshTimer = null;
@@ -683,6 +686,11 @@
     // decide what command to send, since "stop" means different things
     // depending on what's running.
     let lastKnownMode = null;
+    let deviceOnline = false;
+    // Seq of the last command sent from this page, cleared once the
+    // device reports it via lastSeqAck so we can show "Done".
+    let awaitingSeq = null;
+    let awaitingSince = 0;
     // Per-axis coalesced nudge state. The worker only retains the
     // latest queued command (singleton :MotorCommand), so two clicks
     // closer together than the device poll interval would drop the
@@ -690,111 +698,71 @@
     // short timer; when the timer fires, the accumulated delta is sent
     // as a single nudgePan/nudgeTilt command.
     const pendingNudge = { pan: 0, tilt: 0 };
-    const nudgeTimers  = { pan: null, tilt: null };
+    const nudgeTimers = { pan: null, tilt: null };
 
     const MODE_LABELS = {
-      menu: "Menu",
-      motor1: "Motor 1 — Slider",
-      motor2: "Motor 2 — Pan",
-      motor3: "Motor 3 — Tilt",
+      menu: "Standby",
+      motor1: "Rail",
+      motor2: "Pan",
+      motor3: "Tilt",
       allmotors: "Patrol",
-      panSetup: "Pan Setup",
-      tiltSetup: "Tilt Setup"
+      panSetup: "Start-up setup",
+      tiltSetup: "Start-up setup"
+    };
+
+    const MODE_HELP = {
+      menu: "Motors are stopped. The sprinkler can aim at a detected fire automatically.",
+      motor1: "Use the speed control to move the sprinkler along the rail.",
+      motor2: "Use the speed control to turn the sprinkler left or right.",
+      motor3: "Use the speed control to tilt the sprinkler up or down.",
+      allmotors: "The sprinkler sweeps back and forth along the rail.",
+      panSetup: "The sprinkler is waiting for start-up setup on the device. Choose a mode to skip it.",
+      tiltSetup: "The sprinkler is waiting for start-up setup on the device. Choose a mode to skip it."
+    };
+
+    // Labels for the two ends of the signed speed slider. Positive slider
+    // speed moves the rail away from the home switch.
+    const SPEED_ENDS = {
+      motor1: ["Toward home", "Away from home"],
+      motor2: ["Reverse", "Forward"],
+      motor3: ["Reverse", "Forward"]
     };
 
     // --- Gate / session lifecycle ---
 
     function bindGateEvents() {
-      const btn = document.getElementById("open-controls-btn");
-      const input = document.getElementById("control-code-input");
-      if (btn) btn.addEventListener("click", unlockControls);
-      if (input) input.addEventListener("keydown", e => {
+      document.getElementById("open-controls-btn").addEventListener("click", unlockControls);
+      document.getElementById("control-code-input").addEventListener("keydown", e => {
         if (e.key === "Enter") unlockControls();
       });
+      document.getElementById("lock-btn").addEventListener("click", () => lockControls(false));
     }
 
-    // Aligns the stream iframe's vertical center with the Re-home button
-    // on the desktop two-column layout. CSS can't target a specific row
-    // of the internal block-flow controls column, so we measure at
-    // runtime and push the stream column down via margin-top. Re-runs
-    // on resize and on layout shifts inside the controls column (the
-    // calibration row reflows at narrower widths).
-    let streamAlignObserver = null;
-    function alignStreamWithRehome() {
-      const stream = document.getElementById("stream-col");
-      const rehome = document.querySelector('button[data-cmd-action="rehome"]');
-      const cmds = document.getElementById("control-cmds");
-      const frame = stream ? stream.querySelector(".stream-frame") : null;
-      if (!stream || !rehome || !cmds || !frame) return;
-
-      // On narrow viewports the grid collapses to a single column with
-      // the stream stacked on top; the offset doesn't apply.
-      if (window.matchMedia("(max-width: 980px)").matches) {
-        stream.style.marginTop = "";
-        return;
-      }
-
-      const rehomeRect = rehome.getBoundingClientRect();
-      const cmdsRect = cmds.getBoundingClientRect();
-      const frameRect = frame.getBoundingClientRect();
-
-      // Re-home center, measured from the top of the controls column
-      // (= top of the grid row at align-items: start).
-      const rehomeCenterFromTop = (rehomeRect.top + rehomeRect.bottom) / 2 - cmdsRect.top;
-      const offset = Math.max(0, rehomeCenterFromTop - frameRect.height / 2);
-      stream.style.marginTop = offset + "px";
-    }
-
-    function watchStreamAlignment() {
-      if (streamAlignObserver) return;
-      const cmds = document.getElementById("control-cmds");
-      if (!cmds || typeof ResizeObserver === "undefined") return;
-      streamAlignObserver = new ResizeObserver(() => alignStreamWithRehome());
-      streamAlignObserver.observe(cmds);
-    }
-
-    window.addEventListener("resize", alignStreamWithRehome);
-
-    function lockControls() {
-      // Replace the gate card the same way live.html does on expiry.
-      // Also clear and hide the stream iframe so the cached HLS player
+    function lockControls(expired) {
+      // Hide the controls and blank the stream so the camera player
       // doesn't keep running in the background after lockout.
       document.getElementById("control-grid").style.display = "none";
-      const streamCol = document.getElementById("stream-col");
-      const streamFrame = document.getElementById("sprinkler-stream");
-      if (streamFrame) streamFrame.src = "about:blank";
-      if (streamCol) {
-        streamCol.style.display = "none";
-        streamCol.style.marginTop = "";
-      }
-      if (streamAlignObserver) {
-        streamAlignObserver.disconnect();
-        streamAlignObserver = null;
-      }
-      document.getElementById("control-container").innerHTML = `
-        <div class="live-message">
-          <div class="live-status-pill">Session Expired</div>
-          <h2>Open Sprinkler Controls</h2>
-          <p>Your session has expired. Enter the 4-digit code to continue.</p>
-          <div class="camera-code-wrap">
-            <input id="control-code-input" class="camera-code-input" type="password" inputmode="numeric"
-              maxlength="4" placeholder="Enter 4-digit code" aria-label="Enter 4-digit access code" />
-          </div>
-          <div class="live-actions">
-            <button id="open-controls-btn" class="live-btn live-btn-primary" type="button">
-              Unlock Controls
-            </button>
-          </div>
-          <p id="control-code-message" class="camera-code-message" aria-live="polite"></p>
-        </div>
-      `;
-      bindGateEvents();
+      document.getElementById("sprinkler-stream").src = "about:blank";
+      if (sessionTimer) { clearTimeout(sessionTimer); sessionTimer = null; }
+
+      document.getElementById("gate-title").textContent =
+        expired ? "Session ended" : "Controls are locked";
+      document.getElementById("gate-text").textContent = expired
+        ? "For safety, controls lock after 15 minutes. Enter your code to continue."
+        : "Enter your 4-digit access code to view the camera and control the sprinkler.";
+      const input = document.getElementById("control-code-input");
+      input.value = "";
+      document.getElementById("control-code-message").textContent = "";
+      document.getElementById("gate").style.display = "block";
     }
 
     async function unlockControls() {
       const codeInput = document.getElementById("control-code-input");
       const messageEl = document.getElementById("control-code-message");
       const enteredCode = (codeInput.value || "").trim();
+
+      messageEl.classList.remove("error");
+      messageEl.textContent = "Checking…";
 
       let res;
       try {
@@ -804,67 +772,52 @@
           body: JSON.stringify({ code: enteredCode })
         });
       } catch {
-        messageEl.textContent = "Could not connect. Please try again.";
+        messageEl.textContent = "Couldn't connect. Please try again.";
         messageEl.classList.add("error");
         return;
       }
 
       if (!res.ok) {
-        messageEl.textContent = "Wrong code. Please try again.";
+        messageEl.textContent = "That code didn't work. Please try again.";
         messageEl.classList.add("error");
+        codeInput.select();
         return;
       }
 
-      // Body carries { ok: true } and — when SSPT_STREAM_URL is set on
-      // the worker — an additional streamUrl field pointing at the
-      // live sprinkler camera page. Parse defensively: if JSON parsing
-      // fails for any reason, fall back to controls-only mode.
+      // Body is { ok: true } plus streamUrl when the sprinkler camera
+      // is configured on the worker. Parse defensively: if it fails,
+      // fall back to controls without the camera.
       let payload = {};
       try { payload = await res.json(); } catch {}
 
       messageEl.textContent = "";
-      messageEl.classList.remove("error");
-
-      // Same "Access Granted" treatment live.html uses, then reveal the
-      // two-column layout below (controls on the left, stream on the
-      // right when configured).
-      document.getElementById("control-container").innerHTML = `
-        <div class="live-message live-message-compact">
-          <div class="live-status-pill live-status-live">Access Granted</div>
-          <h2>Controls unlocked</h2>
-          <p>You entered the correct code. Buttons below send commands to the device.</p>
-        </div>
-      `;
+      document.getElementById("gate").style.display = "none";
       document.getElementById("control-grid").style.display = "grid";
 
-      const streamCol = document.getElementById("stream-col");
       const streamFrame = document.getElementById("sprinkler-stream");
-      if (payload.streamUrl && streamFrame && streamCol) {
+      const streamEmpty = document.getElementById("stream-empty");
+      if (payload.streamUrl) {
         streamFrame.src = payload.streamUrl;
-        streamCol.style.display = "block";
+        streamFrame.style.display = "block";
+        streamEmpty.style.display = "none";
+      } else {
+        streamFrame.style.display = "none";
+        streamEmpty.style.display = "flex";
       }
 
-      // Align the iframe's vertical center with the Re-home button.
-      // Wait one frame so the grid has laid out and the iframe has
-      // resolved its 16:9 height before we measure.
-      requestAnimationFrame(() => {
-        alignStreamWithRehome();
-        watchStreamAlignment();
-      });
-
       if (sessionTimer) clearTimeout(sessionTimer);
-      sessionTimer = setTimeout(lockControls, SESSION_MS);
+      sessionTimer = setTimeout(() => lockControls(true), SESSION_MS);
     }
 
     // --- Commands (no per-request auth, matching the camera flow) ---
 
-    function setStatus(text, cls) {
+    function setStatus(text, cls, sticky) {
       const el = document.getElementById("cmd-status");
-      if (!el) return;
       el.textContent = text || "";
       el.className = "cmd-status" + (cls ? " " + cls : "");
       if (statusClearTimer) clearTimeout(statusClearTimer);
-      if (text) {
+      statusClearTimer = null;
+      if (text && !sticky) {
         statusClearTimer = setTimeout(() => {
           el.textContent = "";
           el.className = "cmd-status";
@@ -873,7 +826,7 @@
     }
 
     function sendCommand(body) {
-      setStatus("Sending…");
+      setStatus("Sending…", "", true);
       return fetch("/api/motor/command", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -883,8 +836,31 @@
           if (!r.ok) throw new Error("HTTP " + r.status);
           return r.json();
         })
-        .then(d => { setStatus("Sent (seq " + d.seq + ")", "success"); })
-        .catch(err => { setStatus("Send failed: " + err.message, "error"); });
+        .then(d => {
+          if (typeof d.seq === "number") {
+            awaitingSeq = d.seq;
+            awaitingSince = Date.now();
+          }
+          setStatus(deviceOnline ? "Sent. Waiting for the sprinkler…"
+                                 : "Sent. The sprinkler will act on it when it reconnects.", "", true);
+        })
+        .catch(() => {
+          awaitingSeq = null;
+          setStatus("Couldn't send the command. Check your connection and try again.", "error");
+        });
+    }
+
+    // Called on every state poll: report "Done" once the device has
+    // acknowledged our last command, or give up waiting after a while.
+    function checkAck(d) {
+      if (awaitingSeq === null) return;
+      if (typeof d.lastSeqAck === "number" && d.lastSeqAck >= awaitingSeq) {
+        awaitingSeq = null;
+        setStatus("Done", "success");
+      } else if (Date.now() - awaitingSince > ACK_TIMEOUT_MS) {
+        awaitingSeq = null;
+        setStatus("The sprinkler hasn't responded yet.", "error");
+      }
     }
 
     function wireCommandButtons() {
@@ -899,12 +875,10 @@
         });
       });
 
-      // Calibration nudge buttons: accumulate signed degree deltas
-      // per axis, then send the total after NUDGE_DEBOUNCE_MS of
-      // click idle. The device converts to microsteps and calls
-      // stepBy(), which moves the motor a precise amount (no soft-
-      // bound clamping, mirroring the boot-time PanSetup / TiltSetup
-      // flow).
+      // Fine aim: accumulate signed degree deltas per axis, then send
+      // the total after NUDGE_DEBOUNCE_MS of click idle. The device
+      // converts to microsteps and calls stepBy(), which skips the soft
+      // limits (same as the boot-time setup).
       document.querySelectorAll("[data-cmd-nudge]").forEach(btn => {
         btn.addEventListener("click", () => {
           const axis = btn.dataset.cmdNudge;  // "pan" or "tilt"
@@ -927,96 +901,68 @@
 
       const slider = document.getElementById("speed-slider");
       const out = document.getElementById("speed-value");
-      if (slider) {
-        slider.addEventListener("input", () => {
-          out.textContent = slider.value;
-          lastSliderTouchMs = Date.now();
-          if (speedDebounceTimer) clearTimeout(speedDebounceTimer);
-          speedDebounceTimer = setTimeout(() => {
-            sendCommand({ kind: "setSliderSpeed", speed: Number(slider.value) });
-          }, SPEED_DEBOUNCE_MS);
-        });
-      }
+      slider.addEventListener("input", () => {
+        out.textContent = slider.value;
+        lastSliderTouchMs = Date.now();
+        if (speedDebounceTimer) clearTimeout(speedDebounceTimer);
+        speedDebounceTimer = setTimeout(() => {
+          sendCommand({ kind: "setSliderSpeed", speed: Number(slider.value) });
+        }, SPEED_DEBOUNCE_MS);
+      });
 
-      // Pan bounce-speed slider — only meaningful in Patrol mode. The
-      // device retains the last value across mode changes, so there's
-      // no need to re-send on entry. The website doesn't echo this back
-      // via /api/motor/state, so there's no thumb-sync concern like the
-      // slider has — each input just debounces and sends the latest
-      // value. Tilt has no bounce-speed slider — it's only moved by
-      // the Calibration section's nudgeTilt / zeroTilt buttons.
+      // Pan sweep speed (Patrol only). The device keeps the last value
+      // across mode changes and doesn't report it back, so each input
+      // just debounces and sends the latest value.
       const panSpeed = document.getElementById("speed-pan");
       const panSpeedOut = document.getElementById("speed-pan-value");
-      if (panSpeed) {
-        panSpeed.addEventListener("input", () => {
-          panSpeedOut.textContent = panSpeed.value;
-          if (panSpeedDebounceTimer) clearTimeout(panSpeedDebounceTimer);
-          panSpeedDebounceTimer = setTimeout(() => {
-            sendCommand({
-              kind: "setAllMotorsPanSpeed",
-              speed: Number(panSpeed.value),
-            });
-          }, SPEED_DEBOUNCE_MS);
-        });
-      }
+      panSpeed.addEventListener("input", () => {
+        panSpeedOut.textContent = panSpeed.value;
+        if (panSpeedDebounceTimer) clearTimeout(panSpeedDebounceTimer);
+        panSpeedDebounceTimer = setTimeout(() => {
+          sendCommand({
+            kind: "setAllMotorsPanSpeed",
+            speed: Number(panSpeed.value),
+          });
+        }, SPEED_DEBOUNCE_MS);
+      });
 
-      // Inline per-row Stop buttons (slider / pan). Each sends speed:0
-      // for its motor and optimistically resets the row's slider thumb
-      // so the user sees an immediate response without waiting for the
-      // next state echo. Slider visibility is mode-gated in render();
-      // the pan button lives inside the pan row which is itself only
-      // shown in Patrol mode. Tilt has no Stop here — it doesn't bounce
-      // in Patrol mode, so there's nothing to stop.
+      // Per-row Stop buttons (Patrol only). Each sends speed:0 for its
+      // motor and resets the row's thumb right away instead of waiting
+      // for the next state echo.
       const SPEED_STOP_CONFIG = {
-        slider: { kind: "setSliderSpeed",       inputId: "speed-slider", outId: "speed-value",     defaultValue: "0", isSliderThumb: true  },
-        pan:    { kind: "setAllMotorsPanSpeed", inputId: "speed-pan",    outId: "speed-pan-value", defaultValue: "0", isSliderThumb: false },
+        slider: { kind: "setSliderSpeed", inputId: "speed-slider", outId: "speed-value", isSliderThumb: true },
+        pan: { kind: "setAllMotorsPanSpeed", inputId: "speed-pan", outId: "speed-pan-value", isSliderThumb: false },
       };
       document.querySelectorAll("[data-stop-axis]").forEach(btn => {
         btn.addEventListener("click", () => {
           const cfg = SPEED_STOP_CONFIG[btn.dataset.stopAxis];
           if (!cfg) return;
           sendCommand({ kind: cfg.kind, speed: 0 });
-          const input = document.getElementById(cfg.inputId);
-          const out = document.getElementById(cfg.outId);
-          if (input) input.value = cfg.defaultValue;
-          if (out) out.textContent = cfg.defaultValue;
-          // The slider's thumb is sync'd from device state — mark a
-          // touch so the render() sync block doesn't yank it back up
-          // before the device echoes 0.
+          document.getElementById(cfg.inputId).value = "0";
+          document.getElementById(cfg.outId).textContent = "0";
+          // The rail thumb is synced from device state — mark a touch
+          // so render() doesn't yank it back before the device echoes 0.
           if (cfg.isSliderThumb) lastSliderTouchMs = Date.now();
         });
       });
 
-      const stopBtn = document.getElementById("stop-btn");
-      if (stopBtn) {
-        stopBtn.addEventListener("click", () => {
-          // Mode-aware stop:
-          //   Motor 1/2/3 → setSliderSpeed:0 stops the motor in place
-          //     without changing mode, so the user can immediately
-          //     resume by moving the slider.
-          //   Patrol      → the inline Stop buttons handle per-motor
-          //     pauses; this big Stop is the catch-all "exit the demo"
-          //     button — drop to Menu mode, which calls .stop() on
-          //     all three motors.
-          //   Menu / PanSetup / TiltSetup → button is disabled; this
-          //     branch shouldn't be reachable.
-          if (lastKnownMode === "motor1" || lastKnownMode === "motor2" ||
-              lastKnownMode === "motor3") {
-            sendCommand({ kind: "setSliderSpeed", speed: 0 });
-          } else if (lastKnownMode === "allmotors") {
-            sendCommand({ kind: "enterMode", mode: "menu" });
-          } else {
-            return;
-          }
-          // Optimistic local update so the user sees the slider thumb
-          // snap to 0 immediately instead of waiting up to POLL_MS for
-          // the next state echo. Mark lastSliderTouchMs so the sync
-          // block in render() doesn't yank the thumb in the meantime.
-          if (slider) slider.value = "0";
-          if (out) out.textContent = "0";
-          lastSliderTouchMs = Date.now();
-        });
-      }
+      document.getElementById("stop-btn").addEventListener("click", () => {
+        // Mode-aware stop:
+        //   Rail/Pan/Tilt → setSliderSpeed:0 stops the motor in place
+        //     without changing mode, so the user can resume right away.
+        //   Patrol → return to Standby (menu), which stops all motors.
+        if (lastKnownMode === "motor1" || lastKnownMode === "motor2" ||
+            lastKnownMode === "motor3") {
+          sendCommand({ kind: "setSliderSpeed", speed: 0 });
+        } else if (lastKnownMode === "allmotors") {
+          sendCommand({ kind: "enterMode", mode: "menu" });
+        } else {
+          return;
+        }
+        slider.value = "0";
+        out.textContent = "0";
+        lastSliderTouchMs = Date.now();
+      });
     }
 
     // --- State mirror (public, no auth) ---
@@ -1027,18 +973,13 @@
       pill.textContent = label;
     }
 
-    function setVal(id, text, cls) {
+    function setText(id, text) {
       const el = document.getElementById(id);
-      if (!el) return;
-      el.textContent = text;
-      el.className = "data-value" + (cls ? " " + cls : "");
+      if (el) el.textContent = text;
     }
 
-    function formatDial(d) {
-      if (typeof d !== "number") return "—";
-      const sign = d > 0 ? "+" : "";
-      const dir = d > 0 ? " CW" : d < 0 ? " CCW" : " STOP";
-      return sign + d + dir;
+    function formatDeg(v) {
+      return typeof v === "number" ? v + "°" : "—";
     }
 
     function setActiveMode(modeKey) {
@@ -1048,10 +989,9 @@
     }
 
     // Linear bar: fills left-to-right between [min, max]. Used for the
-    // slider, whose range is one-sided (5 mm .. 975 mm).
+    // rail, whose range is one-sided (5 mm .. 975 mm).
     function setLinearBar(trackId, value, min, max) {
       const track = document.getElementById(trackId);
-      if (!track) return;
       const fill = track.querySelector(".pos-fill");
       if (typeof value !== "number" || !Number.isFinite(value)) {
         track.classList.add("unknown");
@@ -1070,7 +1010,6 @@
     // negative leftward. Used for pan (±105°) and tilt (±360°).
     function setCenteredBar(trackId, value, maxAbs) {
       const track = document.getElementById(trackId);
-      if (!track) return;
       const fill = track.querySelector(".pos-fill");
       if (typeof value !== "number" || !Number.isFinite(value) || maxAbs <= 0) {
         track.classList.add("unknown");
@@ -1081,135 +1020,84 @@
       track.classList.remove("unknown");
       const clamped = Math.max(-maxAbs, Math.min(maxAbs, value));
       const halfPct = (Math.abs(clamped) / maxAbs) * 50;
-      if (clamped >= 0) {
-        fill.style.left = "50%";
-        fill.style.width = halfPct + "%";
-      } else {
-        fill.style.left = (50 - halfPct) + "%";
-        fill.style.width = halfPct + "%";
-      }
+      fill.style.left = (clamped >= 0 ? 50 : 50 - halfPct) + "%";
+      fill.style.width = halfPct + "%";
     }
 
     function render(d) {
       const mode = typeof d.mode === "string" ? d.mode : null;
-      setVal("val-mode", mode ? (MODE_LABELS[mode] || mode) : "—");
+      setText("val-mode", mode ? (MODE_LABELS[mode] || mode) : "—");
+      setText("mode-help", (mode && MODE_HELP[mode]) || " ");
       setActiveMode(mode);
 
-      // Menu index is only meaningful in menu mode — hide the sub-line
-      // otherwise so the hero card doesn't show a dangling number.
-      const menuSub = document.getElementById("val-menu-sub");
-      if (menuSub) {
-        if (mode === "menu" && typeof d.menuIndex === "number") {
-          document.getElementById("val-menu-index").textContent = String(d.menuIndex);
-          menuSub.style.display = "";
-        } else {
-          menuSub.style.display = "none";
-        }
-      }
-
-      setVal("val-slider", typeof d.sliderMm === "number" ? d.sliderMm + " mm" : "—");
-      setVal("val-pan",    typeof d.panDeg   === "number" ? d.panDeg   + "°" : "—");
-      setVal("val-tilt",   typeof d.tiltDeg  === "number" ? d.tiltDeg  + "°" : "—");
-
-      // Mirror the live pan/tilt angles into the calibration rows so
-      // the user sees the motor respond to each nudge in real time.
-      const calPan  = document.getElementById("cal-pan-angle");
-      const calTilt = document.getElementById("cal-tilt-angle");
-      if (calPan)  calPan.textContent  = typeof d.panDeg  === "number" ? d.panDeg  + "°" : "—";
-      if (calTilt) calTilt.textContent = typeof d.tiltDeg === "number" ? d.tiltDeg + "°" : "—";
+      setText("val-slider", typeof d.sliderMm === "number" ? d.sliderMm + " mm" : "—");
+      setText("val-pan", formatDeg(d.panDeg));
+      setText("val-tilt", formatDeg(d.tiltDeg));
+      setText("cal-pan-angle", formatDeg(d.panDeg));
+      setText("cal-tilt-angle", formatDeg(d.tiltDeg));
 
       setLinearBar("bar-slider", d.sliderMm, SLIDER_MIN_MM, SLIDER_MAX_MM);
-      setCenteredBar("bar-pan",  d.panDeg,  PAN_MAX_ABS_DEG);
+      setCenteredBar("bar-pan", d.panDeg, PAN_MAX_ABS_DEG);
       setCenteredBar("bar-tilt", d.tiltDeg, TILT_MAX_ABS_DEG);
 
-      setVal("val-dial", formatDial(d.dial));
+      document.getElementById("notice-homing").style.display =
+        d.homed === false ? "block" : "none";
 
-      const limitEngaged = d.limitEngaged === true;
-      setVal("val-limit",
-        typeof d.limitEngaged === "boolean" ? (limitEngaged ? "LOW (hit)" : "HIGH") : "—",
-        typeof d.limitEngaged === "boolean" ? (limitEngaged ? "yes" : "no") : "");
+      // setSliderSpeed only takes effect on the device in Rail/Pan/Tilt
+      // and Patrol modes (see main.ino:dispatchRemoteCommand), so the
+      // speed card is only shown there.
+      const speedActive = mode === "motor1" || mode === "motor2" ||
+                          mode === "motor3" || mode === "allmotors";
+      const patrol = mode === "allmotors";
+      document.getElementById("speed-section").style.display = speedActive ? "" : "none";
 
-      const homed = d.homed === true;
-      setVal("val-homed",
-        typeof d.homed === "boolean" ? (homed ? "Yes" : "No") : "—",
-        typeof d.homed === "boolean" ? (homed ? "no" : "yes") : "");
-
-      // Sync the speed slider thumb to the signed dial from the live
-      // state, suppressed for SLIDER_SYNC_BLOCK_MS after a user touch
-      // so we don't yank under their finger.
+      // In Patrol the device uses the dial's magnitude only, so the rail
+      // slider becomes 0..20; elsewhere it's signed (sign = direction).
       const slider = document.getElementById("speed-slider");
       const out = document.getElementById("speed-value");
-      const speedRow = slider ? slider.closest(".speed-row") : null;
-      const speedHint = document.getElementById("speed-hint");
-      if (slider && typeof d.dial === "number" &&
+      slider.min = patrol ? "0" : "-20";
+      setText("speed-label", patrol ? "Rail sweep speed" : "Speed");
+      document.getElementById("speed-ends").style.display = patrol ? "none" : "";
+      if (SPEED_ENDS[mode]) {
+        setText("speed-end-min", SPEED_ENDS[mode][0]);
+        setText("speed-end-max", SPEED_ENDS[mode][1]);
+      }
+      if (typeof d.dial === "number" &&
           Date.now() - lastSliderTouchMs > SLIDER_SYNC_BLOCK_MS) {
-        const v = d.dial;
+        const v = patrol ? Math.abs(d.dial) : d.dial;
         if (String(v) !== slider.value) {
           slider.value = String(v);
           out.textContent = String(v);
         }
       }
-      // setSliderSpeed only takes effect on the device in Motor 1/2/3
-      // and Patrol modes (see main.ino:dispatchRemoteCommand). In
-      // Menu / PanSetup / TiltSetup the encoder has different
-      // semantics, so disable the slider — and the Stop button —
-      // there to match.
-      const speedActive = mode === "motor1" || mode === "motor2" ||
-                          mode === "motor3" || mode === "allmotors";
-      const allMotors = mode === "allmotors";
-      if (slider) slider.disabled = !speedActive;
-      if (speedRow) speedRow.classList.toggle("disabled", !speedActive);
-      // Pan bounce-speed slider is only meaningful in Patrol mode
-      // (it configures handleAllMotors()'s pan magnitude). Hide outside
-      // Patrol so the panel stays compact. Tilt isn't bounced and has
-      // no speed slider — use the Calibration section instead.
-      const panRow = document.getElementById("speed-row-pan");
-      const panInput = document.getElementById("speed-pan");
-      if (panRow) panRow.style.display = allMotors ? "" : "none";
-      if (panInput) panInput.disabled = !allMotors;
-      // The slider's inline Stop is only useful in Patrol mode —
-      // single-motor modes already have the big Stop button below.
-      const sliderStopBtn = document.querySelector("[data-stop-axis='slider']");
-      if (sliderStopBtn) sliderStopBtn.style.display = allMotors ? "" : "none";
-      if (speedHint) {
-        speedHint.textContent = !speedActive
-          ? "Select a motor mode to enable speed control."
-          : allMotors
-            ? "Each motor's bounce speed — magnitude only; direction is the bounce."
-            : "Sign sets direction. Slide back to 0 to stop.";
-      }
+      document.getElementById("speed-row-pan").style.display = patrol ? "" : "none";
+      document.querySelector("[data-stop-axis='slider']").style.display = patrol ? "" : "none";
+      setText("stop-btn", patrol ? "Stop patrol" : "Stop");
       lastKnownMode = mode;
-      const stopBtn = document.getElementById("stop-btn");
-      if (stopBtn) stopBtn.disabled = !speedActive;
 
       if (typeof d.updatedAt === "number") {
-        const dt = new Date(d.updatedAt);
         const ageMs = Date.now() - d.updatedAt;
-        document.getElementById("updated-at").textContent =
-          "Last update " + dt.toLocaleTimeString([], {
-            hour: "2-digit", minute: "2-digit", second: "2-digit"
-          });
-
-        if (ageMs <= STALE_MS) setPill("online", "Device Online");
-        else                   setPill("stale", "Stale — no fresh update");
+        deviceOnline = ageMs <= STALE_MS;
+        setText("updated-at", "Updated " + new Date(d.updatedAt).toLocaleTimeString([], {
+          hour: "numeric", minute: "2-digit", second: "2-digit"
+        }));
+        if (deviceOnline) setPill("online", "Online");
+        else setPill("stale", "Not responding");
       } else {
-        document.getElementById("updated-at").textContent = "—";
-        setPill("offline", "No device data yet");
+        deviceOnline = false;
+        setText("updated-at", " ");
+        setPill("offline", "No data yet");
       }
+
+      checkAck(d);
     }
 
     function scheduleNextRefresh() {
       if (refreshTimer) clearTimeout(refreshTimer);
-      refreshTimer = setTimeout(() => loadState(true), POLL_MS);
+      refreshTimer = setTimeout(loadState, POLL_MS);
     }
 
-    function loadState(silent) {
-      if (!silent) {
-        document.getElementById("control-loading").style.display = "block";
-        document.getElementById("control-error").style.display = "none";
-        document.getElementById("control-content").style.display = "none";
-      }
-
+    function loadState() {
       fetch("/api/motor/state", { cache: "no-store" })
         .then(r => {
           if (!r.ok) throw new Error("HTTP " + r.status);
@@ -1217,17 +1105,12 @@
         })
         .then(d => {
           render(d || {});
-          document.getElementById("control-loading").style.display = "none";
-          document.getElementById("control-error").style.display = "none";
-          document.getElementById("control-content").style.display = "block";
           scheduleNextRefresh();
         })
         .catch(() => {
-          setPill("offline", "API unreachable");
-          document.getElementById("control-loading").style.display = "none";
-          if (document.getElementById("control-content").style.display !== "block") {
-            document.getElementById("control-error").style.display = "block";
-          }
+          deviceOnline = false;
+          setPill("offline", "Can't connect");
+          setText("updated-at", "Retrying…");
           scheduleNextRefresh();
         });
     }
@@ -1241,7 +1124,7 @@
     });
 
     document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") loadState(true);
+      if (document.visibilityState === "visible") loadState();
       else if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
     });
   </script>
