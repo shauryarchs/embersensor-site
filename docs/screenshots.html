@@ -13,6 +13,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css?v=20261025" />
+  <style>
+    /* Phase 2 fire-test shots are wide (16:9), so the two-column featured
+       grid doesn't need the tall minimum height the award photos use. */
+    .phase-feature-grid .gallery-image {
+      min-height: 0;
+    }
+  </style>
 </head>
 
 <body>
@@ -27,6 +34,69 @@
       </p>
     </div>
   </header>
+
+  <section class="gallery-section">
+    <div class="container">
+      <h2>Phase 2: Automated Fire Detection and Suppression</h2>
+      <p class="section-sub">
+        Building and testing the system that finds a fire with a thermal camera and aims a spray nozzle at it.
+      </p>
+
+      <div class="gallery-grid award-grid phase-feature-grid">
+        <div class="gallery-item">
+          <div class="gallery-image">
+            <img src="images/phase2-fire-test.jpg" alt="Shaurya lighting a small test fire in a tray below the suppression system" />
+          </div>
+          <div class="gallery-caption">
+            <h3>Live fire test</h3>
+            <p>A small test fire is lit in a tray so the system can find it with its thermal camera.</p>
+          </div>
+        </div>
+
+        <div class="gallery-item">
+          <div class="gallery-image">
+            <img src="images/phase2-fire-out.jpg" alt="Smoke rising from the tray after the spray nozzle put out the test fire" />
+          </div>
+          <div class="gallery-caption">
+            <h3>Fire extinguished</h3>
+            <p>The nozzle aimed itself at the flames and sprayed water until the fire was out.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="gallery-grid">
+        <div class="gallery-item">
+          <div class="gallery-image">
+            <img src="images/phase2-test-rig.jpg" alt="Complete suppression rig on a table with the motorized rail, nozzle head, and water reservoir" />
+          </div>
+          <div class="gallery-caption">
+            <h3>Complete test setup</h3>
+            <p>The nozzle head rides on a motorized rail, with a water reservoir feeding the pump.</p>
+          </div>
+        </div>
+
+        <div class="gallery-item">
+          <div class="gallery-image">
+            <img src="images/phase2-nozzle-head.jpg" alt="Close-up of the pan-and-tilt nozzle head with the thermal camera and spray nozzle" />
+          </div>
+          <div class="gallery-caption">
+            <h3>Pan-and-tilt nozzle head</h3>
+            <p>A thermal camera sits beside the spray nozzle on motors that turn and tilt it toward a fire.</p>
+          </div>
+        </div>
+
+        <div class="gallery-item">
+          <div class="gallery-image">
+            <img src="images/phase2-electronics.jpg" alt="Controller electronics on breadboards with stepper drivers, an OLED display, and a relay" />
+          </div>
+          <div class="gallery-caption">
+            <h3>Controller electronics</h3>
+            <p>An Arduino Nano ESP32 drives the stepper motors, the menu display, and the pump relay.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <section class="gallery-section">
     <div class="container">
