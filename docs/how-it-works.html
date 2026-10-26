@@ -14,6 +14,31 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css?v=20261025" />
+  <style>
+    /* One block per project phase: label and description sit on the same
+       900px column as the shared .video-frame below them. */
+    .video-phase {
+      max-width: 900px;
+      margin: 36px auto 0;
+    }
+
+    .video-phase + .video-phase {
+      margin-top: 56px;
+    }
+
+    .video-phase .eyebrow {
+      margin-bottom: 10px;
+    }
+
+    .video-phase h3 {
+      margin-bottom: 6px;
+    }
+
+    .video-phase p {
+      margin: 0;
+      color: var(--muted);
+    }
+  </style>
 </head>
 
 <body>
@@ -33,14 +58,38 @@
     <div class="container">
       <h2>Watch EmberSensor in action</h2>
       <p class="section-sub section-sub-wide">
-        This video provides a walkthrough of how EmberSensor works and shows the project in action.
+        These videos walk through how EmberSensor works and show each phase of the project in action.
       </p>
 
-      <div class="video-frame">
-        <iframe src="https://www.youtube.com/embed/KMeSjCohi9E" title="EmberSensor YouTube Video"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowfullscreen>
-        </iframe>
+      <div class="video-phase">
+        <div class="eyebrow">Phase 2</div>
+        <h3>Automated Fire Detection and Suppression</h3>
+        <p>
+          A thermal camera detects fires automatically, and the system aims its spray nozzle at the flames to deliver
+          targeted suppression.
+        </p>
+        <div class="video-frame">
+          <iframe src="https://www.youtube.com/embed/MNZxvWth1tE"
+            title="EmberSensor Phase 2: Automated Fire Detection and Suppression"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen>
+          </iframe>
+        </div>
+      </div>
+
+      <div class="video-phase">
+        <div class="eyebrow">Phase 1</div>
+        <h3>Initial Fire Detection and Sprinkler System</h3>
+        <p>
+          Local sensors and cloud fire-risk analysis detect dangerous conditions and trigger the home sprinkler system.
+        </p>
+        <div class="video-frame">
+          <iframe src="https://www.youtube.com/embed/KMeSjCohi9E"
+            title="EmberSensor Phase 1: Initial Fire Detection and Sprinkler System"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen>
+          </iframe>
+        </div>
       </div>
     </div>
   </section>
