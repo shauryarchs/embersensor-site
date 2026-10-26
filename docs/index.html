@@ -251,13 +251,13 @@
     <div class="container">
       <h2>High-level system design</h2>
       <p class="section-sub section-sub-wide">
-        EmberSensor connects local IoT sensing, cloud-based fire risk intelligence, the website, and the iPhone app into
-        one integrated system.
+        EmberSensor connects two devices, the FireGuard sensor node and the Phase 2 fire suppression device, with
+        cloud-based fire risk intelligence, the website, and the iPhone app.
       </p>
 
       <div class="diagram-frame">
         <div class="diagram-card">
-          <img src="images/embersensor-high-level-6.png" alt="EmberSensor high-level system design" />
+          <img src="images/embersensor-high-level.svg" alt="EmberSensor high-level system design: two devices, the Cloudflare Worker with Neo4j, external data, and the iOS app and website" />
         </div>
       </div>
     </div>
@@ -267,13 +267,13 @@
     <div class="container">
       <h2>Medium-level system design</h2>
       <p class="section-sub section-sub-wide">
-        This view shows how local sensing, cloud services, weather data, wildfire hotspot data,
+        This view shows how both devices, cloud services, weather and wildfire data, live cameras,
         and client applications work together.
       </p>
 
       <div class="diagram-frame">
         <div class="diagram-card">
-          <img src="images/embersensor-medium-level.png" alt="EmberSensor medium-level system design" />
+          <img src="images/embersensor-medium-level.svg" alt="EmberSensor medium-level system design" />
         </div>
       </div>
     </div>
@@ -283,13 +283,13 @@
     <div class="container">
       <h2>Low-level system design</h2>
       <p class="section-sub section-sub-wide">
-        This view shows the internal data flow across sensors, Cloudflare Worker APIs, caches, and
-        client applications.
+        This view shows the API endpoints each device and app uses, plus the Worker's risk engine, scheduled
+        data refresh, and Neo4j storage.
       </p>
 
       <div class="diagram-frame">
         <div class="diagram-card">
-          <img src="images/embersensor-low-level.png" alt="EmberSensor low-level system design" />
+          <img src="images/embersensor-low-level.svg" alt="EmberSensor low-level system design" />
         </div>
       </div>
     </div>

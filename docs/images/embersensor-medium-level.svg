@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 730" width="1200" height="730" role="img" aria-labelledby="title desc">
+  <title id="title">EmberSensor Medium-Level Design</title>
+  <desc id="desc">The FireGuard sensor node posts readings and starts the Rachio sprinkler zone. The fire suppression device reports its state and receives commands. A Cloudflare Worker stores data in Neo4j through a Cloudflare Tunnel, pulls OpenWeather, NASA FIRMS, and CAL FIRE data, and serves the website and iPhone app, which also show live camera video.</desc>
+  <defs>
+    <style>
+      text { font-family: Inter, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #e5e7eb; }
+      .title { font-size: 28px; font-weight: 700; fill: #f8fafc; }
+      .sub { font-size: 15px; fill: #94a3b8; }
+      .h { font-size: 19px; font-weight: 700; fill: #f8fafc; }
+      .h2 { font-size: 16px; font-weight: 700; fill: #f8fafc; }
+      .m { font-size: 14px; fill: #94a3b8; }
+      .t { font-size: 14px; fill: #d1d5db; }
+      .lbl { font-size: 13px; fill: #cbd5e1; }
+      .tag { font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+      .panel { fill: #121827; stroke-width: 1.6; }
+      .inner { fill: #0b0f1a; stroke-width: 1.2; }
+    </style>
+    <marker id="a-or" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#f97316"/></marker>
+    <marker id="a-bl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#60a5fa"/></marker>
+    <marker id="a-te" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2dd4bf"/></marker>
+    <marker id="a-pu" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#c084fc"/></marker>
+    <marker id="a-gr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#94a3b8"/></marker>
+  </defs>
+
+  <rect width="1200" height="730" fill="#0b0f1a"/>
+
+  <text class="title" x="600" y="46" text-anchor="middle">EmberSensor Medium-Level Design</text>
+  <text class="sub" x="600" y="74" text-anchor="middle">Cloud services connect both devices, external fire and weather data, and the apps</text>
+
+  <!-- Device: FireGuard sensor node (Phase 1) -->
+  <rect class="panel" x="24" y="104" width="320" height="236" rx="16" stroke="#f97316"/>
+  <rect x="44" y="122" width="72" height="22" rx="11" fill="#f97316" fill-opacity="0.18"/>
+  <text class="tag" x="80" y="137" text-anchor="middle" fill="#fdba74">PHASE 1</text>
+  <text class="h" x="44" y="174">FireGuard Sensor Node</text>
+  <text class="m" x="44" y="197">Arduino UNO R4 WiFi</text>
+  <text class="t" x="44" y="232">• TMP36 temperature sensor</text>
+  <text class="t" x="44" y="258">• Smoke sensor</text>
+  <text class="t" x="44" y="284">• Flame sensor</text>
+  <text class="t" x="44" y="310">• Rachio sprinkler control</text>
+
+  <!-- Rachio -->
+  <rect class="panel" x="24" y="372" width="320" height="58" rx="12" stroke="#64748b"/>
+  <text class="h2" x="44" y="398">Rachio Cloud</text>
+  <text class="m" x="44" y="418">starts the home sprinkler zone</text>
+  <line x1="184" y1="340" x2="184" y2="370" stroke="#94a3b8" stroke-width="2" marker-end="url(#a-gr)"/>
+  <text class="lbl" x="196" y="360">start zone</text>
+
+  <!-- Device: fire suppression device (Phase 2) -->
+  <rect class="panel" x="24" y="450" width="320" height="256" rx="16" stroke="#f97316"/>
+  <rect x="44" y="468" width="72" height="22" rx="11" fill="#f97316" fill-opacity="0.18"/>
+  <text class="tag" x="80" y="483" text-anchor="middle" fill="#fdba74">PHASE 2</text>
+  <text class="h" x="44" y="520">Fire Suppression Device</text>
+  <text class="m" x="44" y="543">Arduino Nano ESP32</text>
+  <text class="t" x="44" y="578">• MLX90640 thermal camera</text>
+  <text class="t" x="44" y="604">• Slider, pan, and tilt stepper motors</text>
+  <text class="t" x="44" y="630">• Water pump relay</text>
+  <text class="t" x="44" y="656">• OLED menu and dial</text>
+  <text class="t" x="44" y="682">• Auto-aim and auto-spray</text>
+
+  <!-- Cloudflare Worker -->
+  <rect class="panel" x="500" y="104" width="290" height="456" rx="16" stroke="#3b82f6"/>
+  <rect x="516" y="120" width="258" height="64" rx="10" fill="#3b82f6" fill-opacity="0.16"/>
+  <text class="h" x="645" y="148" text-anchor="middle">Cloudflare Worker</text>
+  <text class="m" x="645" y="171" text-anchor="middle">Website + APIs + Risk Logic</text>
+  <text class="t" x="520" y="222">• Stores latest sensor readings</text>
+  <text class="t" x="532" y="244">and device state</text>
+  <text class="t" x="520" y="278">• Reads weather and</text>
+  <text class="t" x="532" y="300">wildfire data</text>
+  <text class="t" x="520" y="334">• Computes the risk score</text>
+  <text class="t" x="520" y="368">• Queues aim and spray</text>
+  <text class="t" x="532" y="390">commands</text>
+  <text class="t" x="520" y="424">• Refreshes external data</text>
+  <text class="t" x="532" y="446">every 5 minutes</text>
+  <text class="t" x="520" y="480">• Checks the access code for</text>
+  <text class="t" x="532" y="502">website cameras and controls</text>
+
+  <!-- Neo4j -->
+  <rect class="panel" x="500" y="610" width="290" height="96" rx="16" stroke="#3b82f6"/>
+  <text class="h2" x="645" y="642" text-anchor="middle">Neo4j Database</text>
+  <text class="m" x="645" y="665" text-anchor="middle">via Cloudflare Tunnel</text>
+  <text class="m" x="645" y="686" text-anchor="middle">readings, state, commands, caches</text>
+  <line x1="645" y1="562" x2="645" y2="608" stroke="#60a5fa" stroke-width="2" marker-start="url(#a-bl)" marker-end="url(#a-bl)"/>
+  <text class="lbl" x="657" y="590">queries</text>
+
+  <!-- External data sources -->
+  <rect class="panel" x="946" y="104" width="230" height="300" rx="16" stroke="#14b8a6"/>
+  <text class="h" x="966" y="140">External Data</text>
+  <rect class="inner" x="962" y="158" width="198" height="70" rx="10" stroke="#14b8a6"/>
+  <text class="h2" x="978" y="186">OpenWeather</text>
+  <text class="m" x="978" y="208">temp, humidity, wind, rain</text>
+  <rect class="inner" x="962" y="238" width="198" height="70" rx="10" stroke="#14b8a6"/>
+  <text class="h2" x="978" y="266">NASA FIRMS</text>
+  <text class="m" x="978" y="288">satellite fire hotspots</text>
+  <rect class="inner" x="962" y="318" width="198" height="70" rx="10" stroke="#14b8a6"/>
+  <text class="h2" x="978" y="346">CAL FIRE</text>
+  <text class="m" x="978" y="368">active wildfire incidents</text>
+
+  <!-- Clients -->
+  <rect class="panel" x="946" y="440" width="230" height="120" rx="16" stroke="#a855f7"/>
+  <text class="h" x="966" y="478">Clients</text>
+  <text class="m" x="966" y="506">embersensor.com website</text>
+  <text class="m" x="966" y="527">and iPhone app</text>
+
+  <!-- Live cameras -->
+  <rect class="panel" x="946" y="610" width="230" height="96" rx="16" stroke="#64748b"/>
+  <text class="h2" x="966" y="642">Live Cameras</text>
+  <text class="m" x="966" y="665">yard camera and</text>
+  <text class="m" x="966" y="686">nozzle camera</text>
+  <line x1="1061" y1="610" x2="1061" y2="562" stroke="#94a3b8" stroke-width="2" marker-end="url(#a-gr)"/>
+  <text class="lbl" x="1073" y="592">video</text>
+
+  <!-- Devices <-> Worker -->
+  <line x1="344" y1="200" x2="498" y2="200" stroke="#f97316" stroke-width="2" marker-end="url(#a-or)"/>
+  <text class="lbl" x="422" y="191" text-anchor="middle">sensor readings</text>
+  <line x1="500" y1="250" x2="346" y2="250" stroke="#60a5fa" stroke-width="2" marker-end="url(#a-bl)"/>
+  <text class="lbl" x="422" y="241" text-anchor="middle">risk score</text>
+
+  <line x1="344" y1="490" x2="498" y2="490" stroke="#f97316" stroke-width="2" marker-end="url(#a-or)"/>
+  <text class="lbl" x="422" y="481" text-anchor="middle">device state</text>
+  <line x1="500" y1="535" x2="346" y2="535" stroke="#60a5fa" stroke-width="2" marker-end="url(#a-bl)"/>
+  <text class="lbl" x="422" y="526" text-anchor="middle">commands</text>
+
+  <!-- External -> Worker -->
+  <line x1="946" y1="254" x2="792" y2="254" stroke="#2dd4bf" stroke-width="2" marker-end="url(#a-te)"/>
+  <text class="lbl" x="868" y="245" text-anchor="middle">weather + fire data</text>
+
+  <!-- Worker <-> clients -->
+  <line x1="790" y1="500" x2="944" y2="500" stroke="#c084fc" stroke-width="2" marker-start="url(#a-pu)" marker-end="url(#a-pu)"/>
+  <text class="lbl" x="868" y="474" text-anchor="middle">status, fires,</text>
+  <text class="lbl" x="868" y="491" text-anchor="middle">control APIs</text>
+</svg>
