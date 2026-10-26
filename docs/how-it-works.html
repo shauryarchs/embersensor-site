@@ -38,6 +38,29 @@
       margin: 0;
       color: var(--muted);
     }
+
+    /* Phase 2 hardware photos shown side by side above the system copy. */
+    .system-photos {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 0 0 16px;
+    }
+
+    .system-photos figure {
+      margin: 0;
+    }
+
+    .system-photos img {
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+    }
+
+    .system-photos figcaption {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 14px;
+    }
   </style>
 </head>
 
@@ -131,7 +154,18 @@
       </div>
 
       <div>
-        <img class="page-hero-img" src="images/raw-system.jpg" alt="How EmberSensor works" />
+        <div class="system-photos">
+          <figure>
+            <img class="page-hero-img" src="images/phase2-nozzle-head.jpg"
+              alt="Pan-and-tilt nozzle head with the thermal camera and spray nozzle on a motorized rail" />
+            <figcaption>Pan-and-tilt nozzle head with thermal camera</figcaption>
+          </figure>
+          <figure>
+            <img class="page-hero-img" src="images/phase2-electronics.jpg"
+              alt="Controller electronics on breadboards with stepper drivers, an OLED display, and a relay" />
+            <figcaption>Controller electronics</figcaption>
+          </figure>
+        </div>
         <div class="page-copy">
           <h3>Built as a connected system</h3>
           <p>
