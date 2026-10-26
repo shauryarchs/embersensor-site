@@ -3,17 +3,17 @@
 
 <head>
   <meta charset="UTF-8" />
-  <title>Sprinkler Control | EmberSensor</title>
+  <title>Automated Fire Detection &amp; Suppression | EmberSensor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description"
-    content="Watch the EmberSensor sprinkler camera and aim the targeted sprinkler remotely." />
+    content="EmberSensor's automated fire detection and suppression system finds fires with a thermal camera, aims a spray nozzle at them, and puts them out." />
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=20261025" />
   <style>
     .sp-page {
       padding: 48px 0 72px;
@@ -22,6 +22,10 @@
     .sp-header {
       text-align: center;
       margin-bottom: 28px;
+    }
+
+    .sp-header h1 {
+      font-size: clamp(30px, 5vw, 50px);
     }
 
     .sp-header .section-sub {
@@ -46,16 +50,35 @@
       color: var(--muted);
     }
 
-    /* --- Status bar (public, always visible) --- */
+    /* --- Nozzle position (public, always visible) --- */
 
     .sp-status {
-      display: grid;
-      grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr;
       margin-bottom: 20px;
     }
 
+    .sp-status-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .sp-status-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sp-status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
     .sp-status-cell {
-      padding: 16px 20px;
+      padding: 14px 20px 16px;
       border-right: 1px solid rgba(255, 255, 255, 0.08);
       min-width: 0;
     }
@@ -70,12 +93,9 @@
       font-weight: 700;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     .sp-status-sub {
-      margin-top: 2px;
       font-size: 12px;
       color: var(--muted);
       font-variant-numeric: tabular-nums;
@@ -85,8 +105,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      margin-top: 4px;
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 700;
     }
 
@@ -109,7 +128,7 @@
       100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
     }
 
-    /* Position bars. Slider fills from the left; pan and tilt are
+    /* Position bars. Rail fills from the left; pan and tilt are
        centered on 0° and fill left or right by sign. */
     .pos-track {
       position: relative;
@@ -278,6 +297,12 @@
       margin-bottom: 12px;
     }
 
+    .sp-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .sp-help {
       margin: 10px 0 0;
       font-size: 13px;
@@ -296,16 +321,6 @@
     }
 
     .sp-link-btn:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.3); }
-
-    /* Mode selector: one segmented row. */
-    .sp-modes {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 4px;
-      padding: 4px;
-      border-radius: 12px;
-      background: rgba(0, 0, 0, 0.25);
-    }
 
     .sp-btn {
       padding: 10px 8px;
@@ -327,15 +342,92 @@
 
     .sp-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-    .sp-modes .sp-btn {
-      border-color: transparent;
+    /* Info icon: a small round "i" next to a control. Its text is shown
+       in the shared #tip tooltip on hover, focus, or tap. */
+    .info {
+      flex: 0 0 auto;
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.35);
       background: transparent;
+      color: var(--muted);
+      font: 700 11px/16px Georgia, serif;
+      font-style: italic;
+      text-align: center;
+      cursor: help;
     }
 
-    .sp-modes .sp-btn.active {
+    .info:hover,
+    .info:focus-visible,
+    .info.open {
+      color: var(--text);
+      border-color: var(--orange);
+      outline: none;
+    }
+
+    .sp-tip {
+      position: fixed;
+      z-index: 2000;
+      max-width: 260px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: #1a2132;
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.45;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+      pointer-events: none;
+    }
+
+    /* Operating mode tiles: button with its info icon in the corner. */
+    .sp-modes {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .mode-tile {
+      position: relative;
+    }
+
+    .mode-tile .sp-btn {
+      width: 100%;
+      padding: 13px 30px 13px 12px;
+      text-align: left;
+    }
+
+    .mode-tile .info {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+    }
+
+    .mode-tile .sp-btn.active {
       background: rgba(234, 88, 12, 0.22);
       border-color: rgba(234, 88, 12, 0.6);
-      color: #fff;
+    }
+
+    .sp-auto {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      background: rgba(52, 211, 153, 0.08);
+      color: #a7f3d0;
+      font-size: 13px;
+    }
+
+    .sp-auto.manual {
+      border-color: rgba(251, 146, 60, 0.35);
+      background: rgba(251, 146, 60, 0.08);
+      color: #fed7aa;
     }
 
     /* Speed controls. */
@@ -343,7 +435,7 @@
 
     .speed-row-top {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       justify-content: space-between;
       gap: 10px;
     }
@@ -356,12 +448,13 @@
     .speed-controls {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       margin-top: 8px;
     }
 
     .speed-controls input[type="range"] {
       flex: 1;
+      min-width: 0;
       accent-color: var(--orange);
     }
 
@@ -387,9 +480,15 @@
 
     .speed-stop:hover { background: rgba(248, 113, 113, 0.22); }
 
-    .sp-stop {
-      width: 100%;
+    .sp-stop-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       margin-top: 16px;
+    }
+
+    .sp-stop {
+      flex: 1;
       padding: 13px;
       border-radius: 12px;
       border: 1px solid rgba(248, 113, 113, 0.55);
@@ -406,7 +505,7 @@
     /* Fine aim rows: nudge buttons around a live angle readout. */
     .aim-row {
       display: grid;
-      grid-template-columns: 44px repeat(2, 1fr) 64px repeat(2, 1fr);
+      grid-template-columns: 64px repeat(2, 1fr) 56px repeat(2, 1fr);
       align-items: center;
       gap: 6px;
     }
@@ -414,7 +513,7 @@
     .aim-row + .aim-row { margin-top: 8px; }
 
     .aim-row .sp-btn {
-      padding: 8px 4px;
+      padding: 8px 2px;
       font-size: 13px;
     }
 
@@ -450,22 +549,13 @@
       gap: 12px;
       padding: 12px 0;
       border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 14px;
+      font-weight: 600;
     }
 
     .adv-row:first-of-type { margin-top: 12px; }
 
-    .adv-row p {
-      margin: 0;
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    .adv-row strong {
-      display: block;
-      font-size: 14px;
-    }
-
-    .adv-row .sp-btn { flex-shrink: 0; }
+    .adv-row .sp-btn { flex-shrink: 0; min-width: 84px; }
 
     .cmd-status {
       min-height: 20px;
@@ -485,13 +575,10 @@
 
     @media (max-width: 700px) {
       .sp-page { padding-top: 28px; }
-      .sp-status { grid-template-columns: 1fr 1fr; }
-      .sp-status-cell { border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
-      .sp-status-cell:first-child { grid-column: 1 / -1; }
-      .sp-status-cell:nth-child(even) { border-right: 1px solid rgba(255, 255, 255, 0.08); }
-      .sp-status-cell:nth-child(odd):not(:first-child) { border-right: none; }
-      .sp-status-cell:nth-last-child(-n+2) { border-bottom: none; }
-      .sp-modes .sp-btn { padding: 10px 2px; font-size: 13px; }
+      .sp-status-head { padding: 12px 16px; }
+      .sp-status-cell { padding: 12px 14px 14px; }
+      .sp-status-value { font-size: 16px; }
+      .aim-row { grid-template-columns: 58px repeat(2, 1fr) 48px repeat(2, 1fr); gap: 4px; }
     }
   </style>
 </head>
@@ -502,47 +589,52 @@
   <section class="sp-page">
     <div class="container">
       <div class="sp-header">
-        <div class="eyebrow">Targeted Suppression</div>
-        <h1>Sprinkler Control</h1>
-        <p class="section-sub">Watch the sprinkler camera and aim the sprinkler remotely.</p>
+        <div class="eyebrow">Thermal Detection · Targeted Spray</div>
+        <h1>Automated Fire Detection &amp; Suppression System</h1>
+        <p class="section-sub">
+          A thermal camera keeps watch for heat from flames. When it spots a fire, the system
+          moves the spray nozzle along its rail, turns and tilts it toward the fire, and sprays
+          water until the heat is gone, all on its own. You can watch it live and take manual
+          control below.
+        </p>
       </div>
 
-      <!-- Live status: public, always visible. -->
+      <!-- Nozzle position: public, always visible. -->
       <div class="sp-card sp-status">
-        <div class="sp-status-cell">
-          <div class="sp-label">Sprinkler</div>
-          <div id="device-pill" class="device-pill offline">Connecting…</div>
-          <div class="sp-status-sub" id="updated-at">&nbsp;</div>
+        <div class="sp-status-head">
+          <div class="sp-label">Nozzle Position</div>
+          <div class="sp-status-meta">
+            <span class="sp-status-sub" id="updated-at"></span>
+            <span id="device-pill" class="device-pill offline">Connecting…</span>
+          </div>
         </div>
-        <div class="sp-status-cell">
-          <div class="sp-label">Mode</div>
-          <div class="sp-status-value" id="val-mode">—</div>
-        </div>
-        <div class="sp-status-cell">
-          <div class="sp-label">Rail</div>
-          <div class="sp-status-value" id="val-slider">—</div>
-          <div class="pos-track unknown" id="bar-slider"><span class="pos-fill"></span></div>
-        </div>
-        <div class="sp-status-cell">
-          <div class="sp-label">Pan</div>
-          <div class="sp-status-value" id="val-pan">—</div>
-          <div class="pos-track unknown" id="bar-pan"><span class="center-tick"></span><span class="pos-fill"></span></div>
-        </div>
-        <div class="sp-status-cell">
-          <div class="sp-label">Tilt</div>
-          <div class="sp-status-value" id="val-tilt">—</div>
-          <div class="pos-track unknown" id="bar-tilt"><span class="center-tick"></span><span class="pos-fill"></span></div>
+        <div class="sp-status-grid">
+          <div class="sp-status-cell">
+            <div class="sp-label">Along rail</div>
+            <div class="sp-status-value" id="val-slider">—</div>
+            <div class="pos-track unknown" id="bar-slider"><span class="pos-fill"></span></div>
+          </div>
+          <div class="sp-status-cell">
+            <div class="sp-label">Pan</div>
+            <div class="sp-status-value" id="val-pan">—</div>
+            <div class="pos-track unknown" id="bar-pan"><span class="center-tick"></span><span class="pos-fill"></span></div>
+          </div>
+          <div class="sp-status-cell">
+            <div class="sp-label">Tilt</div>
+            <div class="sp-status-value" id="val-tilt">—</div>
+            <div class="pos-track unknown" id="bar-tilt"><span class="center-tick"></span><span class="pos-fill"></span></div>
+          </div>
         </div>
       </div>
 
       <div class="sp-notice" id="notice-homing">
-        The rail position isn't set yet. Use <strong>Re-home rail</strong> under Advanced to fix it.
+        The nozzle's rail position isn't set yet. Use <strong>Re-home rail</strong> under Advanced to fix it.
       </div>
 
       <!-- Access gate. Replaced by the controls after a correct code. -->
       <div id="gate" class="sp-card sp-gate">
         <h2 id="gate-title">Controls are locked</h2>
-        <p id="gate-text">Enter your 4-digit access code to view the camera and control the sprinkler.</p>
+        <p id="gate-text">Enter your 4-digit access code to watch the live view and control the system.</p>
         <div class="sp-gate-form">
           <input id="control-code-input" class="sp-code-input" type="password" inputmode="numeric"
             maxlength="4" placeholder="••••" aria-label="4-digit access code" autocomplete="off" />
@@ -551,66 +643,109 @@
         <p id="control-code-message" class="sp-gate-message" aria-live="polite"></p>
       </div>
 
-      <!-- Camera + controls, shown after unlock. -->
+      <!-- Live view + controls, shown after unlock. -->
       <div id="control-grid" class="sp-grid" style="display: none;">
         <div class="sp-card sp-camera">
-          <iframe id="sprinkler-stream" src="" title="Sprinkler camera" allowfullscreen></iframe>
-          <div id="stream-empty" class="sp-camera-empty">The sprinkler camera isn't available right now.</div>
+          <iframe id="sprinkler-stream" src="" title="Live view of the spray nozzle" allowfullscreen></iframe>
+          <div id="stream-empty" class="sp-camera-empty">The live view isn't available right now.</div>
         </div>
 
         <div class="sp-panel">
           <div class="sp-card sp-section">
             <div class="sp-section-head">
-              <div class="sp-label">Mode</div>
-              <button id="lock-btn" class="sp-link-btn" type="button">Lock</button>
+              <div class="sp-label">Operating Mode</div>
+              <span class="sp-inline">
+                <button id="lock-btn" class="sp-link-btn" type="button">Lock</button>
+                <button class="info" type="button" aria-label="About Lock"
+                  data-tip="Locks the controls again. You'll need the access code to use them next time.">i</button>
+              </span>
             </div>
+            <div class="sp-auto" id="auto-banner">Automatic mode</div>
             <div class="sp-modes">
-              <button class="sp-btn" data-cmd-mode="menu">Standby</button>
-              <button class="sp-btn" data-cmd-mode="motor1">Rail</button>
-              <button class="sp-btn" data-cmd-mode="motor2">Pan</button>
-              <button class="sp-btn" data-cmd-mode="motor3">Tilt</button>
-              <button class="sp-btn" data-cmd-mode="allmotors">Patrol</button>
+              <div class="mode-tile">
+                <button class="sp-btn" data-cmd-mode="motor1">Slider Motor</button>
+                <button class="info" type="button" aria-label="About Slider Motor"
+                  data-tip="Take manual control of the nozzle's movement along the rail. Use the speed control that appears below to choose direction and speed.">i</button>
+              </div>
+              <div class="mode-tile">
+                <button class="sp-btn" data-cmd-mode="motor2">Pan Motor</button>
+                <button class="info" type="button" aria-label="About Pan Motor"
+                  data-tip="Take manual control of turning the nozzle side to side. Use the speed control that appears below to choose direction and speed.">i</button>
+              </div>
+              <div class="mode-tile">
+                <button class="sp-btn" data-cmd-mode="motor3">Tilt Motor</button>
+                <button class="info" type="button" aria-label="About Tilt Motor"
+                  data-tip="Take manual control of tilting the nozzle up and down. Use the speed control that appears below to choose direction and speed.">i</button>
+              </div>
+              <div class="mode-tile">
+                <button class="sp-btn" data-cmd-mode="allmotors">Patrol</button>
+                <button class="info" type="button" aria-label="About Patrol"
+                  data-tip="The nozzle sweeps back and forth along the rail and turns side to side on its own, scanning the whole area. You can adjust both sweep speeds below.">i</button>
+              </div>
             </div>
-            <p class="sp-help" id="mode-help">&nbsp;</p>
           </div>
 
           <!-- Speed: only shown in modes where the device accepts it. -->
           <div class="sp-card sp-section" id="speed-section" style="display: none;">
             <div class="speed-row" id="speed-row-slider">
               <div class="speed-row-top">
-                <div class="sp-label" id="speed-label">Speed</div>
+                <span class="sp-inline">
+                  <span class="sp-label" id="speed-label">Speed</span>
+                  <button class="info" type="button" aria-label="About speed" id="speed-info"
+                    data-tip="">i</button>
+                </span>
                 <span class="speed-value" id="speed-value">0</span>
               </div>
               <div class="speed-controls">
                 <input id="speed-slider" type="range" min="-20" max="20" value="0" step="1"
                   aria-labelledby="speed-label" />
-                <button class="speed-stop" data-stop-axis="slider" type="button" style="display: none;">Stop</button>
+                <span class="sp-inline" id="slider-stop-wrap" style="display: none;">
+                  <button class="speed-stop" data-stop-axis="slider" type="button">Stop</button>
+                  <button class="info" type="button" aria-label="About stopping the rail sweep"
+                    data-tip="Pauses the sweep along the rail. The side-to-side sweep keeps going.">i</button>
+                </span>
               </div>
               <div class="speed-ends" id="speed-ends">
-                <span id="speed-end-min">Reverse</span><span id="speed-end-mid">Stop</span><span id="speed-end-max">Forward</span>
+                <span id="speed-end-min">Reverse</span><span>Stop</span><span id="speed-end-max">Forward</span>
               </div>
             </div>
             <!-- Patrol only: pan sweep speed (magnitude; default 6 matches the firmware). -->
             <div class="speed-row" id="speed-row-pan" style="display: none;">
               <div class="speed-row-top">
-                <div class="sp-label" id="speed-pan-label">Pan sweep speed</div>
+                <span class="sp-inline">
+                  <span class="sp-label" id="speed-pan-label">Side-to-side sweep speed</span>
+                  <button class="info" type="button" aria-label="About side-to-side sweep speed"
+                    data-tip="How fast the nozzle turns side to side while patrolling. Slide left to slow down, right to speed up.">i</button>
+                </span>
                 <span class="speed-value" id="speed-pan-value">6</span>
               </div>
               <div class="speed-controls">
                 <input id="speed-pan" type="range" min="0" max="20" value="6" step="1"
                   aria-labelledby="speed-pan-label" />
-                <button class="speed-stop" data-stop-axis="pan" type="button">Stop</button>
+                <span class="sp-inline">
+                  <button class="speed-stop" data-stop-axis="pan" type="button">Stop</button>
+                  <button class="info" type="button" aria-label="About stopping the side-to-side sweep"
+                    data-tip="Pauses the side-to-side sweep. The sweep along the rail keeps going.">i</button>
+                </span>
               </div>
             </div>
-            <button id="stop-btn" class="sp-stop" type="button">Stop</button>
+            <div class="sp-stop-row">
+              <button id="stop-btn" class="sp-stop" type="button">Stop</button>
+              <button class="info" type="button" aria-label="About Stop"
+                data-tip="Stops all movement right away and hands control back to automatic fire detection.">i</button>
+            </div>
           </div>
 
           <div class="sp-card sp-section">
             <div class="sp-section-head">
-              <div class="sp-label">Fine aim</div>
+              <div class="sp-label">Fine Aim</div>
             </div>
             <div class="aim-row">
-              <div class="sp-label">Pan</div>
+              <span class="sp-inline">
+                <span class="sp-label">Pan</span>
+                <button class="info" type="button" aria-label="About pan fine aim"
+                  data-tip="Turns the nozzle side to side by 1° or 10° per tap, for precise aiming.">i</button>
+              </span>
               <button class="sp-btn" data-cmd-nudge="pan" data-cmd-delta="-10">−10°</button>
               <button class="sp-btn" data-cmd-nudge="pan" data-cmd-delta="-1">−1°</button>
               <div class="aim-angle" id="cal-pan-angle">—</div>
@@ -618,34 +753,41 @@
               <button class="sp-btn" data-cmd-nudge="pan" data-cmd-delta="10">+10°</button>
             </div>
             <div class="aim-row">
-              <div class="sp-label">Tilt</div>
+              <span class="sp-inline">
+                <span class="sp-label">Tilt</span>
+                <button class="info" type="button" aria-label="About tilt fine aim"
+                  data-tip="Tilts the nozzle up or down by 1° or 10° per tap, for precise aiming.">i</button>
+              </span>
               <button class="sp-btn" data-cmd-nudge="tilt" data-cmd-delta="-10">−10°</button>
               <button class="sp-btn" data-cmd-nudge="tilt" data-cmd-delta="-1">−1°</button>
               <div class="aim-angle" id="cal-tilt-angle">—</div>
               <button class="sp-btn" data-cmd-nudge="tilt" data-cmd-delta="1">+1°</button>
               <button class="sp-btn" data-cmd-nudge="tilt" data-cmd-delta="10">+10°</button>
             </div>
-            <p class="sp-help">Fine aim can move past the normal limits, so watch the camera.</p>
+            <p class="sp-help">Fine aim can move past the normal limits, so watch the live view.</p>
           </div>
 
           <details class="sp-card sp-section sp-advanced">
             <summary class="sp-label">Advanced</summary>
             <div class="adv-row">
-              <div><strong>Set pan to 0°</strong>
-                <p>Use the current direction as the pan center.</p>
-              </div>
+              <span class="sp-inline">Set pan to 0°
+                <button class="info" type="button" aria-label="About Set pan to 0°"
+                  data-tip="Saves the nozzle's current side-to-side direction as straight ahead (0°). Line it up first using Fine Aim.">i</button>
+              </span>
               <button class="sp-btn" data-cmd-action="zeroPan">Set</button>
             </div>
             <div class="adv-row">
-              <div><strong>Set tilt to 0°</strong>
-                <p>Use the current angle as the tilt center.</p>
-              </div>
+              <span class="sp-inline">Set tilt to 0°
+                <button class="info" type="button" aria-label="About Set tilt to 0°"
+                  data-tip="Saves the nozzle's current up-and-down angle as level (0°). Line it up first using Fine Aim.">i</button>
+              </span>
               <button class="sp-btn" data-cmd-action="zeroTilt">Set</button>
             </div>
             <div class="adv-row">
-              <div><strong>Re-home rail</strong>
-                <p>Finds the home switch, then returns to the middle of the rail.</p>
-              </div>
+              <span class="sp-inline">Re-home rail
+                <button class="info" type="button" aria-label="About Re-home rail"
+                  data-tip="Moves the nozzle to the end of the rail to find its starting point, then parks it in the middle. Use this if the rail position looks wrong.">i</button>
+              </span>
               <button class="sp-btn" data-cmd-action="rehome">Re-home</button>
             </div>
           </details>
@@ -656,8 +798,10 @@
     </div>
   </section>
 
+  <div id="tip" class="sp-tip" role="tooltip" hidden></div>
+
   <div id="site-footer"></div>
-  <script src="script.js"></script>
+  <script src="script.js?v=20261025"></script>
   <script>
     const POLL_MS = 1500;
     const STALE_MS = 5000;
@@ -682,9 +826,8 @@
     let lastSliderTouchMs = 0;
     let statusClearTimer = null;
     let sessionTimer = null;
-    // Most recent mode the device reported. Used by the Stop button to
-    // decide what command to send, since "stop" means different things
-    // depending on what's running.
+    // Most recent mode the device reported. Stop is only sent from a
+    // moving mode, never from menu or the boot-time setup screens.
     let lastKnownMode = null;
     let deviceOnline = false;
     // Seq of the last command sent from this page, cleared once the
@@ -700,24 +843,16 @@
     const pendingNudge = { pan: 0, tilt: 0 };
     const nudgeTimers = { pan: null, tilt: null };
 
-    const MODE_LABELS = {
-      menu: "Standby",
-      motor1: "Rail",
-      motor2: "Pan",
-      motor3: "Tilt",
-      allmotors: "Patrol",
-      panSetup: "Start-up setup",
-      tiltSetup: "Start-up setup"
-    };
-
-    const MODE_HELP = {
-      menu: "Motors are stopped. The sprinkler can aim at a detected fire automatically.",
-      motor1: "Use the speed control to move the sprinkler along the rail.",
-      motor2: "Use the speed control to turn the sprinkler left or right.",
-      motor3: "Use the speed control to tilt the sprinkler up or down.",
-      allmotors: "The sprinkler sweeps back and forth along the rail.",
-      panSetup: "The sprinkler is waiting for start-up setup on the device. Choose a mode to skip it.",
-      tiltSetup: "The sprinkler is waiting for start-up setup on the device. Choose a mode to skip it."
+    // Banner shown above the mode buttons. The device only runs
+    // automatic detection and spraying in menu mode.
+    const MODE_BANNER = {
+      menu: "Automatic mode: watching for fire. It will aim and spray on its own. Choose a mode below to take manual control.",
+      motor1: "Manual control: Slider Motor. Automatic detection is paused until you press Stop.",
+      motor2: "Manual control: Pan Motor. Automatic detection is paused until you press Stop.",
+      motor3: "Manual control: Tilt Motor. Automatic detection is paused until you press Stop.",
+      allmotors: "Patrol: the nozzle is sweeping the area. Automatic detection is paused until you press Stop.",
+      panSetup: "Waiting for start-up setup on the device.",
+      tiltSetup: "Waiting for start-up setup on the device."
     };
 
     // Labels for the two ends of the signed speed slider. Positive slider
@@ -727,6 +862,59 @@
       motor2: ["Reverse", "Forward"],
       motor3: ["Reverse", "Forward"]
     };
+
+    const SPEED_TIP_MANUAL =
+      "Slide away from the middle to move. The farther you slide, the faster it goes. Slide back to the middle to stop.";
+    const SPEED_TIP_PATROL =
+      "How fast the nozzle sweeps along the rail while patrolling. Slide left to slow down, right to speed up.";
+
+    // --- Info tooltips ---
+
+    const tip = document.getElementById("tip");
+    let tipOwner = null;
+
+    function showTip(btn) {
+      if (!btn.dataset.tip) return;
+      if (tipOwner && tipOwner !== btn) tipOwner.classList.remove("open");
+      tipOwner = btn;
+      btn.classList.add("open");
+      tip.textContent = btn.dataset.tip;
+      tip.hidden = false;
+      // Center under the icon, kept inside the viewport; flip above if
+      // there's no room below.
+      const r = btn.getBoundingClientRect();
+      const w = tip.offsetWidth;
+      const h = tip.offsetHeight;
+      const left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+      const below = r.bottom + 8;
+      const top = below + h > window.innerHeight - 8 ? r.top - h - 8 : below;
+      tip.style.left = left + "px";
+      tip.style.top = top + "px";
+    }
+
+    function hideTip() {
+      if (tipOwner) tipOwner.classList.remove("open");
+      tipOwner = null;
+      tip.hidden = true;
+    }
+
+    function wireInfoIcons() {
+      document.querySelectorAll(".info").forEach(btn => {
+        btn.addEventListener("mouseenter", () => showTip(btn));
+        btn.addEventListener("mouseleave", hideTip);
+        btn.addEventListener("focus", () => showTip(btn));
+        btn.addEventListener("blur", hideTip);
+        // Tap toggles on touch screens.
+        btn.addEventListener("click", e => {
+          e.stopPropagation();
+          if (tipOwner === btn && !tip.hidden) hideTip();
+          else showTip(btn);
+        });
+      });
+      document.addEventListener("click", hideTip);
+      window.addEventListener("scroll", hideTip, { passive: true });
+      document.addEventListener("keydown", e => { if (e.key === "Escape") hideTip(); });
+    }
 
     // --- Gate / session lifecycle ---
 
@@ -741,6 +929,7 @@
     function lockControls(expired) {
       // Hide the controls and blank the stream so the camera player
       // doesn't keep running in the background after lockout.
+      hideTip();
       document.getElementById("control-grid").style.display = "none";
       document.getElementById("sprinkler-stream").src = "about:blank";
       if (sessionTimer) { clearTimeout(sessionTimer); sessionTimer = null; }
@@ -749,9 +938,8 @@
         expired ? "Session ended" : "Controls are locked";
       document.getElementById("gate-text").textContent = expired
         ? "For safety, controls lock after 15 minutes. Enter your code to continue."
-        : "Enter your 4-digit access code to view the camera and control the sprinkler.";
-      const input = document.getElementById("control-code-input");
-      input.value = "";
+        : "Enter your 4-digit access code to watch the live view and control the system.";
+      document.getElementById("control-code-input").value = "";
       document.getElementById("control-code-message").textContent = "";
       document.getElementById("gate").style.display = "block";
     }
@@ -784,9 +972,9 @@
         return;
       }
 
-      // Body is { ok: true } plus streamUrl when the sprinkler camera
-      // is configured on the worker. Parse defensively: if it fails,
-      // fall back to controls without the camera.
+      // Body is { ok: true } plus streamUrl when the camera is
+      // configured on the worker. Parse defensively: if it fails, fall
+      // back to controls without the live view.
       let payload = {};
       try { payload = await res.json(); } catch {}
 
@@ -841,8 +1029,8 @@
             awaitingSeq = d.seq;
             awaitingSince = Date.now();
           }
-          setStatus(deviceOnline ? "Sent. Waiting for the sprinkler…"
-                                 : "Sent. The sprinkler will act on it when it reconnects.", "", true);
+          setStatus(deviceOnline ? "Sent. Waiting for the system…"
+                                 : "Sent. The system will act on it when it reconnects.", "", true);
         })
         .catch(() => {
           awaitingSeq = null;
@@ -859,7 +1047,7 @@
         setStatus("Done", "success");
       } else if (Date.now() - awaitingSince > ACK_TIMEOUT_MS) {
         awaitingSeq = null;
-        setStatus("The sprinkler hasn't responded yet.", "error");
+        setStatus("The system hasn't responded yet.", "error");
       }
     }
 
@@ -910,9 +1098,9 @@
         }, SPEED_DEBOUNCE_MS);
       });
 
-      // Pan sweep speed (Patrol only). The device keeps the last value
-      // across mode changes and doesn't report it back, so each input
-      // just debounces and sends the latest value.
+      // Side-to-side sweep speed (Patrol only). The device keeps the
+      // last value across mode changes and doesn't report it back, so
+      // each input just debounces and sends the latest value.
       const panSpeed = document.getElementById("speed-pan");
       const panSpeedOut = document.getElementById("speed-pan-value");
       panSpeed.addEventListener("input", () => {
@@ -946,19 +1134,15 @@
         });
       });
 
+      // Stop: from any moving mode, return to menu. Entering menu stops
+      // all three motors on the device and is the only mode where
+      // automatic detection runs, so this also hands control back to it.
       document.getElementById("stop-btn").addEventListener("click", () => {
-        // Mode-aware stop:
-        //   Rail/Pan/Tilt → setSliderSpeed:0 stops the motor in place
-        //     without changing mode, so the user can resume right away.
-        //   Patrol → return to Standby (menu), which stops all motors.
-        if (lastKnownMode === "motor1" || lastKnownMode === "motor2" ||
-            lastKnownMode === "motor3") {
-          sendCommand({ kind: "setSliderSpeed", speed: 0 });
-        } else if (lastKnownMode === "allmotors") {
-          sendCommand({ kind: "enterMode", mode: "menu" });
-        } else {
+        if (lastKnownMode !== "motor1" && lastKnownMode !== "motor2" &&
+            lastKnownMode !== "motor3" && lastKnownMode !== "allmotors") {
           return;
         }
+        sendCommand({ kind: "enterMode", mode: "menu" });
         slider.value = "0";
         out.textContent = "0";
         lastSliderTouchMs = Date.now();
@@ -1026,9 +1210,10 @@
 
     function render(d) {
       const mode = typeof d.mode === "string" ? d.mode : null;
-      setText("val-mode", mode ? (MODE_LABELS[mode] || mode) : "—");
-      setText("mode-help", (mode && MODE_HELP[mode]) || " ");
       setActiveMode(mode);
+      const banner = document.getElementById("auto-banner");
+      banner.textContent = (mode && MODE_BANNER[mode]) || "Waiting for the system…";
+      banner.classList.toggle("manual", mode !== "menu");
 
       setText("val-slider", typeof d.sliderMm === "number" ? d.sliderMm + " mm" : "—");
       setText("val-pan", formatDeg(d.panDeg));
@@ -1043,9 +1228,9 @@
       document.getElementById("notice-homing").style.display =
         d.homed === false ? "block" : "none";
 
-      // setSliderSpeed only takes effect on the device in Rail/Pan/Tilt
-      // and Patrol modes (see main.ino:dispatchRemoteCommand), so the
-      // speed card is only shown there.
+      // setSliderSpeed only takes effect on the device in the three
+      // motor modes and Patrol (see main.ino:dispatchRemoteCommand), so
+      // the speed card is only shown there.
       const speedActive = mode === "motor1" || mode === "motor2" ||
                           mode === "motor3" || mode === "allmotors";
       const patrol = mode === "allmotors";
@@ -1057,6 +1242,7 @@
       const out = document.getElementById("speed-value");
       slider.min = patrol ? "0" : "-20";
       setText("speed-label", patrol ? "Rail sweep speed" : "Speed");
+      document.getElementById("speed-info").dataset.tip = patrol ? SPEED_TIP_PATROL : SPEED_TIP_MANUAL;
       document.getElementById("speed-ends").style.display = patrol ? "none" : "";
       if (SPEED_ENDS[mode]) {
         setText("speed-end-min", SPEED_ENDS[mode][0]);
@@ -1071,8 +1257,7 @@
         }
       }
       document.getElementById("speed-row-pan").style.display = patrol ? "" : "none";
-      document.querySelector("[data-stop-axis='slider']").style.display = patrol ? "" : "none";
-      setText("stop-btn", patrol ? "Stop patrol" : "Stop");
+      document.getElementById("slider-stop-wrap").style.display = patrol ? "" : "none";
       lastKnownMode = mode;
 
       if (typeof d.updatedAt === "number") {
@@ -1085,7 +1270,7 @@
         else setPill("stale", "Not responding");
       } else {
         deviceOnline = false;
-        setText("updated-at", " ");
+        setText("updated-at", "");
         setPill("offline", "No data yet");
       }
 
@@ -1120,6 +1305,7 @@
     document.addEventListener("DOMContentLoaded", () => {
       bindGateEvents();
       wireCommandButtons();
+      wireInfoIcons();
       loadState();
     });
 
