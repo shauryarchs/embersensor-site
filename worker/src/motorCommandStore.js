@@ -25,7 +25,15 @@ const VALID_KINDS = new Set([
   "nudgePan",
   "nudgeTilt",
   "setAllMotorsPanSpeed",
+  "pumpOn",
+  "pumpOff",
 ]);
+
+// Manual spray run time. Matches Sprayer::kRemoteMaxS on the device,
+// which also enforces the cap, so a lost pumpOff can never leave the
+// water running longer than this.
+const PUMP_DEFAULT_SECONDS = 10;
+const PUMP_MAX_SECONDS = 10;
 
 const VALID_MODES = new Set([
   "menu",
@@ -87,8 +95,15 @@ export function validateAndBuildProps(body) {
     // guards against pathological values being persisted.
     const clamped = Math.max(-360, Math.min(360, Math.round(deltaDeg)));
     props.deltaDeg = clamped;
+  } else if (kind === "pumpOn") {
+    // seconds is optional; default to the full remote run.
+    const seconds = body.seconds ?? PUMP_DEFAULT_SECONDS;
+    if (typeof seconds !== "number" || !Number.isFinite(seconds)) {
+      return { ok: false, error: "seconds must be a finite number" };
+    }
+    props.seconds = Math.max(1, Math.min(PUMP_MAX_SECONDS, Math.round(seconds)));
   }
-  // rehome / zeroPan / zeroTilt take no args.
+  // rehome / zeroPan / zeroTilt / pumpOff take no args.
 
   return { ok: true, props };
 }
